@@ -1,0 +1,45 @@
+# Build directories
+build/
+cmake-build-*/
+bin/
+lib/
+*.exe
+*.dll
+*.lib
+*.a
+*.so
+*.dylib
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+!config.cmake
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+
+# Cocos2d-x (如果使用本地引擎)
+cocos2d/
+
+# 临时文件
+*.tmp
+*.log
+*.swp
+*~
+
+# 配置文件（包含用户特定路径）
+# config.cmake 应该被提交，但用户可以修改
+
