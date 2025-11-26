@@ -36,8 +36,12 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 # Cocos2d-x 路径配置
-# Cocos2d-x 源码路径
-set(COCOS2DX_ROOT "D:/0TJU/big2/fans/cocos2d-x-4.0" CACHE PATH "Cocos2d-x root directory")
+if(DEFINED ENV{COCOS2DX_ROOT})
+    set(COCOS2DX_ROOT "$ENV{COCOS2DX_ROOT}")
+    message(STATUS "Found environment Cocos2d-x: ${COCOS2DX_ROOT}")
+else()
+    message(FATAL_ERROR "未找到 cocos2d 引擎！请正确设置环境变量 COCOS2DX_ROOT。")
+endif()
 
 # 包含 Cocos2d-x CMake 配置
 if(EXISTS "${COCOS2DX_ROOT}/CMakeLists.txt")
