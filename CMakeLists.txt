@@ -8,6 +8,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # 设置运行时库（修复 LNK4098 警告）
 # 使用 MultiThreadedDLL (/MD) 以匹配大多数 Windows 库
 if(MSVC)
+    # 强制 MSVC 使用 UTF-8 编码读取源文件 (解决 C4819 警告和中文乱码)
+    add_compile_options("/utf-8")
+
     # 启用 CMP0091 策略，允许设置运行时库
     cmake_policy(SET CMP0091 NEW)
     
