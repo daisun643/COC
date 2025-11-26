@@ -9,24 +9,23 @@
  */
 class TownHall : public Building {
 public:
-    static TownHall* create(int level = 1);
-    
-    bool init(int level);
-    
-    /**
-     * 获取大本营等级对应的其他建筑最大等级
-     */
-    int getMaxBuildingLevel() const;
-    
-    /**
-     * 获取大本营信息
-     */
-    virtual std::string getBuildingInfo() const override;
-    
+  static TownHall *create(int level = 1);
+
+  bool init(int level);
+
+  /**
+   * 获取大本营等级对应的其他建筑最大等级
+   */
+  int getMaxBuildingLevel() const;
+
+  /**
+   * 获取大本营信息
+   */
+  virtual std::string getBuildingInfo() const override;
+
 protected:
-    TownHall();
-    virtual ~TownHall();
+  TownHall();
+  virtual ~TownHall();
 };
 
 #endif // __TOWN_HALL_H__
-
