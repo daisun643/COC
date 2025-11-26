@@ -28,7 +28,7 @@ if %errorlevel% neq 0 (
     echo.
     echo CMake configuration failed!
     echo Please check:
-    echo   1. Cocos2d-x path is correctly set in config.cmake or environment variable
+    echo   1. Cocos2d-x path is correctly set in environment variable
     echo   2. CMake is installed and in PATH
     echo   3. Visual Studio is installed
     pause

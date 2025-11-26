@@ -17,7 +17,6 @@ cmake_install.cmake
 Makefile
 *.cmake
 !CMakeLists.txt
-!config.cmake
 
 # IDE
 .vs/
