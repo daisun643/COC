@@ -1,0 +1,17 @@
+{
+    "TownHall": {
+        "image": "images/buildings/TownHall.png",
+        "GridPosition": [
+            22,
+            22
+        ],
+        "AnchorRatio": [
+            0.0,
+            0.0
+        ],
+        "GridSize": 4,
+        "defaultLevel": 1,
+        "maxLevel": 10,
+        "tips": "GridPosition表示建筑中心所在的网格坐标，GridSize表示建筑占用的菱形边长"
+    }
+}

@@ -1,4 +1,6 @@
 #include "GameScene.h"
+#include "Config/ConfigManager.h"
+#include "BuildingManager.h"
 #include <float.h>
 
 Scene *GameScene::createScene() { return GameScene::create(); }
@@ -8,6 +10,15 @@ bool GameScene::init() {
     return false;
   }
 
+  // 获取配置管理器
+  auto configManager = ConfigManager::getInstance();
+  if (!configManager) {
+    CCLOG("Failed to get ConfigManager in GameScene!");
+    return false;
+  }
+  
+  auto constantConfig = configManager->getConstantConfig();
+  
   auto visibleSize = Director::getInstance()->getVisibleSize();
   Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
@@ -16,8 +27,9 @@ bool GameScene::init() {
   this->addChild(_mapLayer, 0);
   _currentScale = 1.0f;
   _isDragging = false;
+  _selectedBuilding = nullptr;
   _draggingBuilding = nullptr;
-  _gridSize = 44;
+  _gridSize = constantConfig.gridSize;
 
   // 创建44x44网格地图背景，使用grass.png进行菱形密铺
   initGrassBackground();
@@ -32,97 +44,10 @@ bool GameScene::init() {
   // 初始化鼠标事件监听器
   initMouseEventListeners();
 
-  // 初始化TownHall
-  initTownHall();
+  // 建筑现在由BuildingManager管理，不再需要单独初始化TownHall
+  // initTownHall();
 
   return true;
-}
-
-void GameScene::initTownHall() {
-  // 创建大本营，放在地图中心位置
-  int centerRow = _gridSize / 2;
-  int centerCol = _gridSize / 2;
-  Vec2 centerPos = gridToScreen(centerRow, centerCol);
-  
-  _townHall = TownHall::create(1);
-  _townHall->setWidth(4);  // 宽度4
-  
-  // 根据2*deltaX进行等比例缩放
-  // 原始图片尺寸是158*120，需要缩放到2*deltaX
-  float targetSize = 2.0f * _deltaX;
-  float scaleFactor = targetSize / 158.0f;  // 158是原始图片长度
-  _townHall->setScale(scaleFactor);
-  
-  // 设置锚点为左侧中点（与grass一致）
-  _townHall->setAnchorPoint(Vec2(0.0f, 0.5f));
-  
-  // 设置中心位置和坐标编码
-  _townHall->setCenterPosition(centerPos.x, centerPos.y, centerRow, centerCol);
-  
-  _mapLayer->addChild(_townHall, 1);
-}
-
-void GameScene::initDefenseBuildings() {
-  auto visibleSize = Director::getInstance()->getVisibleSize();
-  Vec2 origin = Director::getInstance()->getVisibleOrigin();
-
-  // 创建不同类型的防御建筑
-  auto cannon1 = DefenseBuilding::create(DefenseType::CANNON, 1);
-  addBuilding(cannon1, Vec2(origin.x + 150, origin.y + 200));
-
-  auto cannon2 = DefenseBuilding::create(DefenseType::CANNON, 2);
-  addBuilding(cannon2,
-              Vec2(origin.x + visibleSize.width - 150, origin.y + 200));
-
-  auto archerTower = DefenseBuilding::create(DefenseType::ARCHER_TOWER, 1);
-  addBuilding(archerTower,
-              Vec2(origin.x + visibleSize.width / 2, origin.y + 100));
-
-  auto mortar = DefenseBuilding::create(DefenseType::MORTAR, 1);
-  addBuilding(mortar, Vec2(origin.x + visibleSize.width / 2,
-                           origin.y + visibleSize.height - 150));
-}
-
-void GameScene::initResourceBuildings() {
-  auto visibleSize = Director::getInstance()->getVisibleSize();
-  Vec2 origin = Director::getInstance()->getVisibleOrigin();
-
-  // 创建资源建筑
-  auto goldMine1 = ResourceBuilding::create(ResourceType::GOLD, 1);
-  addBuilding(goldMine1, Vec2(origin.x + 100, origin.y + 400));
-
-  auto goldMine2 = ResourceBuilding::create(ResourceType::GOLD, 2);
-  addBuilding(goldMine2, Vec2(origin.x + 250, origin.y + 400));
-
-  auto elixirCollector1 = ResourceBuilding::create(ResourceType::ELIXIR, 1);
-  addBuilding(elixirCollector1,
-              Vec2(origin.x + visibleSize.width - 100, origin.y + 400));
-
-  auto elixirCollector2 = ResourceBuilding::create(ResourceType::ELIXIR, 1);
-  addBuilding(elixirCollector2,
-              Vec2(origin.x + visibleSize.width - 250, origin.y + 400));
-}
-
-void GameScene::initStorageBuildings() {
-  auto visibleSize = Director::getInstance()->getVisibleSize();
-  Vec2 origin = Director::getInstance()->getVisibleOrigin();
-
-  // 创建储存建筑
-  auto goldStorage = StorageBuilding::create(ResourceType::GOLD, 1);
-  addBuilding(goldStorage, Vec2(origin.x + 150, origin.y + 300));
-
-  auto elixirStorage = StorageBuilding::create(ResourceType::ELIXIR, 1);
-  addBuilding(elixirStorage,
-              Vec2(origin.x + visibleSize.width - 150, origin.y + 300));
-}
-
-void GameScene::initBarracks() {
-  auto visibleSize = Director::getInstance()->getVisibleSize();
-  Vec2 origin = Director::getInstance()->getVisibleOrigin();
-
-  // 创建兵营
-  auto barracks = Barracks::create(1);
-  addBuilding(barracks, Vec2(origin.x + visibleSize.width / 2, origin.y + 250));
 }
 
 void GameScene::addBuilding(Building *building, const Vec2 &position) {
@@ -133,11 +58,16 @@ void GameScene::addBuilding(Building *building, const Vec2 &position) {
 }
 
 void GameScene::initGrassBackground() {
-  const int GRID_SIZE = 44;  // 44x44的网格
-  const float L = 158.0f;    // 图片长度：158像素
-  const float W = 120.0f;    // 图片宽度：120像素
-  const float H = W;         // 高度等于宽度：120像素
-  const std::string GRASS_PATH = "images/backgrond/grass.png";
+  // 获取配置管理器
+  auto configManager = ConfigManager::getInstance();
+  auto constantConfig = configManager->getConstantConfig();
+  
+  // 从配置文件读取参数
+  const int GRID_SIZE = constantConfig.gridSize;
+  const float L = constantConfig.grassLength;    // 图片长度
+  const float W = constantConfig.grassWidth;     // 图片宽度
+  const float H = constantConfig.grassHeight;    // 图片高度
+  const std::string GRASS_PATH = constantConfig.grassImagePath;
 
   auto visibleSize = Director::getInstance()->getVisibleSize();
   Vec2 origin = Director::getInstance()->getVisibleOrigin();
@@ -170,9 +100,17 @@ void GameScene::initGrassBackground() {
   
   p43_43.x = p00.x + (W / 2.0f) * 84;
   p43_43.y = p00.y;
-  _deltaX = (W / 2.0f) + 16.0f;
-  _deltaY = (H / 2.0f);
+  // 使用配置文件中的deltaX和deltaY
+  _deltaX = constantConfig.deltaX;
+  _deltaY = constantConfig.deltaY;
   _p00 = p00;
+  
+  // BuildingManager 已在 AppDelegate 中初始化
+  // 从建筑管理器获取所有建筑并添加到地图层
+  auto buildingManager = BuildingManager::getInstance();
+  if (buildingManager) {
+    buildingManager->addBuildingsToLayer(_mapLayer);
+  }
   // 填充44x44的网格
   // 根据公式：p[i][j] = p[0][0] + (向右下j步) + (向上i步)
   // 向右下一步：x += W/2, y += H/2
@@ -190,9 +128,40 @@ void GameScene::initGrassBackground() {
         // 设置尺寸（保持原始菱形尺寸）
         grassSprite->setContentSize(Size(L, W));
         // 注意：pos是图片左侧的中点，需要设置锚点
-        grassSprite->setAnchorPoint(Vec2(0.0f, 0.5f));  // 左侧中点
+        grassSprite->setAnchorPoint(Vec2(0.0f, 0.5f));  // 左侧中点 ratio
         grassSprite->setPosition(pos);
         _mapLayer->addChild(grassSprite, 0);
+        
+        // auto anchorPoint = DrawNode::create();
+        // grassSprite->addChild(anchorPoint);
+        // anchorPoint->drawDot(grassSprite->getAnchorPointInPoints(), 3.0f, Color4F::BLACK);
+        // 创建DrawNode用于绘制锚点和边框
+        auto drawNode = DrawNode::create();
+        
+        // 1. 绘制黑色锚点（在锚点位置，即左侧中点，相对于sprite的(0, 0)）
+        drawNode->drawDot(Vec2(0, W/2.0f), 3.0f, Color4F(0.0f, 0.0f, 0.0f, 1.0f)); // 黑色，半径3像素
+        
+        // 2. 绘制灰色边框（菱形的四个顶点）
+        // 菱形顶点相对于锚点(0, 0)的位置：
+        // - 左侧中点：(0, 0) - 锚点位置
+        // - 上顶点：(L/2, W/2)
+        // - 右侧中点：(L, 0)
+        // - 下顶点：(L/2, -W/2)
+        Vec2 leftMid(0, W/2.0f);
+        Vec2 topVertex(L / 2.0f, W );
+        Vec2 rightMid(L, W/2.0f);
+        Vec2 bottomVertex(L / 2.0f, 0);
+        
+        // 绘制菱形边框（灰色，线宽1像素）
+        Color4F borderColor(0.5f, 0.5f, 0.5f, 1.0f); // 灰色
+        float borderWidth = 1.0f;
+        drawNode->drawLine(leftMid, topVertex, borderColor);
+        drawNode->drawLine(topVertex, rightMid, borderColor);
+        drawNode->drawLine(rightMid, bottomVertex, borderColor);
+        drawNode->drawLine(bottomVertex, leftMid, borderColor);
+        
+        // 将DrawNode添加到grassSprite上，这样它会跟随sprite移动和缩放
+        grassSprite->addChild(drawNode, 1); // 放在sprite上方
       }
     }
   }
@@ -279,33 +248,39 @@ void GameScene::onMouseDown(Event *event) {
   if (mouseEvent->getMouseButton() == EventMouse::MouseButton::BUTTON_LEFT) {
     Vec2 mousePos = mouseEvent->getLocationInView();
     mousePos = Director::getInstance()->convertToGL(mousePos);
+    _mouseDownPos = mousePos; // 记录按下位置
     
     // 转换为地图层坐标系
     Vec2 mapPos = _mapLayer->convertToNodeSpace(mousePos);
     
-    // 检查是否点击了建筑
-    _draggingBuilding = nullptr;
-    Vector<Node*> children = _mapLayer->getChildren();
-    for (auto it = children.rbegin(); it != children.rend(); ++it) {
-      Building *building = dynamic_cast<Building*>(*it);
-      if (building) {
-        Vec2 buildingPos = building->getPosition();
-        Rect buildingRect = Rect(buildingPos.x - building->getContentSize().width / 2,
-                                 buildingPos.y - building->getContentSize().height / 2,
-                                 building->getContentSize().width,
-                                 building->getContentSize().height);
-        if (buildingRect.containsPoint(mapPos)) {
-          _draggingBuilding = building;
-          building->_isDragging = true;
-          building->_dragOffset = mapPos - buildingPos;
-          building->showGlow(); // 显示选中光晕
-          break;
-        }
-      }
+    // 检查是否点击了建筑（使用BuildingManager）
+    auto buildingManager = BuildingManager::getInstance();
+    Building* clickedBuilding = nullptr;
+    
+    if (buildingManager) {
+      // mapPos是地图层坐标系，直接传递给BuildingManager
+      clickedBuilding = buildingManager->getBuildingAtPosition(mapPos);
     }
     
-    if (!_draggingBuilding) {
-      // 如果没有点击建筑，则拖动地图
+    if (clickedBuilding) {
+      // 点击了建筑：先选中（显示光晕），但不立即拖动
+      // 只有移动一定距离后才开始拖动
+      if (_selectedBuilding && _selectedBuilding != clickedBuilding) {
+        // 取消之前选中的建筑
+        _selectedBuilding->hideGlow();
+      }
+      
+      _selectedBuilding = clickedBuilding;
+      _selectedBuilding->showGlow(); // 显示选中光晕
+      _selectedBuilding->_isDragging = false; // 还未开始拖动
+      _buildingStartPos = _selectedBuilding->getPosition(); // 记录建筑初始位置
+      _draggingBuilding = nullptr; // 还未开始拖动
+    } else {
+      // 没有点击建筑：取消选中，准备拖动地图
+      if (_selectedBuilding) {
+        _selectedBuilding->hideGlow();
+        _selectedBuilding = nullptr;
+      }
       _isDragging = true;
       _lastMousePos = mousePos;
     }
@@ -317,21 +292,53 @@ void GameScene::onMouseMove(Event *event) {
   Vec2 currentPos = mouseEvent->getLocationInView();
   currentPos = Director::getInstance()->convertToGL(currentPos);
   
-  if (_draggingBuilding) {
-    // 拖动建筑
-    Vec2 mapPos = _mapLayer->convertToNodeSpace(currentPos);
-    Vec2 newPos = mapPos - _draggingBuilding->_dragOffset;
-    _draggingBuilding->setPosition(newPos);
+  if (_selectedBuilding && !_draggingBuilding) {
+    // 如果选中了建筑但还未开始拖动，检查是否移动了足够距离
+    float dragThreshold = 5.0f; // 拖动阈值（像素）
+    float moveDistance = _mouseDownPos.distance(currentPos);
     
-    // 更新中心坐标（临时）
-    _draggingBuilding->setCenterX(newPos.x);
-    _draggingBuilding->setCenterY(newPos.y);
+    if (moveDistance > dragThreshold) {
+      // 开始拖动建筑
+      _draggingBuilding = _selectedBuilding;
+      _draggingBuilding->_isDragging = true;
+      
+      // 计算拖动偏移量（鼠标位置相对于建筑锚点的偏移）
+      Vec2 mapPos = _mapLayer->convertToNodeSpace(currentPos);
+      // 竖直分量取相反数
+      Vec2 adjustedMapPos = Vec2(mapPos.x, 2.0f * _buildingStartPos.y - mapPos.y);
+      _draggingBuilding->_dragOffset = adjustedMapPos - _buildingStartPos;
+    }
+  }
+  
+  if (_draggingBuilding) {
+    // 拖动建筑：实时更新位置并显示吸附预览
+    Vec2 mapPos = _mapLayer->convertToNodeSpace(currentPos);
+    
+    // 竖直分量取相反数（鼠标向下移动时，建筑向上移动）
+    Vec2 adjustedMapPos = Vec2(mapPos.x, 2.0f * _buildingStartPos.y - mapPos.y);
+    Vec2 targetAnchorPos = adjustedMapPos - _draggingBuilding->_dragOffset;
+    
+    // 找到最近的网格点（用于吸附预览）
+    int row, col;
+    Vec2 nearestPos;
+    if (GridUtils::findNearestGrassVertex(targetAnchorPos, row, col, nearestPos, _p00, _deltaX, _deltaY, _gridSize)) {
+      // 临时设置位置到吸附点（拖动时显示预览）
+      _draggingBuilding->setPosition(nearestPos);
+      
+      // 临时更新中心坐标（用于预览）
+      _draggingBuilding->setCenterX(nearestPos.x + _deltaX * _draggingBuilding->getWidth());
+      _draggingBuilding->setCenterY(nearestPos.y);
+    } else {
+      // 如果找不到有效网格点，使用原始位置
+      _draggingBuilding->setPosition(targetAnchorPos);
+      _draggingBuilding->setCenterX(targetAnchorPos.x + _deltaX * _draggingBuilding->getWidth());
+      _draggingBuilding->setCenterY(targetAnchorPos.y);
+    }
   } else if (_isDragging) {
     // 拖动地图（鼠标移动方向与地图移动方向相反，就像拖动物体）
-    // 水平分量取相反数，垂直分量保持原样
     Vec2 delta = currentPos - _lastMousePos;
-    delta.x = delta.x; // 水平分量取相反数
-    delta.y = -delta.y;
+    delta.x = delta.x; // 水平分量保持原样
+    delta.y = -delta.y; // 垂直分量取相反数
     _mapLayer->setPosition(_mapLayer->getPosition() + delta);
     _lastMousePos = currentPos;
   }
@@ -343,94 +350,122 @@ void GameScene::onMouseUp(Event *event) {
   // 检查是否释放左键
   if (mouseEvent->getMouseButton() == EventMouse::MouseButton::BUTTON_LEFT) {
     if (_draggingBuilding) {
-      // 如果正在拖动建筑，进行吸附
+      // 如果正在拖动建筑，进行最终吸附
       Vec2 mousePos = mouseEvent->getLocationInView();
       mousePos = Director::getInstance()->convertToGL(mousePos);
       
       // 转换为地图层坐标系
       Vec2 mapPos = _mapLayer->convertToNodeSpace(mousePos);
       
+      // 竖直分量取相反数（鼠标向下移动时，建筑向上移动）
+      Vec2 adjustedMapPos = Vec2(mapPos.x, 2.0f * _buildingStartPos.y - mapPos.y);
+      Vec2 targetAnchorPos = adjustedMapPos - _draggingBuilding->_dragOffset;
+      
+      // 找到最近的网格点
       int row, col;
       Vec2 nearestPos;
-      if (findNearestGrassVertex(mapPos, row, col, nearestPos)) {
-        // 设置新位置
-        _draggingBuilding->setCenterPosition(nearestPos.x, nearestPos.y, row, col);
+      if (GridUtils::findNearestGrassVertex(targetAnchorPos, row, col, nearestPos, _p00, _deltaX, _deltaY, _gridSize)) {
+        // 使用 setPositionFromAnchor 正确设置建筑位置
+        _draggingBuilding->setPositionFromAnchor(nearestPos.x, nearestPos.y, _deltaX, row, col);
         
         // 检查是否越界
         if (_draggingBuilding->isOutOfBounds(_gridSize)) {
-          // 如果越界，恢复到之前的位置（这里可以添加提示）
-          // 暂时允许越界，但可以添加视觉提示
+          // 如果越界，恢复到之前的位置
+          _draggingBuilding->setPosition(_buildingStartPos);
+          // 可以在这里添加视觉提示（如红色闪烁）
+          CCLOG("Building moved out of bounds, restoring to previous position");
+        } else {
+          // 位置有效，保持光晕显示（表示选中状态）
+          // 光晕继续显示，表示建筑仍被选中
         }
+      } else {
+        // 找不到有效网格点，恢复到之前的位置
+        _draggingBuilding->setPosition(_buildingStartPos);
       }
       
-      _draggingBuilding->hideGlow(); // 隐藏光晕
       _draggingBuilding->_isDragging = false;
       _draggingBuilding = nullptr;
+      // 注意：不隐藏光晕，保持选中状态
+    } else if (_selectedBuilding) {
+      // 如果只是选中了建筑但没有拖动，保持选中状态（光晕继续显示）
+      // 可以在这里添加其他点击行为（如显示建筑信息）
     } else {
+      // 没有选中或拖动建筑，停止拖动地图
       _isDragging = false;
     }
   }
 }
 
-Vec2 GameScene::gridToScreen(int row, int col) const {
-  Vec2 pos;
-  pos.x = _p00.x + (row + col) * _deltaX;
-  pos.y = _p00.y + (col - row) * _deltaY;
-  return pos;
-}
 
-bool GameScene::screenToGrid(const Vec2 &screenPos, int &row, int &col) const {
-  // 从屏幕坐标转换为网格坐标
-  // 使用逆变换公式
-  float dx = screenPos.x - _p00.x;
-  float dy = screenPos.y - _p00.y;
+void GameScene::showPopupDialog(const std::string &title, const std::string &message) {
+  auto visibleSize = Director::getInstance()->getVisibleSize();
+  Vec2 origin = Director::getInstance()->getVisibleOrigin();
   
-  // 解方程组：
-  // dx = (row + col) * deltaX
-  // dy = (col - row) * deltaY
-  // 
-  // 解得：
-  // col = (dx/deltaX + dy/deltaY) / 2
-  // row = (dx/deltaX - dy/deltaY) / 2
+  // 创建半透明背景层
+  auto bgLayer = LayerColor::create(Color4B(0, 0, 0, 180), visibleSize.width, visibleSize.height);
+  bgLayer->setPosition(origin);
+  bgLayer->setName("PopupBackground");
+  this->addChild(bgLayer, 1000);
   
-  float col_f = (dx / _deltaX + dy / _deltaY) / 2.0f;
-  float row_f = (dx / _deltaX - dy / _deltaY) / 2.0f;
+  // 创建对话框背景
+  float dialogWidth = 400.0f;
+  float dialogHeight = 200.0f;
+  auto dialogBg = LayerColor::create(Color4B(50, 50, 50, 255), dialogWidth, dialogHeight);
+  dialogBg->setPosition(Vec2(origin.x + (visibleSize.width - dialogWidth) / 2,
+                            origin.y + (visibleSize.height - dialogHeight) / 2));
+  dialogBg->setName("DialogBackground");
+  this->addChild(dialogBg, 1001);
   
-  // 四舍五入到最近的整数
-  col = (int)(col_f + 0.5f);
-  row = (int)(row_f + 0.5f);
+  // 创建标题标签
+  auto titleLabel = Label::createWithSystemFont(title, "Arial", 24);
+  titleLabel->setColor(Color3B::WHITE);
+  titleLabel->setPosition(Vec2(dialogWidth / 2, dialogHeight - 40));
+  dialogBg->addChild(titleLabel);
   
-  // 检查是否在有效范围内
-  return (row >= 0 && row < _gridSize && col >= 0 && col < _gridSize);
-}
-
-bool GameScene::findNearestGrassVertex(const Vec2 &screenPos, int &row, int &col, Vec2 &nearestPos) const {
-  // 先转换为网格坐标
-  int tempRow, tempCol;
-  if (!screenToGrid(screenPos, tempRow, tempCol)) {
-    return false;
-  }
+  // 创建消息标签
+  auto messageLabel = Label::createWithSystemFont(message, "Arial", 16);
+  messageLabel->setColor(Color3B::WHITE);
+  messageLabel->setDimensions(dialogWidth - 40, 0);
+  messageLabel->setAlignment(TextHAlignment::CENTER);
+  messageLabel->setPosition(Vec2(dialogWidth / 2, dialogHeight / 2 - 20));
+  dialogBg->addChild(messageLabel);
   
-  // 检查周围的几个点，找到最近的
-  float minDist = FLT_MAX;
-  int bestRow = tempRow, bestCol = tempCol;
+  // 创建确定按钮
+  auto okButton = Label::createWithSystemFont("确定", "Arial", 18);
+  okButton->setColor(Color3B::YELLOW);
+  auto okButtonBg = LayerColor::create(Color4B(100, 100, 100, 255), 100, 40);
+  okButtonBg->setPosition(Vec2((dialogWidth - 100) / 2, 20));
+  okButton->setPosition(Vec2(50, 20));
+  okButtonBg->addChild(okButton);
+  dialogBg->addChild(okButtonBg);
   
-  for (int r = tempRow - 1; r <= tempRow + 1; ++r) {
-    for (int c = tempCol - 1; c <= tempCol + 1; ++c) {
-      if (r >= 0 && r < _gridSize && c >= 0 && c < _gridSize) {
-        Vec2 gridPos = gridToScreen(r, c);
-        float dist = screenPos.distance(gridPos);
-        if (dist < minDist) {
-          minDist = dist;
-          bestRow = r;
-          bestCol = c;
-        }
-      }
+  // 添加按钮点击事件
+  auto listener = EventListenerTouchOneByOne::create();
+  listener->setSwallowTouches(true);
+  listener->onTouchBegan = [this, bgLayer, dialogBg](Touch *touch, Event *event) -> bool {
+    Vec2 location = touch->getLocation();
+    Vec2 dialogPos = dialogBg->getPosition();
+    Size dialogSize = dialogBg->getContentSize();
+    
+    // 检查是否点击了确定按钮区域
+    if (location.x >= dialogPos.x && location.x <= dialogPos.x + dialogSize.width &&
+        location.y >= dialogPos.y && location.y <= dialogPos.y + dialogSize.height) {
+      // 关闭弹窗
+      this->removeChild(bgLayer);
+      this->removeChild(dialogBg);
+      return true;
     }
-  }
+    // 点击背景也关闭弹窗
+    else if (location.x >= bgLayer->getPosition().x && 
+             location.x <= bgLayer->getPosition().x + bgLayer->getContentSize().width &&
+             location.y >= bgLayer->getPosition().y && 
+             location.y <= bgLayer->getPosition().y + bgLayer->getContentSize().height) {
+      this->removeChild(bgLayer);
+      this->removeChild(dialogBg);
+      return true;
+    }
+    return false;
+  };
   
-  row = bestRow;
-  col = bestCol;
-  nearestPos = gridToScreen(row, col);
-  return true;
+  _eventDispatcher->addEventListenerWithSceneGraphPriority(listener, dialogBg);
 }

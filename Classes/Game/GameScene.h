@@ -6,6 +6,7 @@
 #include "Building/ResourceBuilding.h"
 #include "Building/StorageBuilding.h"
 #include "Building/TownHall.h"
+#include "util/GridUtils.h"
 #include "cocos2d.h"
 
 
@@ -28,26 +29,6 @@ private:
    * 初始化大本营
    */
   void initTownHall();
-
-  /**
-   * 初始化防御建筑
-   */
-  void initDefenseBuildings();
-
-  /**
-   * 初始化资源建筑
-   */
-  void initResourceBuildings();
-
-  /**
-   * 初始化储存建筑
-   */
-  void initStorageBuildings();
-
-  /**
-   * 初始化兵营
-   */
-  void initBarracks();
 
   /**
    * 添加建筑到场景
@@ -76,27 +57,21 @@ private:
   void onMouseDown(Event *event);
   void onMouseUp(Event *event);
 
+
   /**
-   * 将屏幕坐标转换为网格坐标(row, col)
+   * 显示弹窗对话框
    */
-  bool screenToGrid(const Vec2 &screenPos, int &row, int &col) const;
-  
-  /**
-   * 将网格坐标转换为屏幕坐标（grass顶点位置）
-   */
-  Vec2 gridToScreen(int row, int col) const;
-  
-  /**
-   * 找到最近的grass顶点
-   */
-  bool findNearestGrassVertex(const Vec2 &screenPos, int &row, int &col, Vec2 &nearestPos) const;
+  void showPopupDialog(const std::string &title, const std::string &message);
 
   TownHall *_townHall; // 大本营
   Layer *_mapLayer;    // 地图容器层，用于整体移动和缩放
   float _currentScale; // 当前缩放比例
   Vec2 _lastMousePos;  // 上次鼠标位置，用于拖拽
-  bool _isDragging;    // 是否正在拖拽
-  Building *_draggingBuilding; // 正在拖动的建筑
+  Vec2 _mouseDownPos;  // 鼠标按下时的位置，用于判断是否开始拖动
+  bool _isDragging;    // 是否正在拖拽地图
+  Building *_selectedBuilding;  // 当前选中的建筑（点击但未拖动）
+  Building *_draggingBuilding;  // 正在拖动的建筑
+  Vec2 _buildingStartPos;      // 建筑开始拖动时的位置
   
   // 地图参数（从initGrassBackground中提取）
   Vec2 _p00;           // 地图原点p[0][0]

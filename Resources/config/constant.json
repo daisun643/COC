@@ -1,0 +1,17 @@
+{
+    "GridSize": 44,
+    "GridResolutionWidth": 79,
+    "GridResolutionHeight": 60,
+    "GridImage": "images/backgrond/grass.png",
+    "GrassImage": {
+        "path": "images/backgrond/grass.png",
+        "length": 79,
+        "width": 60
+    },
+    "GridDelta": {
+        "deltaX": 40.0,
+        "deltaY": 30.0,
+        "tips": "网格间距，deltaX = W/2 + 16, deltaY = H/2"
+    },
+    "GlowDelay": 0.5
+}

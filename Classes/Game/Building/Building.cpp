@@ -1,10 +1,12 @@
 #include "Building.h"
+#include "Config/ConfigManager.h"
+#include <cmath>
 
 Building::Building()
     : _buildingType(BuildingType::TOWN_HALL), _level(1), _maxLevel(10),
       _infoLabel(nullptr), _buildingName("Building"),
       _centerX(0.0f), _centerY(0.0f), _width(1), _row(0), _col(0),
-      _isDragging(false), _glowNode(nullptr), _anchorNode(nullptr) {}
+      _isDragging(false), _glowNode(nullptr), _anchorNode(nullptr), _glowAction(nullptr) {}
 
 Building::~Building() {}
 
@@ -12,6 +14,18 @@ Building *Building::create(const std::string &imagePath, BuildingType type,
                            int level) {
   Building *building = new (std::nothrow) Building();
   if (building && building->init(imagePath, type, level)) {
+    building->autorelease();
+    return building;
+  }
+  CC_SAFE_DELETE(building);
+  return nullptr;
+}
+
+Building *Building::create(const std::string &imagePath, BuildingType type,
+                           int level, int gridSize, float anchorRatioX, float anchorRatioY,
+                           float deltaX, float grassLength) {
+  Building *building = new (std::nothrow) Building();
+  if (building && building->init(imagePath, type, level, gridSize, anchorRatioX, anchorRatioY, deltaX, grassLength)) {
     building->autorelease();
     return building;
   }
@@ -29,7 +43,7 @@ bool Building::init(const std::string &imagePath, BuildingType type,
     createDefaultAppearance();
   }
 
-  // 设置锚点为左侧中点（与grass一致）
+  // 设置锚点（默认左侧中点，可以通过setAnchorPointFromConfig修改）
   this->setAnchorPoint(Vec2(0.0f, 0.5f));
 
   // 创建信息标签（初始隐藏）
@@ -52,6 +66,48 @@ bool Building::init(const std::string &imagePath, BuildingType type,
   _anchorNode = DrawNode::create();
   // 锚点位置是(0, 0.5)，即左侧中点
   // 绘制一个红色圆点
+  _anchorNode->drawDot(Vec2(0, 0), 15.0f, Color4F(1.0f, 0.0f, 0.0f, 1.0f)); // 红色，半径5像素
+  this->addChild(_anchorNode, 10); // 放在最前面，确保可见
+
+  return true;
+}
+
+bool Building::init(const std::string &imagePath, BuildingType type, int level,
+                    int gridSize, float anchorRatioX, float anchorRatioY,
+                    float deltaX, float grassLength) {
+  _buildingType = type;
+  _level = level;
+  _width = gridSize;
+
+  // 尝试加载图片，如果失败则创建默认外观
+  if (!Sprite::initWithFile(imagePath)) {
+    createDefaultAppearance();
+  }
+
+  // 根据2*deltaX进行等比例缩放
+  float targetSize = 2.0f * deltaX;
+  float scaleFactor = targetSize / grassLength;
+  this->setScale(scaleFactor);
+
+  // 设置锚点
+  this->setAnchorPoint(Vec2(anchorRatioX, anchorRatioY));
+
+  // 创建信息标签（初始隐藏）
+  _infoLabel = Label::createWithSystemFont("", "Arial", 12);
+  _infoLabel->setPosition(Vec2(this->getContentSize().width / 2,
+                               this->getContentSize().height + 20));
+  _infoLabel->setColor(Color3B::WHITE);
+  _infoLabel->setVisible(false);
+  this->addChild(_infoLabel, 10);
+  
+  // 创建光晕效果节点（初始隐藏）
+  _glowNode = DrawNode::create();
+  _glowNode->setVisible(false);
+  this->addChild(_glowNode, -1); // 放在建筑后面
+  
+  // 创建锚点标记节点（红点）
+  _anchorNode = DrawNode::create();
+  // 绘制一个红色圆点（在锚点位置，即本地坐标系原点）
   _anchorNode->drawDot(Vec2(0, 0), 5.0f, Color4F(1.0f, 0.0f, 0.0f, 1.0f)); // 红色，半径5像素
   this->addChild(_anchorNode, 10); // 放在最前面，确保可见
 
@@ -128,8 +184,22 @@ void Building::setCenterPosition(float x, float y, int row, int col) {
   _centerY = y;
   _row = row;
   _col = col;
-  // 更新显示位置（锚点在左侧中点）
+  // 更新显示位置（使用当前设置的锚点）
   this->setPosition(Vec2(x, y));
+}
+
+void Building::setPositionFromAnchor(float anchorX, float anchorY, float deltaX, int row, int col) {
+  // 中心坐标计算：anchor的横坐标+deltaX*gridSize,纵坐标和anchor的纵坐标相同
+  _centerX = anchorX + deltaX * _width;
+  _centerY = anchorY;
+  _row = row;
+  _col = col;
+  // 设置建筑位置（锚点位置）
+  this->setPosition(Vec2(anchorX, anchorY));
+}
+
+void Building::setAnchorPointFromConfig(float anchorRatioX, float anchorRatioY) {
+  this->setAnchorPoint(Vec2(anchorRatioX, anchorRatioY));
 }
 
 void Building::getCornerCoordinates(int &topRow, int &topCol, 
@@ -180,31 +250,72 @@ void Building::showGlow() {
     return;
   }
   
-  _glowNode->clear();
   _glowNode->setVisible(true);
   
-  // 获取建筑尺寸
-  Size buildingSize = this->getContentSize();
-  float width = buildingSize.width;
-  float height = buildingSize.height;
+  // 获取配置管理器中的GlowDelay
+  auto configManager = ConfigManager::getInstance();
+  float glowDelay = 0.5f;
+  if (configManager) {
+    auto constantConfig = configManager->getConstantConfig();
+    glowDelay = constantConfig.glowDelay;
+  }
+  
+  // 先绘制一次光晕
+  updateGlowDrawing();
+  
+  // 停止之前的动画
+  if (_glowAction) {
+    _glowNode->stopAction(_glowAction);
+  }
+  
+  // 创建明暗交替动画
+  // 使用FadeTo实现明暗交替（从0.3到0.8透明度，0-255范围）
+  auto fadeToBright = FadeTo::create(glowDelay, static_cast<GLubyte>(0.8f * 255.0f));
+  auto fadeToDark = FadeTo::create(glowDelay, static_cast<GLubyte>(0.3f * 255.0f));
+  auto sequence = Sequence::create(fadeToBright, fadeToDark, nullptr);
+  auto repeat = RepeatForever::create(sequence);
+  
+  // 设置初始透明度（0-255范围）
+  _glowNode->setOpacity(static_cast<GLubyte>(0.6f * 255.0f));
+  
+  // 开始动画
+  _glowAction = repeat;
+  _glowNode->runAction(_glowAction);
+}
+
+void Building::updateGlowDrawing() {
+  if (!_glowNode) {
+    return;
+  }
+  
+  _glowNode->clear();
+  
+  // 获取配置管理器
+  auto configManager = ConfigManager::getInstance();
+  if (!configManager) {
+    return;
+  }
+  auto constantConfig = configManager->getConstantConfig();
+  float deltaX = constantConfig.deltaX;
+  float deltaY = constantConfig.deltaY;
   
   // 绘制光晕边框（使用黄色半透明）
   Color4F glowColor(1.0f, 1.0f, 0.0f, 0.6f); // 黄色，60%透明度
   float glowWidth = 3.0f; // 光晕宽度
   
   // 绘制菱形的光晕边框
-  // 由于建筑锚点是左侧中点(0, 0.5)，需要调整坐标
-  // 菱形的中心在(width/2, height/2)，但相对于锚点需要偏移
-  float halfW = width / 2;
-  float halfH = height / 2;
+  // 菱形以锚点为中心，gridSize为边长
+  // 在等距投影中，菱形的四个顶点相对于锚点(0,0)：
+  // 顶部：(0, gridSize * deltaY)
+  // 右侧：(gridSize * deltaX, 0)
+  // 底部：(0, -gridSize * deltaY)
+  // 左侧：(-gridSize * deltaX, 0)
   
-  // 菱形的四个顶点（相对于锚点(0, 0.5)）
-  // 锚点在左侧中点，所以中心在(width/2, 0)
-  Vec2 center(halfW, 0);
-  Vec2 top(center.x, center.y + halfH);
-  Vec2 right(center.x + halfW, center.y);
-  Vec2 bottom(center.x, center.y - halfH);
-  Vec2 left(center.x - halfW, center.y);
+  int gridSize = this->getWidth(); // 使用getter方法获取宽度
+  Vec2 top(0, gridSize * deltaY);
+  Vec2 right(gridSize * deltaX, 0);
+  Vec2 bottom(0, -gridSize * deltaY);
+  Vec2 left(-gridSize * deltaX, 0);
   
   // 绘制四条边
   _glowNode->drawSegment(top, right, glowWidth, glowColor);
@@ -217,5 +328,31 @@ void Building::hideGlow() {
   if (_glowNode) {
     _glowNode->setVisible(false);
     _glowNode->clear();
+    if (_glowAction) {
+      _glowNode->stopAction(_glowAction);
+      _glowAction = nullptr;
+    }
   }
+}
+
+bool Building::isPointInDiamond(const Vec2 &pos, const Vec2 &anchorPos, int gridSize, 
+                                float deltaX, float deltaY) const {
+  // 将点转换为相对于锚点的坐标
+  Vec2 relativePos = pos - anchorPos;
+  
+  // 菱形的边界：以锚点为中心，gridSize为边长的菱形
+  // 在等距投影中，菱形的边界条件：
+  // |x / deltaX| + |y / deltaY| <= gridSize
+  
+  if (deltaX <= 0 || deltaY <= 0) {
+    return false;
+  }
+  
+  float dx = relativePos.x / deltaX;
+  float dy = relativePos.y / deltaY;
+  
+  // 曼哈顿距离
+  float manhattanDist = std::abs(dx) + std::abs(dy);
+  
+  return manhattanDist <= gridSize;
 }

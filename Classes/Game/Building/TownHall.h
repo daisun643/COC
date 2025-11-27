@@ -10,8 +10,20 @@
 class TownHall : public Building {
 public:
   static TownHall *create(int level = 1);
+  
+  /**
+   * 创建TownHall（新版本，包含gridSize和anchorRatio）
+   */
+  static TownHall *create(int level, int gridSize, float anchorRatioX, float anchorRatioY,
+                          float deltaX, float grassLength);
 
   bool init(int level);
+  
+  /**
+   * 初始化TownHall（新版本，包含gridSize和anchorRatio）
+   */
+  bool init(int level, int gridSize, float anchorRatioX, float anchorRatioY,
+            float deltaX, float grassLength);
 
   /**
    * 获取大本营等级对应的其他建筑最大等级

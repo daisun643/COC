@@ -30,11 +30,33 @@ public:
    */
   static Building *create(const std::string &imagePath, BuildingType type,
                           int level = 1);
+  
+  /**
+   * 创建建筑（新版本，包含gridSize和anchorRatio）
+   * @param imagePath 建筑图片路径
+   * @param type 建筑类型
+   * @param level 建筑等级
+   * @param gridSize 建筑占用的网格大小（菱形边长）
+   * @param anchorRatioX 锚点X比例
+   * @param anchorRatioY 锚点Y比例
+   * @param deltaX X方向间距（用于缩放计算）
+   * @param grassLength 草地长度（用于缩放计算）
+   */
+  static Building *create(const std::string &imagePath, BuildingType type,
+                          int level, int gridSize, float anchorRatioX, float anchorRatioY,
+                          float deltaX, float grassLength);
 
   /**
    * 初始化建筑
    */
   virtual bool init(const std::string &imagePath, BuildingType type, int level);
+  
+  /**
+   * 初始化建筑（新版本，包含gridSize和anchorRatio）
+   */
+  virtual bool init(const std::string &imagePath, BuildingType type, int level,
+                    int gridSize, float anchorRatioX, float anchorRatioY,
+                    float deltaX, float grassLength);
 
   // 建筑属性
   CC_SYNTHESIZE(BuildingType, _buildingType, BuildingType);
@@ -56,6 +78,11 @@ public:
    * 设置建筑的中心坐标和坐标编码
    */
   void setCenterPosition(float x, float y, int row, int col);
+  
+  /**
+   * 根据配置设置锚点
+   */
+  void setAnchorPointFromConfig(float anchorRatioX, float anchorRatioY);
   
   /**
    * 检查建筑是否越界
@@ -107,6 +134,28 @@ public:
    * 隐藏选中光晕效果
    */
   void hideGlow();
+  
+  /**
+   * 判断点是否在建筑的菱形区域内
+   * @param pos 屏幕坐标点
+   * @param anchorPos 建筑锚点的屏幕坐标
+   * @param gridSize 建筑占用的网格大小
+   * @param deltaX X方向间距
+   * @param deltaY Y方向间距
+   * @return 是否在菱形区域内
+   */
+  bool isPointInDiamond(const Vec2 &pos, const Vec2 &anchorPos, int gridSize, 
+                        float deltaX, float deltaY) const;
+  
+  /**
+   * 设置建筑的中心坐标（根据anchor和gridSize计算）
+   * @param anchorX 锚点X坐标
+   * @param anchorY 锚点Y坐标
+   * @param deltaX X方向间距
+   * @param row 网格行坐标
+   * @param col 网格列坐标
+   */
+  void setPositionFromAnchor(float anchorX, float anchorY, float deltaX, int row, int col);
 
   // 拖动相关属性（需要被GameScene访问）
   bool _isDragging;          // 是否正在拖动
@@ -120,11 +169,17 @@ protected:
   std::string _buildingName; // 建筑名称
   DrawNode *_glowNode;       // 光晕效果节点
   DrawNode *_anchorNode;     // 锚点标记节点（红点）
+  Action *_glowAction;       // 光晕动画动作
 
   /**
    * 创建默认建筑外观（如果图片不存在）
    */
   virtual void createDefaultAppearance();
+  
+  /**
+   * 更新光晕绘制（内部方法）
+   */
+  void updateGlowDrawing();
 };
 
 #endif // __BUILDING_H__

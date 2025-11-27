@@ -1,0 +1,22 @@
+{
+    "ResolutionSize": {
+        "width": 1280,
+        "height": 720,
+        "tips": "窗口的设计分辨率"
+    },
+    "ResolutionPolicies": {
+        "small": {
+            "width": 480,
+            "height": 320
+        },
+        "medium": {
+            "width": 1024,
+            "height": 768
+        },
+        "large": {
+            "width": 2048,
+            "height": 1536
+        },
+        "tips": "不同屏幕尺寸的分辨率配置"
+    }
+}

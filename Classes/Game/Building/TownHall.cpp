@@ -30,6 +30,28 @@ bool TownHall::init(int level) {
   return true;
 }
 
+TownHall *TownHall::create(int level, int gridSize, float anchorRatioX, float anchorRatioY,
+                           float deltaX, float grassLength) {
+  TownHall *townHall = new (std::nothrow) TownHall();
+  if (townHall && townHall->init(level, gridSize, anchorRatioX, anchorRatioY, deltaX, grassLength)) {
+    townHall->autorelease();
+    return townHall;
+  }
+  CC_SAFE_DELETE(townHall);
+  return nullptr;
+}
+
+bool TownHall::init(int level, int gridSize, float anchorRatioX, float anchorRatioY,
+                    float deltaX, float grassLength) {
+  // 使用新的Building::init方法，传入gridSize和anchorRatio
+  if (!Building::init("images/buildings/TownHall.png", BuildingType::TOWN_HALL, level,
+                      gridSize, anchorRatioX, anchorRatioY, deltaX, grassLength)) {
+    return false;
+  }
+  
+  return true;
+}
+
 int TownHall::getMaxBuildingLevel() const {
   // 大本营等级决定其他建筑的最大等级
   // 例如：大本营1级 -> 其他建筑最大1级
