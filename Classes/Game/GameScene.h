@@ -1,10 +1,10 @@
 #ifndef __GAME_SCENE_H__
 #define __GAME_SCENE_H__
 
-#include "Building/Barracks.h"
-#include "Building/DefenseBuilding.h"
-#include "Building/ResourceBuilding.h"
-#include "Building/StorageBuilding.h"
+// #include "Building/Barracks.h"
+// #include "Building/DefenseBuilding.h"
+// #include "Building/ResourceBuilding.h"
+// #include "Building/StorageBuilding.h"
 #include "Building/TownHall.h"
 #include "util/GridUtils.h"
 #include "cocos2d.h"

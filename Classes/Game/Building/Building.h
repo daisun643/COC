@@ -40,12 +40,13 @@ public:
    * @param anchorRatioX 锚点X比例
    * @param anchorRatioY 锚点Y比例
    * @param deltaX X方向间距（用于缩放计算）
-   * @param grassLength 草地长度（用于缩放计算）
+   * @param grassWidth 草地宽度（用于缩放计算）
    */
   static Building *create(const std::string &imagePath, BuildingType type,
                           int level, int gridSize, float anchorRatioX, float anchorRatioY,
-                          float deltaX, float grassLength);
-
+                          float deltaX, float grassWidth);
+  // TODO 删除 旧版本 init
+  // 适配派生类
   /**
    * 初始化建筑
    */
@@ -56,7 +57,7 @@ public:
    */
   virtual bool init(const std::string &imagePath, BuildingType type, int level,
                     int gridSize, float anchorRatioX, float anchorRatioY,
-                    float deltaX, float grassLength);
+                    float deltaX, float grassWidth);
 
   // 建筑属性
   CC_SYNTHESIZE(BuildingType, _buildingType, BuildingType);

@@ -80,8 +80,7 @@ bool AppDelegate::applicationDidFinishLaunching()
     // 初始化 BuildingManager（需要在设置分辨率之后，创建场景之前）
     // 计算地图原点 p00，用于 BuildingManager 初始化
     auto constantConfig = configManager->getConstantConfig();
-    float L = constantConfig.grassLength;    // 图片长度
-    float W = constantConfig.grassWidth;     // 图片宽度
+    float W = constantConfig.grassWidth;    // 图片宽度
     float H = constantConfig.grassHeight;    // 图片高度
     
     // 获取可见区域大小和原点（此时分辨率已设置，可以正确获取）
@@ -91,7 +90,7 @@ bool AppDelegate::applicationDidFinishLaunching()
     // 根据公式计算地图原点 p00
     // p[43][43].x = p[0][0].x + W/2 * 84
     // 总宽度 = (W / 2) * 84 + L
-    float totalWidth = (W / 2.0f) * 84 + L;  // 最右端x坐标 + 图片长度
+    float totalWidth = (W / 2.0f) * 84 + H;  // 最右端x坐标 + 图片长度
     
     // 计算 p00 位置（最左端，居中显示）
     Vec2 p00(origin.x + (visibleSize.width - totalWidth) / 2,

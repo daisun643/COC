@@ -128,9 +128,9 @@ Building* BuildingManager::createBuilding(const std::string &buildingType, int r
     
     // 使用TownHall的create方法，传入gridSize和anchorRatio
     TownHall* townHall = TownHall::create(level,
-                                          townHallConfig.gridSize, 
-                                          townHallConfig.anchorRatioX, townHallConfig.anchorRatioY,
-                                          constantConfig.deltaX, constantConfig.grassLength);
+                    townHallConfig.gridSize, 
+                    townHallConfig.anchorRatioX, townHallConfig.anchorRatioY,
+                    constantConfig.deltaX, constantConfig.grassWidth);
     
     if (townHall) {
       building = townHall;

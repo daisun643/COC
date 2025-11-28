@@ -33,10 +33,8 @@ ConfigManager::ConfigManager() {
     _constantConfig.gridSize = 44;
     _constantConfig.gridResolutionWidth = 79;
     _constantConfig.gridResolutionHeight = 60;
-    _constantConfig.gridImage = "images/backgrond/grass.png";
     _constantConfig.grassImagePath = "images/backgrond/grass.png";
-    _constantConfig.grassLength = 158.0f;
-    _constantConfig.grassWidth = 120.0f;
+    _constantConfig.grassWidth = 158.0f;
     _constantConfig.grassHeight = 120.0f;
     _constantConfig.deltaX = 76.0f;
     _constantConfig.deltaY = 60.0f;
@@ -179,18 +177,12 @@ bool ConfigManager::loadConstantConfig() {
     if (doc.HasMember("GridResolutionHeight") && doc["GridResolutionHeight"].IsInt()) {
         _constantConfig.gridResolutionHeight = doc["GridResolutionHeight"].GetInt();
     }
-    if (doc.HasMember("GridImage") && doc["GridImage"].IsString()) {
-        _constantConfig.gridImage = doc["GridImage"].GetString();
-    }
     
     // 解析草地图片配置
     if (doc.HasMember("GrassImage") && doc["GrassImage"].IsObject()) {
         const rapidjson::Value& grass = doc["GrassImage"];
         if (grass.HasMember("path") && grass["path"].IsString()) {
             _constantConfig.grassImagePath = grass["path"].GetString();
-        }
-        if (grass.HasMember("length") && grass["length"].IsNumber()) {
-            _constantConfig.grassLength = grass["length"].GetFloat();
         }
         if (grass.HasMember("width") && grass["width"].IsNumber()) {
             _constantConfig.grassWidth = grass["width"].GetFloat();
@@ -214,6 +206,10 @@ bool ConfigManager::loadConstantConfig() {
     // 解析GlowDelay
     if (doc.HasMember("GlowDelay") && doc["GlowDelay"].IsNumber()) {
         _constantConfig.glowDelay = doc["GlowDelay"].GetFloat();
+    }
+
+    if (doc.HasMember("imageRatio") && doc["imageRatio"].IsNumber()) {
+        _constantConfig.imageRatio = doc["imageRatio"].GetFloat();
     }
     
     return true;

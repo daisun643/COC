@@ -64,8 +64,7 @@ void GameScene::initGrassBackground() {
   
   // 从配置文件读取参数
   const int GRID_SIZE = constantConfig.gridSize;
-  const float L = constantConfig.grassLength;    // 图片长度
-  const float W = constantConfig.grassWidth;     // 图片宽度
+  const float W = constantConfig.grassWidth;    // 图片宽度
   const float H = constantConfig.grassHeight;    // 图片高度
   const std::string GRASS_PATH = constantConfig.grassImagePath;
 
@@ -82,7 +81,7 @@ void GameScene::initGrassBackground() {
   // p[43][0].y = p[0][0].y - H/2 * 43
   // p[0][43].y = p[0][0].y + H/2 * 43
   
-  float totalWidth = (W / 2.0f) * 84 + L;  // 最右端x坐标 + 图片长度
+  float totalWidth = (W / 2.0f) * 84 + W;  // 最右端x坐标 + 图片长度
   float minY = -(H / 2.0f) * 43;           // 最上端相对y坐标
   float maxY = (H / 2.0f) * 43;            // 最下端相对y坐标
   float totalHeight = maxY - minY + H;
@@ -126,7 +125,7 @@ void GameScene::initGrassBackground() {
       auto grassSprite = Sprite::create(GRASS_PATH);
       if (grassSprite) {
         // 设置尺寸（保持原始菱形尺寸）
-        grassSprite->setContentSize(Size(L, W));
+        grassSprite->setContentSize(Size(W, H));
         // 注意：pos是图片左侧的中点，需要设置锚点
         grassSprite->setAnchorPoint(Vec2(0.0f, 0.5f));  // 左侧中点 ratio
         grassSprite->setPosition(pos);
@@ -139,18 +138,17 @@ void GameScene::initGrassBackground() {
         auto drawNode = DrawNode::create();
         
         // 1. 绘制黑色锚点（在锚点位置，即左侧中点，相对于sprite的(0, 0)）
-        drawNode->drawDot(Vec2(0, W/2.0f), 3.0f, Color4F(0.0f, 0.0f, 0.0f, 1.0f)); // 黑色，半径3像素
-        
+        drawNode->drawDot(Vec2(0, H/2.0f), 3.0f, Color4F(0.0f, 0.0f, 0.0f, 1.0f)); // 黑色，半径3像素
+        // drawNode 是 绝对像素坐标 左下角为00
         // 2. 绘制灰色边框（菱形的四个顶点）
-        // 菱形顶点相对于锚点(0, 0)的位置：
-        // - 左侧中点：(0, 0) - 锚点位置
-        // - 上顶点：(L/2, W/2)
-        // - 右侧中点：(L, 0)
-        // - 下顶点：(L/2, -W/2)
-        Vec2 leftMid(0, W/2.0f);
-        Vec2 topVertex(L / 2.0f, W );
-        Vec2 rightMid(L, W/2.0f);
-        Vec2 bottomVertex(L / 2.0f, 0);
+        // - 左侧中点：(0, H/2) - 锚点位置
+        // - 上顶点：(W/2, H)
+        // - 右侧中点：(W, H/2)
+        // - 下顶点：(W/2, 0)
+        Vec2 leftMid(0, H/2.0f);
+        Vec2 topVertex(W / 2.0f, H);
+        Vec2 rightMid(W, H/2.0f);
+        Vec2 bottomVertex(W / 2.0f, 0);
         
         // 绘制菱形边框（灰色，线宽1像素）
         Color4F borderColor(0.5f, 0.5f, 0.5f, 1.0f); // 灰色

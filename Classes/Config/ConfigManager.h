@@ -39,17 +39,16 @@ public:
      * 获取常量配置
      */
     struct ConstantConfig {
-        int gridSize;
-        int gridResolutionWidth;
-        int gridResolutionHeight;
-        std::string gridImage;
-        std::string grassImagePath;
-        float grassLength;
-        float grassWidth;
-        float grassHeight;
-        float deltaX;
-        float deltaY;
-        float glowDelay;  // 光晕明暗交替间隔
+        int gridSize;                   // 网格边长
+        int gridResolutionWidth;        // 网格分辨率宽度
+        int gridResolutionHeight;       // 网格分辨率高度
+        std::string grassImagePath;     // 草地图片路径
+        float grassWidth;               // 草地图片宽度
+        float grassHeight;              // 草地图片高度
+        float deltaX;                   // 网格间距X
+        float deltaY;                   // 网格间距Y
+        float glowDelay;                // 光晕明暗交替间隔
+        float imageRatio;               // 图片比例
     };
     
     /**
@@ -57,11 +56,11 @@ public:
      */
     struct BuildingConfig {
         std::string image;
-        int gridPositionX;
-        int gridPositionY;
+        int gridPositionX;   // 建筑在网格中的位置X
+        int gridPositionY;   // 建筑在网格中的位置Y
         float anchorRatioX;  // 锚点X比例
         float anchorRatioY;  // 锚点Y比例
-        int gridSize;
+        int gridSize;        // 建筑占用的网格大小（菱形边长）
         int defaultLevel;
         int maxLevel;
     };

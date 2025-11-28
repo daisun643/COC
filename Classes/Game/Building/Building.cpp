@@ -23,9 +23,9 @@ Building *Building::create(const std::string &imagePath, BuildingType type,
 
 Building *Building::create(const std::string &imagePath, BuildingType type,
                            int level, int gridSize, float anchorRatioX, float anchorRatioY,
-                           float deltaX, float grassLength) {
+                           float deltaX, float grassWidth) {
   Building *building = new (std::nothrow) Building();
-  if (building && building->init(imagePath, type, level, gridSize, anchorRatioX, anchorRatioY, deltaX, grassLength)) {
+  if (building && building->init(imagePath, type, level, gridSize, anchorRatioX, anchorRatioY, deltaX, grassWidth)) {
     building->autorelease();
     return building;
   }
@@ -74,7 +74,7 @@ bool Building::init(const std::string &imagePath, BuildingType type,
 
 bool Building::init(const std::string &imagePath, BuildingType type, int level,
                     int gridSize, float anchorRatioX, float anchorRatioY,
-                    float deltaX, float grassLength) {
+                    float deltaX, float grassWidth) {
   _buildingType = type;
   _level = level;
   _width = gridSize;
@@ -86,8 +86,8 @@ bool Building::init(const std::string &imagePath, BuildingType type, int level,
 
   // 根据2*deltaX进行等比例缩放
   float targetSize = 2.0f * deltaX;
-  float scaleFactor = targetSize / grassLength;
-  this->setScale(scaleFactor);
+  float scaleFactor = targetSize / grassWidth;
+  // this->setScale(imageRatio*scaleFactor);
 
   // 设置锚点
   this->setAnchorPoint(Vec2(anchorRatioX, anchorRatioY));
@@ -108,7 +108,7 @@ bool Building::init(const std::string &imagePath, BuildingType type, int level,
   // 创建锚点标记节点（红点）
   _anchorNode = DrawNode::create();
   // 绘制一个红色圆点（在锚点位置，即本地坐标系原点）
-  _anchorNode->drawDot(Vec2(0, 0), 5.0f, Color4F(1.0f, 0.0f, 0.0f, 1.0f)); // 红色，半径5像素
+  _anchorNode->drawDot(Vec2(0, 100), 5.0f, Color4F(1.0f, 0.0f, 0.0f, 1.0f)); // 红色，半径5像素
   this->addChild(_anchorNode, 10); // 放在最前面，确保可见
 
   return true;
