@@ -15,7 +15,7 @@ public:
     /**
      * 获取单例实例
      */
-    static ConstantManager* getInstance();
+    static const ConstantManager* getInstance();
     
     /**
      * 初始化常量管理器

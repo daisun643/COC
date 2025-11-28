@@ -13,7 +13,7 @@ USING_NS_CC;
  */
 class ConfigManager {
 public:
-    static ConfigManager* getInstance();
+    static const ConfigManager* getInstance();
     
     /**
      * 初始化配置管理器，加载所有配置文件

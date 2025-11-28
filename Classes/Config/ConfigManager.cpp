@@ -6,7 +6,7 @@ USING_NS_CC;
 
 ConfigManager* ConfigManager::_instance = nullptr;
 
-ConfigManager* ConfigManager::getInstance() {
+const ConfigManager* ConfigManager::getInstance() {
     if (_instance == nullptr) {
         _instance = new (std::nothrow) ConfigManager();
         if (_instance && _instance->init()) {

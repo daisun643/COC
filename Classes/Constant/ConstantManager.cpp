@@ -5,7 +5,7 @@ USING_NS_CC;
 
 ConstantManager* ConstantManager::_instance = nullptr;
 
-ConstantManager* ConstantManager::getInstance() {
+const ConstantManager* ConstantManager::getInstance() {
     if (_instance == nullptr) {
         _instance = new (std::nothrow) ConstantManager();
         if (_instance && _instance->init()) {
