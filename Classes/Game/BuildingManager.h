@@ -20,16 +20,16 @@ public:
   
   /**
    * 初始化建筑管理器（单例初始化）
-   * @param p00 地图原点p[0][0]的位置
+   * 从 ConstantManager 获取地图原点 p00
    */
-  static void initialize(const Vec2 &p00);
+  static void initialize();
   
   /**
    * 初始化建筑管理器，从配置文件加载所有建筑
-   * @param p00 地图原点p[0][0]的位置
+   * 从 ConstantManager 获取地图原点 p00
    * @return 是否初始化成功
    */
-  bool init(const Vec2 &p00);
+  bool init();
   
   /**
    * 获取所有建筑

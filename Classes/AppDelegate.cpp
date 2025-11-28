@@ -1,6 +1,7 @@
 #include "AppDelegate.h"
 #include "Game/GameScene.h"
 #include "Config/ConfigManager.h"
+#include "Constant/ConstantManager.h"
 #include "Game/BuildingManager.h"
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
@@ -77,27 +78,16 @@ bool AppDelegate::applicationDidFinishLaunching()
         director->setContentScaleFactor(MIN(smallResolutionSize.height/designResolutionSize.height, smallResolutionSize.width/designResolutionSize.width));
     }
 
-    // 初始化 BuildingManager（需要在设置分辨率之后，创建场景之前）
-    // 计算地图原点 p00，用于 BuildingManager 初始化
-    auto constantConfig = configManager->getConstantConfig();
-    float W = constantConfig.grassWidth;    // 图片宽度
-    float H = constantConfig.grassHeight;    // 图片高度
+    // 初始化 ConstantManager（需要在设置分辨率之后，创建场景之前）
+    // ConstantManager 会自动计算地图原点 p00
+    auto constantManager = ConstantManager::getInstance();
+    if (!constantManager) {
+        CCLOG("Failed to initialize ConstantManager!");
+        return false;
+    }
     
-    // 获取可见区域大小和原点（此时分辨率已设置，可以正确获取）
-    auto visibleSize = director->getVisibleSize();
-    Vec2 origin = director->getVisibleOrigin();
-    
-    // 根据公式计算地图原点 p00
-    // p[43][43].x = p[0][0].x + W/2 * 84
-    // 总宽度 = (W / 2) * 84 + L
-    float totalWidth = (W / 2.0f) * 84 + H;  // 最右端x坐标 + 图片长度
-    
-    // 计算 p00 位置（最左端，居中显示）
-    Vec2 p00(origin.x + (visibleSize.width - totalWidth) / 2,
-             origin.y + visibleSize.height / 2);
-    
-    // 初始化 BuildingManager
-    BuildingManager::initialize(p00);
+    // 初始化 BuildingManager（使用 ConstantManager 中的 p00）
+    BuildingManager::initialize();
     
     // 创建游戏场景
     auto scene = GameScene::createScene();

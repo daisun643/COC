@@ -1,5 +1,6 @@
 #include "GameScene.h"
 #include "Config/ConfigManager.h"
+#include "Constant/ConstantManager.h"
 #include "BuildingManager.h"
 #include <float.h>
 
@@ -68,26 +69,13 @@ void GameScene::initGrassBackground() {
   const float H = constantConfig.grassHeight;    // 图片高度
   const std::string GRASS_PATH = constantConfig.grassImagePath;
 
-  auto visibleSize = Director::getInstance()->getVisibleSize();
-  Vec2 origin = Director::getInstance()->getVisibleOrigin();
-
-  // 根据用户给定的公式计算四个顶点
-  // p[i][j] 表示第i行第j列的图片坐标（图片左侧的中点）
-  
-  // 确定p[0][0]的位置（最左端，居中显示）
-  // 根据公式计算总尺寸：
-  // p[43][43].x = p[0][0].x + W/2 * 84
-  // p[43][43].y = p[0][0].y
-  // p[43][0].y = p[0][0].y - H/2 * 43
-  // p[0][43].y = p[0][0].y + H/2 * 43
-  
-  float totalWidth = (W / 2.0f) * 84 + W;  // 最右端x坐标 + 图片长度
-  float minY = -(H / 2.0f) * 43;           // 最上端相对y坐标
-  float maxY = (H / 2.0f) * 43;            // 最下端相对y坐标
-  float totalHeight = maxY - minY + H;
-  
-  Vec2 p00(origin.x + (visibleSize.width - totalWidth) / 2,
-           origin.y + visibleSize.height / 2);
+  // 从 ConstantManager 获取地图原点 p00
+  auto constantManager = ConstantManager::getInstance();
+  if (!constantManager) {
+    CCLOG("ConstantManager not initialized");
+    return;
+  }
+  Vec2 p00 = constantManager->getP00();
 
   // 验证四个顶点（用于调试）
   Vec2 p43_0, p0_43, p43_43;
@@ -319,7 +307,9 @@ void GameScene::onMouseMove(Event *event) {
     // 找到最近的网格点（用于吸附预览）
     int row, col;
     Vec2 nearestPos;
-    if (GridUtils::findNearestGrassVertex(targetAnchorPos, row, col, nearestPos, _p00, _deltaX, _deltaY, _gridSize)) {
+    auto constantManager = ConstantManager::getInstance();
+    Vec2 p00 = constantManager ? constantManager->getP00() : _p00;
+    if (GridUtils::findNearestGrassVertex(targetAnchorPos, row, col, nearestPos, p00, _deltaX, _deltaY, _gridSize)) {
       // 临时设置位置到吸附点（拖动时显示预览）
       _draggingBuilding->setPosition(nearestPos);
       
@@ -362,7 +352,9 @@ void GameScene::onMouseUp(Event *event) {
       // 找到最近的网格点
       int row, col;
       Vec2 nearestPos;
-      if (GridUtils::findNearestGrassVertex(targetAnchorPos, row, col, nearestPos, _p00, _deltaX, _deltaY, _gridSize)) {
+      auto constantManager = ConstantManager::getInstance();
+    Vec2 p00 = constantManager ? constantManager->getP00() : _p00;
+    if (GridUtils::findNearestGrassVertex(targetAnchorPos, row, col, nearestPos, p00, _deltaX, _deltaY, _gridSize)) {
         // 使用 setPositionFromAnchor 正确设置建筑位置
         _draggingBuilding->setPositionFromAnchor(nearestPos.x, nearestPos.y, _deltaX, row, col);
         

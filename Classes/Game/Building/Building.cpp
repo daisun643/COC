@@ -108,7 +108,9 @@ bool Building::init(const std::string &imagePath, BuildingType type, int level,
   // 创建锚点标记节点（红点）
   _anchorNode = DrawNode::create();
   // 绘制一个红色圆点（在锚点位置，即本地坐标系原点）
-  _anchorNode->drawDot(Vec2(0, 100), 5.0f, Color4F(1.0f, 0.0f, 0.0f, 1.0f)); // 红色，半径5像素
+  auto width = this->getContentSize().width;
+  auto height = this->getContentSize().height;
+  _anchorNode->drawDot(Vec2(anchorRatioX * width, anchorRatioY * height), 5.0f, Color4F(1.0f, 0.0f, 0.0f, 1.0f)); // 红色，半径5像素
   this->addChild(_anchorNode, 10); // 放在最前面，确保可见
 
   return true;

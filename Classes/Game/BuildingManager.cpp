@@ -1,6 +1,7 @@
 #include "BuildingManager.h"
 #include "Building/TownHall.h"
 #include "Config/ConfigManager.h"
+#include "Constant/ConstantManager.h"
 #include "util/GridUtils.h"
 #include "json/document.h"
 #include <fstream>
@@ -13,10 +14,10 @@ BuildingManager* BuildingManager::getInstance() {
   return _instance;
 }
 
-void BuildingManager::initialize(const Vec2 &p00) {
+void BuildingManager::initialize() {
   if (_instance == nullptr) {
     _instance = new (std::nothrow) BuildingManager();
-    if (_instance && _instance->init(p00)) {
+    if (_instance && _instance->init()) {
       // 初始化成功
     } else {
       CC_SAFE_DELETE(_instance);
@@ -32,7 +33,7 @@ BuildingManager::~BuildingManager() {
   clearAllBuildings();
 }
 
-bool BuildingManager::init(const Vec2 &p00) {
+bool BuildingManager::init() {
   // 获取配置管理器
   auto configManager = ConfigManager::getInstance();
   if (!configManager) {
@@ -40,11 +41,18 @@ bool BuildingManager::init(const Vec2 &p00) {
     return false;
   }
   
+  // 获取 ConstantManager 以获取地图原点 p00
+  auto constantManager = ConstantManager::getInstance();
+  if (!constantManager) {
+    CCLOG("Failed to get ConstantManager in BuildingManager!");
+    return false;
+  }
+  
   auto constantConfig = configManager->getConstantConfig();
   _deltaX = constantConfig.deltaX;
   _deltaY = constantConfig.deltaY;
   _gridSize = constantConfig.gridSize;
-  _p00 = p00;
+  _p00 = constantManager->getP00();
   
   // 加载建筑地图
   if (!loadBuildingMap()) {
