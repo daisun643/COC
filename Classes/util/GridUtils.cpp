@@ -1,14 +1,52 @@
 #include "util/GridUtils.h"
+#include "Constant/ConstantManager.h"
+#include "Config/ConfigManager.h"
 
-Vec2 GridUtils::gridToScreen(int row, int col, const Vec2 &p00, float deltaX, float deltaY) {
+Vec2 GridUtils::gridToScreen(int row, int col) {
+  // 从 ConstantManager 获取 p00
+  auto constantManager = ConstantManager::getInstance();
+  if (!constantManager) {
+    CCLOG("ConstantManager not initialized in GridUtils::gridToScreen");
+    return Vec2::ZERO;
+  }
+  Vec2 p00 = constantManager->getP00();
+  
+  // 从 ConfigManager 获取 deltaX 和 deltaY
+  auto configManager = ConfigManager::getInstance();
+  if (!configManager) {
+    CCLOG("ConfigManager not initialized in GridUtils::gridToScreen");
+    return Vec2::ZERO;
+  }
+  auto constantConfig = configManager->getConstantConfig();
+  float deltaX = constantConfig.deltaX;
+  float deltaY = constantConfig.deltaY;
+  
   Vec2 pos;
   pos.x = p00.x + (row + col) * deltaX;
   pos.y = p00.y + (col - row) * deltaY;
   return pos;
 }
 
-bool GridUtils::screenToGrid(const Vec2 &screenPos, int &row, int &col, 
-                             const Vec2 &p00, float deltaX, float deltaY, int gridSize) {
+bool GridUtils::screenToGrid(const Vec2 &screenPos, int &row, int &col) {
+  // 从 ConstantManager 获取 p00
+  auto constantManager = ConstantManager::getInstance();
+  if (!constantManager) {
+    CCLOG("ConstantManager not initialized in GridUtils::screenToGrid");
+    return false;
+  }
+  Vec2 p00 = constantManager->getP00();
+  
+  // 从 ConfigManager 获取 deltaX, deltaY 和 gridSize
+  auto configManager = ConfigManager::getInstance();
+  if (!configManager) {
+    CCLOG("ConfigManager not initialized in GridUtils::screenToGrid");
+    return false;
+  }
+  auto constantConfig = configManager->getConstantConfig();
+  float deltaX = constantConfig.deltaX;
+  float deltaY = constantConfig.deltaY;
+  int gridSize = constantConfig.gridSize;
+  
   // 从屏幕坐标转换为网格坐标
   // 使用逆变换公式
   float dx = screenPos.x - p00.x;
@@ -33,11 +71,19 @@ bool GridUtils::screenToGrid(const Vec2 &screenPos, int &row, int &col,
   return (row >= 0 && row < gridSize && col >= 0 && col < gridSize);
 }
 
-bool GridUtils::findNearestGrassVertex(const Vec2 &screenPos, int &row, int &col, Vec2 &nearestPos,
-                                       const Vec2 &p00, float deltaX, float deltaY, int gridSize) {
+bool GridUtils::findNearestGrassVertex(const Vec2 &screenPos, int &row, int &col, Vec2 &nearestPos) {
+  // 从 ConfigManager 获取 gridSize
+  auto configManager = ConfigManager::getInstance();
+  if (!configManager) {
+    CCLOG("ConfigManager not initialized in GridUtils::findNearestGrassVertex");
+    return false;
+  }
+  auto constantConfig = configManager->getConstantConfig();
+  int gridSize = constantConfig.gridSize;
+  
   // 先转换为网格坐标
   int tempRow, tempCol;
-  if (!screenToGrid(screenPos, tempRow, tempCol, p00, deltaX, deltaY, gridSize)) {
+  if (!screenToGrid(screenPos, tempRow, tempCol)) {
     return false;
   }
   
@@ -48,7 +94,7 @@ bool GridUtils::findNearestGrassVertex(const Vec2 &screenPos, int &row, int &col
   for (int r = tempRow - 1; r <= tempRow + 1; ++r) {
     for (int c = tempCol - 1; c <= tempCol + 1; ++c) {
       if (r >= 0 && r < gridSize && c >= 0 && c < gridSize) {
-        Vec2 gridPos = gridToScreen(r, c, p00, deltaX, deltaY);
+        Vec2 gridPos = gridToScreen(r, c);
         float dist = screenPos.distance(gridPos);
         if (dist < minDist) {
           minDist = dist;
@@ -61,7 +107,7 @@ bool GridUtils::findNearestGrassVertex(const Vec2 &screenPos, int &row, int &col
   
   row = bestRow;
   col = bestCol;
-  nearestPos = gridToScreen(row, col, p00, deltaX, deltaY);
+  nearestPos = gridToScreen(row, col);
   return true;
 }
 

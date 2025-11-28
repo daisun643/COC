@@ -144,7 +144,7 @@ Building* BuildingManager::createBuilding(const std::string &buildingType, int r
       building = townHall;
       
       // 计算锚点位置
-      Vec2 anchorPos = GridUtils::gridToScreen(row, col, _p00, _deltaX, _deltaY);
+      Vec2 anchorPos = GridUtils::gridToScreen(row, col);
       
       // 设置位置（根据anchor和gridSize计算中心坐标）
       building->setPositionFromAnchor(anchorPos.x, anchorPos.y, _deltaX, row, col);

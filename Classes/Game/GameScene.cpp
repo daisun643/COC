@@ -307,9 +307,7 @@ void GameScene::onMouseMove(Event *event) {
     // 找到最近的网格点（用于吸附预览）
     int row, col;
     Vec2 nearestPos;
-    auto constantManager = ConstantManager::getInstance();
-    Vec2 p00 = constantManager ? constantManager->getP00() : _p00;
-    if (GridUtils::findNearestGrassVertex(targetAnchorPos, row, col, nearestPos, p00, _deltaX, _deltaY, _gridSize)) {
+    if (GridUtils::findNearestGrassVertex(targetAnchorPos, row, col, nearestPos)) {
       // 临时设置位置到吸附点（拖动时显示预览）
       _draggingBuilding->setPosition(nearestPos);
       
@@ -352,9 +350,7 @@ void GameScene::onMouseUp(Event *event) {
       // 找到最近的网格点
       int row, col;
       Vec2 nearestPos;
-      auto constantManager = ConstantManager::getInstance();
-    Vec2 p00 = constantManager ? constantManager->getP00() : _p00;
-    if (GridUtils::findNearestGrassVertex(targetAnchorPos, row, col, nearestPos, p00, _deltaX, _deltaY, _gridSize)) {
+      if (GridUtils::findNearestGrassVertex(targetAnchorPos, row, col, nearestPos)) {
         // 使用 setPositionFromAnchor 正确设置建筑位置
         _draggingBuilding->setPositionFromAnchor(nearestPos.x, nearestPos.y, _deltaX, row, col);
         
