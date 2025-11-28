@@ -208,9 +208,7 @@ bool ConfigManager::loadConstantConfig() {
         _constantConfig.glowDelay = doc["GlowDelay"].GetFloat();
     }
 
-    if (doc.HasMember("imageRatio") && doc["imageRatio"].IsNumber()) {
-        _constantConfig.imageRatio = doc["imageRatio"].GetFloat();
-    }
+    
     
     return true;
 }
@@ -256,6 +254,9 @@ bool ConfigManager::loadBuildingConfig() {
         
         if (townHall.HasMember("maxLevel") && townHall["maxLevel"].IsInt()) {
             _townHallConfig.maxLevel = townHall["maxLevel"].GetInt();
+        }
+        if (townHall.HasMember("imageScale") && townHall["imageScale"].IsNumber()) {
+            _townHallConfig.imageScale = townHall["imageScale"].GetFloat();
         }
     }
     

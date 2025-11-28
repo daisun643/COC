@@ -31,9 +31,10 @@ bool TownHall::init(int level) {
 }
 
 TownHall *TownHall::create(int level, int gridSize, float anchorRatioX, float anchorRatioY,
-                           float deltaX, float grassWidth) {
+                           float deltaX, float grassWidth, float imageScale) {
   TownHall *townHall = new (std::nothrow) TownHall();
-  if (townHall && townHall->init(level, gridSize, anchorRatioX, anchorRatioY, deltaX, grassWidth)) {
+  if (townHall && townHall->init(level, gridSize, anchorRatioX, 
+    anchorRatioY, deltaX, grassWidth, imageScale)) {
     townHall->autorelease();
     return townHall;
   }
@@ -42,10 +43,10 @@ TownHall *TownHall::create(int level, int gridSize, float anchorRatioX, float an
 }
 
 bool TownHall::init(int level, int gridSize, float anchorRatioX, float anchorRatioY,
-                    float deltaX, float grassWidth) {
+                    float deltaX, float grassWidth, float imageScale) {
   // 使用新的Building::init方法，传入gridSize和anchorRatio
   if (!Building::init("images/buildings/TownHall.png", BuildingType::TOWN_HALL, level,
-                      gridSize, anchorRatioX, anchorRatioY, deltaX, grassWidth)) {
+                      gridSize, anchorRatioX, anchorRatioY, deltaX, grassWidth, imageScale)) {
     return false;
   }
   

@@ -31,11 +31,6 @@ private:
   void initTownHall();
 
   /**
-   * 添加建筑到场景
-   */
-  void addBuilding(Building *building, const Vec2 &position);
-
-  /**
    * 初始化草地背景，创建44x44网格的菱形密铺
    */
   void initGrassBackground();

@@ -138,7 +138,8 @@ Building* BuildingManager::createBuilding(const std::string &buildingType, int r
     TownHall* townHall = TownHall::create(level,
                     townHallConfig.gridSize, 
                     townHallConfig.anchorRatioX, townHallConfig.anchorRatioY,
-                    constantConfig.deltaX, constantConfig.grassWidth);
+                    constantConfig.deltaX, constantConfig.grassWidth,
+                    townHallConfig.imageScale);
     
     if (townHall) {
       building = townHall;

@@ -51,13 +51,6 @@ bool GameScene::init() {
   return true;
 }
 
-void GameScene::addBuilding(Building *building, const Vec2 &position) {
-  if (building) {
-    building->setPosition(position);
-    this->addChild(building, 1);
-  }
-}
-
 void GameScene::initGrassBackground() {
   // 获取配置管理器
   auto configManager = ConfigManager::getInstance();

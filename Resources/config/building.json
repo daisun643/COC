@@ -6,9 +6,10 @@
             22
         ],
         "AnchorRatio": [
-            0.0,
+            0.50,
             0.50
         ],
+        "imageScale": 0.8,
         "GridSize": 4,
         "defaultLevel": 1,
         "maxLevel": 10,

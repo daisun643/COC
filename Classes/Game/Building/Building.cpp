@@ -23,9 +23,10 @@ Building *Building::create(const std::string &imagePath, BuildingType type,
 
 Building *Building::create(const std::string &imagePath, BuildingType type,
                            int level, int gridSize, float anchorRatioX, float anchorRatioY,
-                           float deltaX, float grassWidth) {
+                           float deltaX, float grassWidth, float imageScale) {
   Building *building = new (std::nothrow) Building();
-  if (building && building->init(imagePath, type, level, gridSize, anchorRatioX, anchorRatioY, deltaX, grassWidth)) {
+  if (building && building->init(imagePath, type, level, gridSize, anchorRatioX, 
+    anchorRatioY, deltaX, grassWidth, imageScale)) {
     building->autorelease();
     return building;
   }
@@ -74,7 +75,7 @@ bool Building::init(const std::string &imagePath, BuildingType type,
 
 bool Building::init(const std::string &imagePath, BuildingType type, int level,
                     int gridSize, float anchorRatioX, float anchorRatioY,
-                    float deltaX, float grassWidth) {
+                    float deltaX, float grassWidth, float imageScale) {
   _buildingType = type;
   _level = level;
   _width = gridSize;
@@ -87,7 +88,7 @@ bool Building::init(const std::string &imagePath, BuildingType type, int level,
   // 根据2*deltaX进行等比例缩放
   float targetSize = 2.0f * deltaX;
   float scaleFactor = targetSize / grassWidth;
-  // this->setScale(imageRatio*scaleFactor);
+  this->setScale(imageScale*scaleFactor);
 
   // 设置锚点
   this->setAnchorPoint(Vec2(anchorRatioX, anchorRatioY));

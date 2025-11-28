@@ -44,8 +44,7 @@ public:
    */
   static Building *create(const std::string &imagePath, BuildingType type,
                           int level, int gridSize, float anchorRatioX, float anchorRatioY,
-                          float deltaX, float grassWidth);
-  // TODO 删除 旧版本 init
+                          float deltaX, float grassWidth, float imageScale);
   // 适配派生类
   /**
    * 初始化建筑
@@ -57,7 +56,7 @@ public:
    */
   virtual bool init(const std::string &imagePath, BuildingType type, int level,
                     int gridSize, float anchorRatioX, float anchorRatioY,
-                    float deltaX, float grassWidth);
+                    float deltaX, float grassWidth, float imageScale);
 
   // 建筑属性
   CC_SYNTHESIZE(BuildingType, _buildingType, BuildingType);

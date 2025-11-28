@@ -48,7 +48,6 @@ public:
         float deltaX;                   // 网格间距X
         float deltaY;                   // 网格间距Y
         float glowDelay;                // 光晕明暗交替间隔
-        float imageRatio;               // 图片比例
     };
     
     /**
@@ -63,6 +62,7 @@ public:
         int gridSize;        // 建筑占用的网格大小（菱形边长）
         int defaultLevel;
         int maxLevel;
+        float imageScale;
     };
     
     /**
