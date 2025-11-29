@@ -58,7 +58,7 @@ class ConfigManager {
     std::string image;
     float anchorRatioX;  // 锚点X比例
     float anchorRatioY;  // 锚点Y比例
-    int gridSize;        // 建筑占用的网格大小（菱形边长）
+    int gridCount;        // 建筑占用的网格大小（菱形边长）
     int defaultLevel;
     int maxLevel;
     float imageScale;

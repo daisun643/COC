@@ -109,22 +109,15 @@ Building* BuildingManager::createBuilding(const std::string& buildingType,
     auto townHallConfig = configManager->getTownHallConfig();
     auto constantConfig = configManager->getConstantConfig();
 
-    // 使用TownHall的create方法，传入gridSize和anchorRatio
-    TownHall* townHall = TownHall::create(
-        level, townHallConfig.gridSize, townHallConfig.anchorRatioX,
-        townHallConfig.anchorRatioY, constantConfig.deltaX,
-        constantConfig.grassWidth, townHallConfig.imageScale);
+    // 使用TownHall的create方法，传入gridCount和anchorRatio
+    building = TownHall::create(level);
 
-    if (townHall) {
-      building = townHall;
-
-      // 计算锚点位置
-      Vec2 anchorPos = GridUtils::gridToScreen(row, col, _p00);
-
-      // 设置位置（根据anchor和gridSize计算中心坐标）
-      building->setPositionFromAnchor(anchorPos.x, anchorPos.y, _deltaX, row,
-                                      col);
-    }
+    Vec2 anchorPos = GridUtils::gridToScene(row, col, _p00);
+    building->setPosition(anchorPos);   //设置锚点位置
+    building->setCenterX(anchorPos.x);
+    building->setCenterY(anchorPos.y);
+    building->setRow(row);
+    building->setCol(col);
   }
   // 可以在这里添加其他建筑类型的创建逻辑
 
@@ -136,22 +129,15 @@ Building* BuildingManager::getBuildingAtPosition(const Vec2& pos) const {
   if (!configManager) {
     return nullptr;
   }
-  auto constantConfig = configManager->getConstantConfig();
-
   // 从后往前遍历（后添加的建筑在上层）
   for (auto it = _buildings.rbegin(); it != _buildings.rend(); ++it) {
     Building* building = *it;
     if (!building) {
       continue;
     }
-
-    // 获取建筑的锚点位置
-    Vec2 anchorPos = building->getPosition();
-
+    // TODO
     // 判断点是否在建筑的菱形区域内
-    if (building->isPointInDiamond(pos, anchorPos, building->getWidth(),
-                                   constantConfig.deltaX,
-                                   constantConfig.deltaY)) {
+    if (building->inDiamond(pos)) {
       return building;
     }
   }

@@ -2,11 +2,11 @@
 
 #include "Manager/Config/ConfigManager.h"
 
-Vec2 GridUtils::gridToScreen(int row, int col, const Vec2& p00) {
+Vec2 GridUtils::gridToScene(int row, int col, const Vec2& p00) {
   // 从 ConfigManager 获取 deltaX 和 deltaY
   auto configManager = ConfigManager::getInstance();
   if (!configManager) {
-    CCLOG("ConfigManager not initialized in GridUtils::gridToScreen");
+    CCLOG("ConfigManager not initialized in GridUtils::gridToScene");
     return Vec2::ZERO;
   }
   auto constantConfig = configManager->getConstantConfig();
@@ -53,12 +53,12 @@ bool GridUtils::screenToGrid(const Vec2& screenPos, const Vec2& p00, int& row,
   row = (int)(row_f + 0.5f);
 
   // 检查是否在有效范围内
-  return (row >= 0 && row < gridSize && col >= 0 && col < gridSize);
+  return (row >= 0 && row <= gridSize && col >= 0 && col <= gridSize);
 }
 
 bool GridUtils::findNearestGrassVertex(const Vec2& screenPos, const Vec2& p00,
                                        int& row, int& col, Vec2& nearestPos) {
-  // 从 ConfigManager 获取 gridSize
+  // 从 ConfigManager 获取 gridCount
   auto configManager = ConfigManager::getInstance();
   if (!configManager) {
     CCLOG("ConfigManager not initialized in GridUtils::findNearestGrassVertex");
@@ -79,8 +79,8 @@ bool GridUtils::findNearestGrassVertex(const Vec2& screenPos, const Vec2& p00,
 
   for (int r = tempRow - 1; r <= tempRow + 1; ++r) {
     for (int c = tempCol - 1; c <= tempCol + 1; ++c) {
-      if (r >= 0 && r < gridSize && c >= 0 && c < gridSize) {
-        Vec2 gridPos = gridToScreen(r, c, p00);
+      if (r >= 0 && r <= gridSize && c >= 0 && c < gridSize) {
+        Vec2 gridPos = gridToScene(r, c, p00);
         float dist = screenPos.distance(gridPos);
         if (dist < minDist) {
           minDist = dist;
@@ -93,6 +93,6 @@ bool GridUtils::findNearestGrassVertex(const Vec2& screenPos, const Vec2& p00,
 
   row = bestRow;
   col = bestCol;
-  nearestPos = gridToScreen(row, col, p00);
+  nearestPos = gridToScene(row, col, p00);
   return true;
 }

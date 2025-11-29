@@ -44,7 +44,7 @@ ConfigManager::ConfigManager() {
   _townHallConfig.image = "images/buildings/TownHall.png";
   _townHallConfig.anchorRatioX = 0.0f;  // 默认左侧中点
   _townHallConfig.anchorRatioY = 0.5f;
-  _townHallConfig.gridSize = 4;
+  _townHallConfig.gridCount = 4;
   _townHallConfig.defaultLevel = 1;
   _townHallConfig.maxLevel = 10;
 }
@@ -239,7 +239,7 @@ bool ConfigManager::loadBuildingConfig() {
     }
 
     if (townHall.HasMember("GridSize") && townHall["GridSize"].IsInt()) {
-      _townHallConfig.gridSize = townHall["GridSize"].GetInt();
+      _townHallConfig.gridCount = townHall["GridSize"].GetInt();
     }
 
     if (townHall.HasMember("defaultLevel") &&

@@ -31,6 +31,7 @@ bool GameScene::init() {
   _isMouseDown = false;
   _selectedBuilding = nullptr;
   _draggingBuilding = nullptr;
+  // TODO
   _gridSize = constantConfig.gridSize;
   _buildingManager = nullptr;
 
@@ -60,10 +61,6 @@ bool GameScene::init() {
 
   // 初始化鼠标事件监听器
   initMouseEventListeners();
-
-  // 建筑现在由BuildingManager管理，不再需要单独初始化TownHall
-  // initTownHall();
-
   return true;
 }
 
@@ -134,9 +131,6 @@ void GameScene::initGrassBackground() {
         grassSprite->setPosition(pos);
         _mapLayer->addChild(grassSprite, 0);
 
-        // auto anchorPoint = DrawNode::create();
-        // grassSprite->addChild(anchorPoint);
-        // anchorPoint->drawDot(grassSprite->getAnchorPointInPoints(), 3.0f,
         // Color4F::BLACK); 创建DrawNode用于绘制锚点和边框
         auto drawNode = DrawNode::create();
 
@@ -197,11 +191,11 @@ void GameScene::initMouseEventListeners() {
 void GameScene::onMouseScroll(Event* event) {
   EventMouse* mouseEvent = static_cast<EventMouse*>(event);
   float scrollY = mouseEvent->getScrollY();
-
+  // TODO 视角高低 最好放到参数里
   // 缩放因子
   const float SCALE_FACTOR = 0.1f;
   const float MIN_SCALE = 0.5f;
-  const float MAX_SCALE = 3.0f;
+  const float MAX_SCALE = 2.0f;
 
   // 计算新的缩放比例
   float deltaScale =
@@ -332,13 +326,13 @@ void GameScene::onMouseMove(Event* event) {
 
       // 临时更新中心坐标（用于预览）
       _draggingBuilding->setCenterX(nearestPos.x +
-                                    _deltaX * _draggingBuilding->getWidth());
+                                    _deltaX * _draggingBuilding->getGridCount());
       _draggingBuilding->setCenterY(nearestPos.y);
     } else {
       // 如果找不到有效网格点，使用原始位置
       _draggingBuilding->setPosition(targetAnchorPos);
       _draggingBuilding->setCenterX(targetAnchorPos.x +
-                                    _deltaX * _draggingBuilding->getWidth());
+                                    _deltaX * _draggingBuilding->getGridCount());
       _draggingBuilding->setCenterY(targetAnchorPos.y);
     }
   } else if (_isDragging) {
@@ -374,10 +368,9 @@ void GameScene::onMouseUp(Event* event) {
       Vec2 nearestPos;
       if (GridUtils::findNearestGrassVertex(targetAnchorPos, _p00, row, col,
                                             nearestPos)) {
-        // 使用 setPositionFromAnchor 正确设置建筑位置
-        _draggingBuilding->setPositionFromAnchor(nearestPos.x, nearestPos.y,
-                                                 _deltaX, row, col);
-
+        _draggingBuilding->setCenterX(nearestPos.x + _deltaX * _draggingBuilding->getGridCount());
+        _draggingBuilding->setCenterY(nearestPos.y);
+        _draggingBuilding->setRow(row);
         // 检查是否越界
         if (_draggingBuilding->isOutOfBounds(_gridSize)) {
           // 如果越界，恢复到之前的位置

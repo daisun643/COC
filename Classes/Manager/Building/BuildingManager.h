@@ -37,7 +37,7 @@ class BuildingManager {
 
   /**
    * 检查指定位置是否有建筑被点击
-   * @param pos 屏幕坐标
+   * @param pos Layer坐标
    * @return 被点击的建筑指针，如果没有则返回nullptr
    */
   Building* getBuildingAtPosition(const Vec2& pos) const;

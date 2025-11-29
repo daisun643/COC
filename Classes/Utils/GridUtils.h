@@ -21,7 +21,7 @@ class GridUtils {
    * @param p00 地图原点p[0][0]的位置
    * @return 屏幕坐标
    */
-  static Vec2 gridToScreen(int row, int col, const Vec2& p00);
+  static Vec2 gridToScene(int row, int col, const Vec2& p00);
 
   /**
    * 将屏幕坐标转换为网格坐标(row, col)
