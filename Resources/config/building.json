@@ -1,15 +1,11 @@
 {
     "TownHall": {
         "image": "images/buildings/TownHall.png",
-        "GridPosition": [
-            22,
-            22
-        ],
         "AnchorRatio": [
-            0.50,
-            0.50
+            0.55,
+            0.30
         ],
-        "imageScale": 0.8,
+        "imageScale": 0.6,
         "GridSize": 4,
         "defaultLevel": 1,
         "maxLevel": 10,

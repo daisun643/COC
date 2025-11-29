@@ -8,8 +8,8 @@ TownHall::TownHall() {
 
 TownHall::~TownHall() {}
 
-TownHall *TownHall::create(int level) {
-  TownHall *townHall = new (std::nothrow) TownHall();
+TownHall* TownHall::create(int level) {
+  TownHall* townHall = new (std::nothrow) TownHall();
   if (townHall && townHall->init(level)) {
     townHall->autorelease();
     return townHall;
@@ -20,7 +20,8 @@ TownHall *TownHall::create(int level) {
 
 bool TownHall::init(int level) {
   // 使用TownHall图片
-  if (!Building::init("images/buildings/TownHall.png", BuildingType::TOWN_HALL, level)) {
+  if (!Building::init("images/buildings/TownHall.png", BuildingType::TOWN_HALL,
+                      level)) {
     return false;
   }
 
@@ -30,11 +31,12 @@ bool TownHall::init(int level) {
   return true;
 }
 
-TownHall *TownHall::create(int level, int gridSize, float anchorRatioX, float anchorRatioY,
-                           float deltaX, float grassWidth, float imageScale) {
-  TownHall *townHall = new (std::nothrow) TownHall();
-  if (townHall && townHall->init(level, gridSize, anchorRatioX, 
-    anchorRatioY, deltaX, grassWidth, imageScale)) {
+TownHall* TownHall::create(int level, int gridSize, float anchorRatioX,
+                           float anchorRatioY, float deltaX, float grassWidth,
+                           float imageScale) {
+  TownHall* townHall = new (std::nothrow) TownHall();
+  if (townHall && townHall->init(level, gridSize, anchorRatioX, anchorRatioY,
+                                 deltaX, grassWidth, imageScale)) {
     townHall->autorelease();
     return townHall;
   }
@@ -42,14 +44,16 @@ TownHall *TownHall::create(int level, int gridSize, float anchorRatioX, float an
   return nullptr;
 }
 
-bool TownHall::init(int level, int gridSize, float anchorRatioX, float anchorRatioY,
-                    float deltaX, float grassWidth, float imageScale) {
+bool TownHall::init(int level, int gridSize, float anchorRatioX,
+                    float anchorRatioY, float deltaX, float grassWidth,
+                    float imageScale) {
   // 使用新的Building::init方法，传入gridSize和anchorRatio
-  if (!Building::init("images/buildings/TownHall.png", BuildingType::TOWN_HALL, level,
-                      gridSize, anchorRatioX, anchorRatioY, deltaX, grassWidth, imageScale)) {
+  if (!Building::init("images/buildings/TownHall.png", BuildingType::TOWN_HALL,
+                      level, gridSize, anchorRatioX, anchorRatioY, deltaX,
+                      grassWidth, imageScale)) {
     return false;
   }
-  
+
   return true;
 }
 

@@ -8,17 +8,18 @@
  * 村庄的核心建筑，决定其他建筑的等级上限
  */
 class TownHall : public Building {
-public:
-  static TownHall *create(int level = 1);
-  
+ public:
+  static TownHall* create(int level = 1);
+
   /**
    * 创建TownHall（新版本，包含gridSize和anchorRatio）
    */
-  static TownHall *create(int level, int gridSize, float anchorRatioX, float anchorRatioY,
-                          float deltaX, float grassWidth, float imageScale);
+  static TownHall* create(int level, int gridSize, float anchorRatioX,
+                          float anchorRatioY, float deltaX, float grassWidth,
+                          float imageScale);
 
   bool init(int level);
-  
+
   /**
    * 初始化TownHall（新版本，包含gridSize和anchorRatio）
    */
@@ -35,9 +36,9 @@ public:
    */
   virtual std::string getBuildingInfo() const override;
 
-protected:
+ protected:
   TownHall();
   virtual ~TownHall();
 };
 
-#endif // __TOWN_HALL_H__
+#endif  // __TOWN_HALL_H__

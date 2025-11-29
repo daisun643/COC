@@ -7,7 +7,7 @@
 @brief    应用程序委托类
 */
 class AppDelegate : private cocos2d::Application {
-public:
+ public:
   AppDelegate();
   virtual ~AppDelegate();
 
@@ -29,4 +29,4 @@ public:
   virtual void applicationWillEnterForeground();
 };
 
-#endif // _APP_DELEGATE_H_
+#endif  // _APP_DELEGATE_H_

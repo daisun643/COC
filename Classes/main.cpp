@@ -1,7 +1,7 @@
 #include "AppDelegate.h"
 #include "cocos2d.h"
 
-USING_NS_CC; // 使用cocos2d命名空间
+USING_NS_CC;  // 使用cocos2d命名空间
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
                     LPWSTR lpCmdLine, int nCmdShow) {
