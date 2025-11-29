@@ -86,6 +86,7 @@ bool BuildingManager::loadBuildingMap() {
 
         Building* building = createBuilding("TownHall", row, col, level);
         if (building) {
+          building->retain();
           _buildings.push_back(building);
         }
       }
