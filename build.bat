@@ -25,6 +25,7 @@ if not "%COCOS2DX_ROOT%"=="" (
 )
 
 if %errorlevel% neq 0 (
+    cd ..
     echo.
     echo CMake configuration failed!
     echo Please check:
@@ -37,6 +38,7 @@ if %errorlevel% neq 0 (
 
 cmake --build . --config Release --target cocos2d
 if %errorlevel% neq 0 (
+    cd ..
     echo Build cocos2d library failed!
     pause
     exit /b %errorlevel%
@@ -44,6 +46,7 @@ if %errorlevel% neq 0 (
 
 cmake --build . --config Release --target COC
 if %errorlevel% neq 0 (
+    cd ..
     echo Build COC project failed!
     pause
     exit /b %errorlevel%
