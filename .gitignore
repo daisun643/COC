@@ -20,7 +20,6 @@ Makefile
 
 # IDE
 .vs/
-.vscode/
 .idea/
 *.suo
 *.user
@@ -39,6 +38,7 @@ cocos2d/
 *.swp
 *~
 
-# 配置文件（包含用户特定路径）
-# config.cmake 应该被提交，但用户可以修改
+# 配置文件
+.clangd
+
 
