@@ -3,6 +3,7 @@
 
 #include "Game/Building/TownHall.h"
 #include "Manager/Building/BuildingManager.h"
+#include "UI/MainUILayer.h"
 #include "Utils/GridUtils.h"
 #include "cocos2d.h"
 
@@ -38,6 +39,7 @@ class GameScene : public Scene {
   int _gridSize;  // 网格大小（44）
 
   BuildingManager* _buildingManager;  // 建筑管理器
+  MainUILayer* _uiLayer;              // UI 层
   /**
    * 初始化大本营
    */
@@ -74,7 +76,6 @@ class GameScene : public Scene {
    * 计算地图原点p00
    */
   void calculateP00();
-
 
   // 析构函数需要清理BuildingManager
   virtual ~GameScene();

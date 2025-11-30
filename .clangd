@@ -1,2 +1,0 @@
-CompileFlags:
-  Add: ["-Wno-everything"]  # 禁用所有警告

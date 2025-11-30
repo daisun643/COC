@@ -26,6 +26,22 @@ bool GameScene::init() {
   // 创建地图容器层
   _mapLayer = Layer::create();
   this->addChild(_mapLayer, 0);
+
+  // 创建 UI 层 (ZOrder 设为 100，保证在最上层)
+  _uiLayer = MainUILayer::create();
+  this->addChild(_uiLayer, 100);
+
+  // 设置 UI 按钮回调
+  _uiLayer->setOnShopClickCallback([]() {
+    CCLOG("Shop Button Clicked!");
+    // TODO: 打开商店界面
+  });
+
+  _uiLayer->setOnAttackClickCallback([]() {
+    CCLOG("Attack Button Clicked!");
+    // TODO: 切换到进攻场景
+  });
+
   _currentScale = 1.0f;
   _isDragging = false;
   _isMouseDown = false;
@@ -325,14 +341,14 @@ void GameScene::onMouseMove(Event* event) {
       _draggingBuilding->setPosition(nearestPos);
 
       // 临时更新中心坐标（用于预览）
-      _draggingBuilding->setCenterX(nearestPos.x +
-                                    _deltaX * _draggingBuilding->getGridCount());
+      _draggingBuilding->setCenterX(
+          nearestPos.x + _deltaX * _draggingBuilding->getGridCount());
       _draggingBuilding->setCenterY(nearestPos.y);
     } else {
       // 如果找不到有效网格点，使用原始位置
       _draggingBuilding->setPosition(targetAnchorPos);
-      _draggingBuilding->setCenterX(targetAnchorPos.x +
-                                    _deltaX * _draggingBuilding->getGridCount());
+      _draggingBuilding->setCenterX(
+          targetAnchorPos.x + _deltaX * _draggingBuilding->getGridCount());
       _draggingBuilding->setCenterY(targetAnchorPos.y);
     }
   } else if (_isDragging) {
@@ -368,7 +384,8 @@ void GameScene::onMouseUp(Event* event) {
       Vec2 nearestPos;
       if (GridUtils::findNearestGrassVertex(targetAnchorPos, _p00, row, col,
                                             nearestPos)) {
-        _draggingBuilding->setCenterX(nearestPos.x + _deltaX * _draggingBuilding->getGridCount());
+        _draggingBuilding->setCenterX(
+            nearestPos.x + _deltaX * _draggingBuilding->getGridCount());
         _draggingBuilding->setCenterY(nearestPos.y);
         _draggingBuilding->setRow(row);
         // 检查是否越界
