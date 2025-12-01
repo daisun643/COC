@@ -28,8 +28,8 @@ PlayerManager::~PlayerManager() {}
 
 bool PlayerManager::init() {
   // 初始化默认资源，以后可以从存档读取
-  _gold = 8000;
-  _elixir = 8000;
+  _gold = 5000;
+  _elixir = 500;
   _maxGold = 10000;
   _maxElixir = 10000;
   _goldProduction = 100;

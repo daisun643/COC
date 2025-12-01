@@ -28,47 +28,37 @@ bool ResourceWidget::init(Type type) {
   // 1. 加载背景条 (Bar.png)
   _background = Sprite::create("images/ui/Bar.png");
   if (_background) {
-    // 尝试将背景变暗，以防图片本身太亮导致文字看不清
-    // 如果图片本身是深色的，这会让它更深，通常没问题
-    _background->setColor(Color3B(80, 80, 80));
     this->addChild(_background);
   }
 
   Size bgSize = _background ? _background->getContentSize() : Size(100, 20);
 
   // 2. 创建进度条 (LoadingBar)
-  // 由于没有专门的进度条纹理，我们创建一个纯色的纹理
-  // 金币用黄色，圣水用紫色
-  Color3B barColor =
-      (type == Type::GOLD) ? Color3B(255, 215, 0) : Color3B(255, 0, 255);
+  // 使用用户提供的纹理
+  std::string barTexture =
+      (type == Type::GOLD) ? "images/ui/Yellow.png" : "images/ui/Purple.png";
 
-  // 创建一个1x1的白色纹理
-  auto whitePixel = Sprite::create();
-  whitePixel->setTextureRect(Rect(0, 0, 1, 1));
-  whitePixel->setColor(barColor);
+  _progressBar = cocos2d::ui::LoadingBar::create(barTexture);
+  if (_progressBar) {
+    _progressBar->setDirection(
+        cocos2d::ui::LoadingBar::Direction::RIGHT);  // 从右向左填充
+    _progressBar->setPercent(0);
+    _progressBar->setPosition(Vec2::ZERO);  // 居中显示
 
-  // 使用 LoadingBar
-  _progressBar = cocos2d::ui::LoadingBar::create();
-  _progressBar->setScale9Enabled(true);  // 开启九宫格缩放，以便拉伸纯色纹理
-  _progressBar->loadTexture(
-      whitePixel->getTexture()
-          ->getPath());  // 这里可能需要更复杂的处理来使用纯色，或者直接用LayerColor模拟
-  // 简单起见，我们用 LayerColor 模拟进度条，因为 LoadingBar 需要纹理路径
-  // 重新实现：使用 LayerColor + ClippingNode 或者直接改变 LayerColor 的宽度
-  // 但为了支持 "从右向左填充"，改变 LayerColor 的宽度并设置锚点为 (1, 0.5)
-  // 是最简单的
+    // 自动调整进度条尺寸以匹配背景条
+    Size barSize = _progressBar->getContentSize();
+    if (barSize.width > 0 && barSize.height > 0) {
+      // 宽度缩小至 95%，高度缩小至 80% 以露出上下黑框
+      float scaleX = (bgSize.width * 0.95f) / barSize.width;
+      float scaleY = (bgSize.height * 0.80f) / barSize.height;
+      _progressBar->setScale(scaleX, scaleY);
+    }
 
-  // 移除上面的 LoadingBar 代码，改用 LayerColor
-  auto barLayer = LayerColor::create(Color4B(barColor), bgSize.width - 4,
-                                     bgSize.height - 4);
-  barLayer->setIgnoreAnchorPointForPosition(false);
-  barLayer->setAnchorPoint(Vec2(1.0f, 0.5f));            // 锚点设在右侧中心
-  barLayer->setPosition(Vec2(bgSize.width / 2 - 2, 0));  // 放在背景条内部右侧
-  this->addChild(barLayer, 1);
+    // 向左平移一点，解决左侧空隙问题，右侧由图标遮挡
+    _progressBar->setPosition(Vec2(-5, 0));
 
-  // 保存 barLayer 指针以便更新，这里我们用 tag 或者成员变量
-  // 由于 LayerColor 没有 setPercent，我们需要手动计算宽度
-  barLayer->setTag(999);  // Tag 999 for progress bar
+    this->addChild(_progressBar, 1);  // 层级在背景之上
+  }
 
   // 3. 根据类型加载图标
   std::string iconPath =
@@ -84,7 +74,7 @@ bool ResourceWidget::init(Type type) {
 
   // 4. 创建数字标签
   // 增大字号，提高清晰度
-  float labelFontSize = 24;
+  float labelFontSize = 28;
 
   TTFConfig ttfConfig("fonts/NotoSansSC-VariableFont_wght.ttf", labelFontSize);
   // 检查文件是否存在，如果不存在则使用 Arial
@@ -135,6 +125,9 @@ bool ResourceWidget::init(Type type) {
   _eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
   _eventDispatcher->addEventListenerWithSceneGraphPriority(closeListener, this);
 
+  // 整体缩小组件，因为素材本身较大
+  this->setScale(0.75f);
+
   return true;
 }
 
@@ -147,17 +140,12 @@ void ResourceWidget::updateAmount(int amount, int maxAmount) {
   }
 
   // 更新进度条
-  auto barLayer = dynamic_cast<LayerColor*>(this->getChildByTag(999));
-  if (barLayer && _background && maxAmount > 0) {
-    float percent = (float)amount / maxAmount;
-    if (percent > 1.0f) percent = 1.0f;
+  if (_progressBar && maxAmount > 0) {
+    float percent = (float)amount / maxAmount * 100.0f;
+    if (percent > 100.0f) percent = 100.0f;
     if (percent < 0.0f) percent = 0.0f;
 
-    Size bgSize = _background->getContentSize();
-    float maxWidth = bgSize.width - 4;  // 减去边距
-
-    // 改变宽度
-    barLayer->setContentSize(Size(maxWidth * percent, bgSize.height - 4));
+    _progressBar->setPercent(percent);
   }
 }
 
@@ -199,35 +187,29 @@ void ResourceWidget::showInfoPopup() {
   bool useTTF = FileUtils::getInstance()->isFileExist(fontFile);
   float fontSize = 24;
 
+  auto createLabel = [&](const std::string& text, const Color4B& color) {
+    Label* label;
+    if (useTTF) {
+      TTFConfig ttfConfig(fontFile, fontSize);
+      label = Label::createWithTTF(ttfConfig, text);
+    } else {
+      label = Label::createWithSystemFont(text, "Arial", fontSize);
+    }
+    label->enableBold();
+    label->setTextColor(color);
+    label->enableOutline(Color4B::BLACK, 1);
+    return label;
+  };
+
   // 最大储量文本
   std::string maxStr = "最大储量: " + std::to_string(_maxAmount);
-  Label* maxLabel;
-  if (useTTF) {
-    TTFConfig ttfConfig(fontFile, fontSize);
-    maxLabel = Label::createWithTTF(ttfConfig, maxStr);
-    maxLabel->enableBold();
-  } else {
-    maxLabel = Label::createWithSystemFont(maxStr, "Arial", fontSize);
-    maxLabel->enableBold();
-  }
-  maxLabel->setTextColor(Color4B::WHITE);
-  maxLabel->enableOutline(Color4B::BLACK, 1);
+  auto maxLabel = createLabel(maxStr, Color4B::WHITE);
   maxLabel->setPosition(Vec2(100, 55));
   bg->addChild(maxLabel);
 
   // 产量文本
   std::string prodStr = "产量: " + std::to_string(_production) + "/小时";
-  Label* prodLabel;
-  if (useTTF) {
-    TTFConfig ttfConfig(fontFile, fontSize);
-    prodLabel = Label::createWithTTF(ttfConfig, prodStr);
-    prodLabel->enableBold();
-  } else {
-    prodLabel = Label::createWithSystemFont(prodStr, "Arial", fontSize);
-    prodLabel->enableBold();
-  }
-  prodLabel->setTextColor(Color4B::GREEN);
-  prodLabel->enableOutline(Color4B::BLACK, 1);
+  auto prodLabel = createLabel(prodStr, Color4B::GREEN);
   prodLabel->setPosition(Vec2(100, 25));
   bg->addChild(prodLabel);
 }

@@ -16,7 +16,6 @@ bool MainUILayer::init() {
   // ================= 资源条 =================
   // 右上角显示
   float margin = 20.0f;
-  float barHeight = 40.0f;  // 预估高度，实际会根据图片调整
 
   // 圣水条 (最上面)
   _elixirWidget = ResourceWidget::create(ResourceWidget::Type::ELIXIR);
