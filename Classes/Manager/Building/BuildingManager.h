@@ -54,6 +54,11 @@ class BuildingManager {
   void clearAllBuildings();
 
   /**
+   * 注册新建筑到管理器
+   */
+  void registerBuilding(Building* building);
+
+  /**
    * 析构函数
    */
   ~BuildingManager();

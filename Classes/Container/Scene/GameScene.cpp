@@ -2,6 +2,7 @@
 
 #include <float.h>
 
+#include "Game/Building/PlaceholderBuilding.h"
 #include "Manager/Config/ConfigManager.h"
 
 Scene* GameScene::createScene() { return GameScene::create(); }
@@ -26,11 +27,37 @@ bool GameScene::init() {
   // 创建地图容器层
   _mapLayer = Layer::create();
   this->addChild(_mapLayer, 0);
+
+  // 创建 UI 层 (ZOrder 设为 100，保证在最上层)
+  _uiLayer = MainUILayer::create();
+  this->addChild(_uiLayer, 100);
+
+  // 设置 UI 按钮回调
+  _uiLayer->setOnShopClickCallback([this]() { this->openShop(); });
+
+  _uiLayer->setOnAttackClickCallback([]() {
+    CCLOG("Attack Button Clicked!");
+    // TODO: 切换到进攻场景
+  });
+
   _currentScale = 1.0f;
   _isDragging = false;
   _isMouseDown = false;
   _selectedBuilding = nullptr;
   _draggingBuilding = nullptr;
+  _isPlacingBuilding = false;
+  _placementBuilding = nullptr;
+  _placementHintLabel = nullptr;
+  _isPlacementMouseDown = false;
+  _placementDraggingMap = false;
+  _placementMouseDownPos = Vec2::ZERO;
+  _placementLastMousePos = Vec2::ZERO;
+  _placementPreviewValid = false;
+  _placementPreviewRow = 0;
+  _placementPreviewCol = 0;
+  _placementPreviewAnchor = Vec2::ZERO;
+  _currentMousePos = Vec2::ZERO;
+  _ignoreNextMouseUp = false;
   // TODO
   _gridSize = constantConfig.gridSize;
   _buildingManager = nullptr;
@@ -58,6 +85,15 @@ bool GameScene::init() {
                                origin.y + visibleSize.height - 30));
   titleLabel->setColor(Color3B::WHITE);
   this->addChild(titleLabel, 1);
+
+  _placementHintLabel = Label::createWithSystemFont("", "Arial", 20);
+  if (_placementHintLabel) {
+    _placementHintLabel->setColor(Color3B::YELLOW);
+    _placementHintLabel->setVisible(false);
+    _placementHintLabel->setPosition(
+        Vec2(origin.x + visibleSize.width / 2.0f, origin.y + 80.0f));
+    this->addChild(_placementHintLabel, 150);
+  }
 
   // 初始化鼠标事件监听器
   initMouseEventListeners();
@@ -189,6 +225,10 @@ void GameScene::initMouseEventListeners() {
 }
 
 void GameScene::onMouseScroll(Event* event) {
+  if (isShopOpen()) {
+    return;
+  }
+
   EventMouse* mouseEvent = static_cast<EventMouse*>(event);
   float scrollY = mouseEvent->getScrollY();
   // TODO 视角高低 最好放到参数里
@@ -210,11 +250,10 @@ void GameScene::onMouseScroll(Event* event) {
   }
 
   if (newScale != _currentScale) {
-    // 获取鼠标在屏幕坐标系中的位置
-    Vec2 mouseScreenPos = mouseEvent->getLocationInView();
-
-    // 转换为OpenGL坐标系
-    Vec2 mouseGLPos = Director::getInstance()->convertToGL(mouseScreenPos);
+    // 获取鼠标在OpenGL坐标系中的位置
+    // 注意：在当前环境下，getLocationInView似乎直接返回了GL坐标（左下角原点）
+    // 因此不需要convertToGL，否则会导致Y轴翻转
+    Vec2 mouseGLPos = mouseEvent->getLocationInView();
 
     // 获取地图层当前的位置和缩放
     Vec2 mapLayerPos = _mapLayer->getPosition();
@@ -239,10 +278,27 @@ void GameScene::onMouseScroll(Event* event) {
 void GameScene::onMouseDown(Event* event) {
   EventMouse* mouseEvent = static_cast<EventMouse*>(event);
 
+  if (isShopOpen()) {
+    return;
+  }
+
+  if (_isPlacingBuilding) {
+    // 放置模式下：
+    // 左键点击：不做处理，等待 MouseUp
+    // 进行放置（或者在这里放置也可以，但为了统一逻辑，通常在 Up 处理）
+    // 右键点击：取消放置
+    if (mouseEvent->getMouseButton() == EventMouse::MouseButton::BUTTON_RIGHT) {
+      cancelPlacementMode(true);
+      showPopupDialog("提示", "已取消放置，资源已退回");
+      return;
+    }
+    return;
+  }
+
   // 检查是否按下左键
   if (mouseEvent->getMouseButton() == EventMouse::MouseButton::BUTTON_LEFT) {
     Vec2 mousePos = mouseEvent->getLocationInView();
-    mousePos = Director::getInstance()->convertToGL(mousePos);
+    // mousePos = Director::getInstance()->convertToGL(mousePos);
     _mouseDownPos = mousePos;  // 记录按下位置
 
     // 转换为地图层坐标系
@@ -285,7 +341,20 @@ void GameScene::onMouseDown(Event* event) {
 void GameScene::onMouseMove(Event* event) {
   EventMouse* mouseEvent = static_cast<EventMouse*>(event);
   Vec2 currentPos = mouseEvent->getLocationInView();
-  currentPos = Director::getInstance()->convertToGL(currentPos);
+  // currentPos = Director::getInstance()->convertToGL(currentPos);
+  _currentMousePos = currentPos;
+
+  if (isShopOpen()) {
+    return;
+  }
+
+  if (_isPlacingBuilding) {
+    // 放置模式下禁用地图拖动，仅更新建筑预览位置
+    if (_placementBuilding) {
+      updatePlacementPreview(currentPos);
+    }
+    return;
+  }
 
   // 只有按住鼠标才能拖动建筑
   if (_isMouseDown && _selectedBuilding && !_draggingBuilding) {
@@ -300,10 +369,8 @@ void GameScene::onMouseMove(Event* event) {
 
       // 计算拖动偏移量（鼠标位置相对于建筑锚点的偏移）
       Vec2 mapPos = _mapLayer->convertToNodeSpace(currentPos);
-      // 竖直分量取相反数
-      Vec2 adjustedMapPos =
-          Vec2(mapPos.x, 2.0f * _buildingStartPos.y - mapPos.y);
-      _draggingBuilding->_dragOffset = adjustedMapPos - _buildingStartPos;
+      // 直接使用 mapPos，不需要翻转
+      _draggingBuilding->_dragOffset = mapPos - _buildingStartPos;
     }
   }
 
@@ -312,9 +379,8 @@ void GameScene::onMouseMove(Event* event) {
     // 拖动建筑：实时更新位置并显示吸附预览
     Vec2 mapPos = _mapLayer->convertToNodeSpace(currentPos);
 
-    // 竖直分量取相反数（鼠标向下移动时，建筑向上移动）
-    Vec2 adjustedMapPos = Vec2(mapPos.x, 2.0f * _buildingStartPos.y - mapPos.y);
-    Vec2 targetAnchorPos = adjustedMapPos - _draggingBuilding->_dragOffset;
+    // 直接使用 mapPos，不需要翻转
+    Vec2 targetAnchorPos = mapPos - _draggingBuilding->_dragOffset;
 
     // 找到最近的网格点（用于吸附预览）
     int row, col;
@@ -325,14 +391,14 @@ void GameScene::onMouseMove(Event* event) {
       _draggingBuilding->setPosition(nearestPos);
 
       // 临时更新中心坐标（用于预览）
-      _draggingBuilding->setCenterX(nearestPos.x +
-                                    _deltaX * _draggingBuilding->getGridCount());
+      _draggingBuilding->setCenterX(
+          nearestPos.x + _deltaX * _draggingBuilding->getGridCount());
       _draggingBuilding->setCenterY(nearestPos.y);
     } else {
       // 如果找不到有效网格点，使用原始位置
       _draggingBuilding->setPosition(targetAnchorPos);
-      _draggingBuilding->setCenterX(targetAnchorPos.x +
-                                    _deltaX * _draggingBuilding->getGridCount());
+      _draggingBuilding->setCenterX(
+          targetAnchorPos.x + _deltaX * _draggingBuilding->getGridCount());
       _draggingBuilding->setCenterY(targetAnchorPos.y);
     }
   } else if (_isDragging) {
@@ -348,27 +414,107 @@ void GameScene::onMouseMove(Event* event) {
 void GameScene::onMouseUp(Event* event) {
   EventMouse* mouseEvent = static_cast<EventMouse*>(event);
 
+  if (isShopOpen()) {
+    return;
+  }
+
+  if (_ignoreNextMouseUp) {
+    _ignoreNextMouseUp = false;
+    return;
+  }
+
+  if (_isPlacingBuilding) {
+    Vec2 mousePos = mouseEvent->getLocationInView();
+    // Vec2 worldPos = Director::getInstance()->convertToGL(mousePos);
+    Vec2 worldPos = mousePos;
+
+    if (mouseEvent->getMouseButton() == EventMouse::MouseButton::BUTTON_LEFT) {
+      // 放置模式下点击左键：尝试放置建筑
+      updatePlacementPreview(worldPos);
+
+      if (!_placementBuilding) {
+        return;
+      }
+
+      if (!_placementPreviewValid) {
+        showPopupDialog("提示", "请选择有效的草地网格");
+        return;
+      }
+
+      _placementBuilding->setPosition(_placementPreviewAnchor);
+
+      auto configManager = ConfigManager::getInstance();
+      if (configManager) {
+        auto constantConfig = configManager->getConstantConfig();
+        float deltaX = constantConfig.deltaX;
+        _placementBuilding->setCenterX(_placementPreviewAnchor.x +
+                                       deltaX *
+                                           _placementBuilding->getGridCount());
+      } else {
+        _placementBuilding->setCenterX(_placementPreviewAnchor.x);
+      }
+      _placementBuilding->setCenterY(_placementPreviewAnchor.y);
+      _placementBuilding->setRow(_placementPreviewRow);
+      _placementBuilding->setCol(_placementPreviewCol);
+
+      if (_placementBuilding->isOutOfBounds(_gridSize)) {
+        showPopupDialog("提示", "超出地图范围，无法放置");
+        return;
+      }
+
+      _placementBuilding->setOpacity(255);
+      _placementBuilding->hideGlow();
+
+      if (_buildingManager) {
+        _buildingManager->registerBuilding(_placementBuilding);
+      }
+
+      _selectedBuilding = _placementBuilding;
+      _placementBuilding = nullptr;
+      _isPlacingBuilding = false;
+      _placementPreviewValid = false;
+      _isPlacementMouseDown = false;
+      _placementMouseDownPos = Vec2::ZERO;
+      showPlacementHint("建筑已放置");
+
+      if (_placementHintLabel) {
+        _placementHintLabel->stopAllActions();
+        auto delay = DelayTime::create(1.5f);
+        auto clear = CallFunc::create([this]() { showPlacementHint(""); });
+        _placementHintLabel->runAction(Sequence::create(delay, clear, nullptr));
+      }
+      return;
+    }
+
+    if (mouseEvent->getMouseButton() == EventMouse::MouseButton::BUTTON_RIGHT) {
+      cancelPlacementMode(true);
+      showPopupDialog("提示", "已取消放置，资源已退回");
+      return;
+    }
+
+    return;
+  }
+
   // 检查是否释放左键
   if (mouseEvent->getMouseButton() == EventMouse::MouseButton::BUTTON_LEFT) {
     if (_draggingBuilding) {
       // 如果正在拖动建筑，进行最终吸附
       Vec2 mousePos = mouseEvent->getLocationInView();
-      mousePos = Director::getInstance()->convertToGL(mousePos);
+      // mousePos = Director::getInstance()->convertToGL(mousePos);
 
       // 转换为地图层坐标系
       Vec2 mapPos = _mapLayer->convertToNodeSpace(mousePos);
 
-      // 竖直分量取相反数（鼠标向下移动时，建筑向上移动）
-      Vec2 adjustedMapPos =
-          Vec2(mapPos.x, 2.0f * _buildingStartPos.y - mapPos.y);
-      Vec2 targetAnchorPos = adjustedMapPos - _draggingBuilding->_dragOffset;
+      // 直接使用 mapPos，不需要翻转
+      Vec2 targetAnchorPos = mapPos - _draggingBuilding->_dragOffset;
 
       // 找到最近的网格点
       int row, col;
       Vec2 nearestPos;
       if (GridUtils::findNearestGrassVertex(targetAnchorPos, _p00, row, col,
                                             nearestPos)) {
-        _draggingBuilding->setCenterX(nearestPos.x + _deltaX * _draggingBuilding->getGridCount());
+        _draggingBuilding->setCenterX(
+            nearestPos.x + _deltaX * _draggingBuilding->getGridCount());
         _draggingBuilding->setCenterY(nearestPos.y);
         _draggingBuilding->setRow(row);
         // 检查是否越界
@@ -487,7 +633,293 @@ void GameScene::showPopupDialog(const std::string& title,
   _eventDispatcher->addEventListenerWithSceneGraphPriority(listener, dialogBg);
 }
 
+void GameScene::openShop() {
+  if (this->getChildByName("ShopLayerUI")) {
+    return;
+  }
+
+  auto items = buildShopCatalog();
+  if (items.empty()) {
+    showPopupDialog("提示", "暂时没有可购买的建筑");
+    return;
+  }
+
+  auto shopLayer = ShopLayer::createWithItems(items);
+  if (!shopLayer) {
+    return;
+  }
+
+  shopLayer->setName("ShopLayerUI");
+  shopLayer->setPurchaseCallback(
+      [this](const ShopItem& item) { return this->handleShopPurchase(item); });
+  this->addChild(shopLayer, 200);
+}
+
+bool GameScene::isShopOpen() const {
+  return this->getChildByName("ShopLayerUI") != nullptr;
+}
+
+std::vector<ShopItem> GameScene::buildShopCatalog() const {
+  std::vector<ShopItem> items;
+
+  auto configManager = ConfigManager::getInstance();
+  if (configManager) {
+    auto townHallConfig = configManager->getTownHallConfig();
+    ShopItem townHall;
+    townHall.id = "TownHall";
+    townHall.displayName = "大本营";
+    townHall.description = "村庄的核心建筑，解锁更多功能";
+    townHall.costGold = 1000;
+    townHall.costElixir = 0;
+    townHall.defaultLevel = townHallConfig.defaultLevel;
+    townHall.category = BuildingType::TOWN_HALL;
+    townHall.placeholderColor = Color4B(139, 69, 19, 255);
+    townHall.gridCount = townHallConfig.gridCount;
+    townHall.anchorRatioX = townHallConfig.anchorRatioX;
+    townHall.anchorRatioY = townHallConfig.anchorRatioY;
+    townHall.imageScale = townHallConfig.imageScale;
+    items.push_back(townHall);
+  }
+
+  ShopItem goldMine;
+  goldMine.id = "GoldMine";
+  goldMine.displayName = "金矿";
+  goldMine.description = "持续生产金币的基础建筑";
+  goldMine.costGold = 300;
+  goldMine.costElixir = 0;
+  goldMine.defaultLevel = 1;
+  goldMine.category = BuildingType::RESOURCE;
+  goldMine.placeholderColor = Color4B(212, 175, 55, 255);
+  goldMine.gridCount = 2;
+  goldMine.anchorRatioX = 0.5f;
+  goldMine.anchorRatioY = 0.25f;
+  goldMine.imageScale = 0.7f;
+  items.push_back(goldMine);
+
+  ShopItem elixirCollector;
+  elixirCollector.id = "ElixirCollector";
+  elixirCollector.displayName = "圣水采集器";
+  elixirCollector.description = "产出圣水的基础设施";
+  elixirCollector.costGold = 0;
+  elixirCollector.costElixir = 350;
+  elixirCollector.defaultLevel = 1;
+  elixirCollector.category = BuildingType::RESOURCE;
+  elixirCollector.placeholderColor = Color4B(140, 90, 200, 255);
+  elixirCollector.gridCount = 2;
+  elixirCollector.anchorRatioX = 0.5f;
+  elixirCollector.anchorRatioY = 0.3f;
+  elixirCollector.imageScale = 0.7f;
+  items.push_back(elixirCollector);
+
+  ShopItem cannon;
+  cannon.id = "Cannon";
+  cannon.displayName = "加农炮";
+  cannon.description = "基础防御建筑，守护村庄安全";
+  cannon.costGold = 800;
+  cannon.costElixir = 200;
+  cannon.defaultLevel = 1;
+  cannon.category = BuildingType::DEFENSE;
+  cannon.placeholderColor = Color4B(120, 120, 120, 255);
+  cannon.gridCount = 2;
+  cannon.anchorRatioX = 0.5f;
+  cannon.anchorRatioY = 0.35f;
+  cannon.imageScale = 0.65f;
+  items.push_back(cannon);
+
+  return items;
+}
+
+bool GameScene::handleShopPurchase(const ShopItem& item) {
+  auto playerManager = PlayerManager::getInstance();
+  if (!playerManager) {
+    showPopupDialog("错误", "未找到玩家数据，无法购买");
+    return false;
+  }
+
+  if (_isPlacingBuilding) {
+    cancelPlacementMode(true);
+  }
+
+  if (item.costGold > 0 && playerManager->getGold() < item.costGold) {
+    showPopupDialog("提示", "金币不足，无法购买该建筑");
+    return false;
+  }
+
+  if (item.costElixir > 0 && playerManager->getElixir() < item.costElixir) {
+    showPopupDialog("提示", "圣水不足，无法购买该建筑");
+    return false;
+  }
+
+  if (!playerManager->consumeGold(item.costGold)) {
+    showPopupDialog("提示", "金币不足，无法购买该建筑");
+    return false;
+  }
+
+  if (!playerManager->consumeElixir(item.costElixir)) {
+    // 退回金币
+    playerManager->addGold(item.costGold);
+    showPopupDialog("提示", "圣水不足，无法购买该建筑");
+    return false;
+  }
+
+  enterPlacementMode(item);
+  return true;
+}
+
+void GameScene::enterPlacementMode(const ShopItem& item) {
+  cancelPlacementMode(false);
+
+  // 强制重置地图拖动状态，防止购买后地图跟随鼠标移动
+  _isDragging = false;
+  _isMouseDown = false;
+  // 忽略紧接着的鼠标抬起事件（防止点击购买按钮后直接触发放置）
+  _ignoreNextMouseUp = true;
+
+  Building* building = createBuildingForItem(item);
+  if (!building) {
+    showPopupDialog("提示", "该建筑尚未完成，实现暂不可用");
+    auto playerManager = PlayerManager::getInstance();
+    if (playerManager) {
+      playerManager->addGold(item.costGold);
+      playerManager->addElixir(item.costElixir);
+    }
+    return;
+  }
+
+  _placementBuilding = building;
+  _placementItem = item;
+  _isPlacingBuilding = true;
+  _placementPreviewValid = false;
+  _placementPreviewRow = 0;
+  _placementPreviewCol = 0;
+  _placementPreviewAnchor = Vec2::ZERO;
+
+  _mapLayer->addChild(building, 2);
+  building->setOpacity(180);
+  building->showGlow();
+
+  // 使用当前鼠标位置作为初始位置
+  Vec2 initialPos;
+  if (_currentMousePos.equals(Vec2::ZERO)) {
+    // 如果没有鼠标位置记录（极少情况），使用屏幕中心
+    auto director = Director::getInstance();
+    auto visibleSize = director->getVisibleSize();
+    Vec2 origin = director->getVisibleOrigin();
+    initialPos = Vec2(origin.x + visibleSize.width / 2.0f,
+                      origin.y + visibleSize.height / 2.0f);
+  } else {
+    initialPos = _currentMousePos;
+  }
+
+  // 立即更新一次位置
+  updatePlacementPreview(initialPos);
+
+  showPlacementHint("拖动鼠标调整位置，左键确认放置，右键取消");
+}
+
+void GameScene::cancelPlacementMode(bool refundResources) {
+  if (!_isPlacingBuilding) {
+    return;
+  }
+
+  if (refundResources) {
+    auto playerManager = PlayerManager::getInstance();
+    if (playerManager) {
+      playerManager->addGold(_placementItem.costGold);
+      playerManager->addElixir(_placementItem.costElixir);
+    }
+  }
+
+  if (_placementBuilding) {
+    _placementBuilding->removeFromParent();
+    _placementBuilding = nullptr;
+  }
+
+  _isPlacingBuilding = false;
+  _placementItem = ShopItem();
+  showPlacementHint("");
+  _isPlacementMouseDown = false;
+  _placementDraggingMap = false;
+  _placementMouseDownPos = Vec2::ZERO;
+  _placementLastMousePos = Vec2::ZERO;
+  _placementPreviewValid = false;
+  _placementPreviewRow = 0;
+  _placementPreviewCol = 0;
+  _placementPreviewAnchor = Vec2::ZERO;
+}
+
+Building* GameScene::createBuildingForItem(const ShopItem& item) {
+  if (item.id == "TownHall") {
+    return TownHall::create(item.defaultLevel);
+  }
+
+  return PlaceholderBuilding::create(
+      item.displayName, item.category, item.placeholderColor, item.defaultLevel,
+      item.gridCount, item.anchorRatioX, item.anchorRatioY, item.imageScale);
+}
+
+void GameScene::showPlacementHint(const std::string& text) {
+  if (!_placementHintLabel) {
+    return;
+  }
+
+  if (text.empty()) {
+    _placementHintLabel->setVisible(false);
+    _placementHintLabel->setString("");
+  } else {
+    _placementHintLabel->setString(text);
+    _placementHintLabel->setVisible(true);
+  }
+}
+
+void GameScene::updatePlacementPreview(const Vec2& worldPos) {
+  if (!_placementBuilding) {
+    return;
+  }
+
+  Vec2 mapPos = _mapLayer->convertToNodeSpace(worldPos);
+
+  int row = 0;
+  int col = 0;
+  Vec2 nearestPos;
+  if (GridUtils::findNearestGrassVertex(mapPos, _p00, row, col, nearestPos)) {
+    float deltaX = 0.0f;
+    auto configManager = ConfigManager::getInstance();
+    if (configManager) {
+      deltaX = configManager->getConstantConfig().deltaX;
+    }
+
+    _placementBuilding->setPosition(nearestPos);
+    if (deltaX > 0.0f) {
+      _placementBuilding->setCenterX(
+          nearestPos.x + deltaX * _placementBuilding->getGridCount());
+    } else {
+      _placementBuilding->setCenterX(nearestPos.x);
+    }
+    _placementBuilding->setCenterY(nearestPos.y);
+    _placementBuilding->setRow(row);
+    _placementBuilding->setCol(col);
+
+    showPlacementHint(StringUtils::format("放置坐标: (%d, %d)", row, col));
+    _placementPreviewValid = true;
+    _placementPreviewRow = row;
+    _placementPreviewCol = col;
+    _placementPreviewAnchor = nearestPos;
+  } else {
+    // 未吸附时，直接跟随鼠标
+    _placementBuilding->setPosition(mapPos);
+    // 确保中心点也同步更新，防止逻辑位置偏差
+    _placementBuilding->setCenterX(mapPos.x);
+    _placementBuilding->setCenterY(mapPos.y);
+
+    showPlacementHint("无法吸附到网格");
+    _placementPreviewValid = false;
+    _placementPreviewAnchor = mapPos;
+  }
+}
+
 GameScene::~GameScene() {
+  cancelPlacementMode(false);
   if (_buildingManager) {
     delete _buildingManager;
     _buildingManager = nullptr;
