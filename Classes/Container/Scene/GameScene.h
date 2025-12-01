@@ -1,9 +1,13 @@
 #ifndef __GAME_SCENE_H__
 #define __GAME_SCENE_H__
 
+#include <vector>
+
 #include "Game/Building/TownHall.h"
 #include "Manager/Building/BuildingManager.h"
+#include "Manager/PlayerManager.h"
 #include "UI/MainUILayer.h"
+#include "UI/ShopLayer.h"
 #include "Utils/GridUtils.h"
 #include "cocos2d.h"
 
@@ -77,8 +81,65 @@ class GameScene : public Scene {
    */
   void calculateP00();
 
+  /**
+   * 打开商店界面
+   */
+  void openShop();
+
+  bool isShopOpen() const;
+
+  /**
+   * 构建商店商品列表
+   */
+  std::vector<ShopItem> buildShopCatalog() const;
+
+  /**
+   * 处理购买逻辑
+   */
+  bool handleShopPurchase(const ShopItem& item);
+
+  /**
+   * 进入建筑放置模式
+   */
+  void enterPlacementMode(const ShopItem& item);
+
+  /**
+   * 取消建筑放置
+   */
+  void cancelPlacementMode(bool refundResources = false);
+
+  /**
+   * 根据商品创建建筑实例
+   */
+  Building* createBuildingForItem(const ShopItem& item);
+
+  /**
+   * 放置提示
+   */
+  void showPlacementHint(const std::string& text);
+
+  /**
+   * 更新放置预览位置
+   */
+  void updatePlacementPreview(const cocos2d::Vec2& worldPos);
+
   // 析构函数需要清理BuildingManager
   virtual ~GameScene();
+
+  bool _isPlacingBuilding;                // 是否处于放置模式
+  Building* _placementBuilding;           // 正在放置的建筑
+  ShopItem _placementItem;                // 当前放置商品
+  cocos2d::Label* _placementHintLabel;    // 放置提示文本
+  bool _isPlacementMouseDown;             // 放置模式左键是否按下
+  bool _placementDraggingMap;             // 放置模式是否正在拖动地图
+  cocos2d::Vec2 _placementMouseDownPos;   // 放置模式按下位置
+  cocos2d::Vec2 _placementLastMousePos;   // 放置模式最后一次鼠标位置
+  bool _placementPreviewValid;            // 当前预览是否有效
+  int _placementPreviewRow;               // 预览所在行
+  int _placementPreviewCol;               // 预览所在列
+  cocos2d::Vec2 _placementPreviewAnchor;  // 预览锚点位置
+  cocos2d::Vec2 _currentMousePos;         // 当前鼠标位置
+  bool _ignoreNextMouseUp;                // 是否忽略下一次鼠标抬起事件
 };
 
 #endif  // __GAME_SCENE_H__

@@ -1,5 +1,6 @@
 #include "BuildingManager.h"
 
+#include <algorithm>
 #include <cmath>
 #include <fstream>
 #include <sstream>
@@ -113,7 +114,7 @@ Building* BuildingManager::createBuilding(const std::string& buildingType,
     building = TownHall::create(level);
 
     Vec2 anchorPos = GridUtils::gridToScene(row, col, _p00);
-    building->setPosition(anchorPos);   //设置锚点位置
+    building->setPosition(anchorPos);  // 设置锚点位置
     building->setCenterX(anchorPos.x);
     building->setCenterY(anchorPos.y);
     building->setRow(row);
@@ -170,4 +171,19 @@ void BuildingManager::clearAllBuildings() {
     }
   }
   _buildings.clear();
+}
+
+void BuildingManager::registerBuilding(Building* building) {
+  if (!building) {
+    return;
+  }
+
+  // 避免重复注册
+  auto it = std::find(_buildings.begin(), _buildings.end(), building);
+  if (it != _buildings.end()) {
+    return;
+  }
+
+  building->retain();
+  _buildings.push_back(building);
 }
