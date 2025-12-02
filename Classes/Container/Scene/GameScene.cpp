@@ -405,7 +405,7 @@ void GameScene::onMouseMove(Event* event) {
     // 拖动地图（鼠标移动方向与地图移动方向相反，就像拖动物体）
     Vec2 delta = currentPos - _lastMousePos;
     delta.x = delta.x;   // 水平分量保持原样
-    delta.y = -delta.y;  // 垂直分量取相反数
+    // delta.y = -delta.y;  // 垂直分量取相反数
     _mapLayer->setPosition(_mapLayer->getPosition() + delta);
     _lastMousePos = currentPos;
   }
