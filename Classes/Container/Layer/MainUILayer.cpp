@@ -30,16 +30,26 @@ bool MainUILayer::init() {
   this->addChild(_goldWidget);
 
   // ================= 按钮 =================
+  // 字体配置
+  std::string fontFile = "fonts/NotoSansSC-VariableFont_wght.ttf";
+  bool useTTF = FileUtils::getInstance()->isFileExist(fontFile);
+  auto createLabel = [&](const std::string& text) {
+    Label* label;
+    if (useTTF) {
+      TTFConfig ttfConfig(fontFile, 24);
+      label = Label::createWithTTF(ttfConfig, text);
+    } else {
+      label = Label::createWithSystemFont(text, "Arial", 24);
+    }
+    label->enableOutline(Color4B::BLACK, 2);
+    return label;
+  };
+
   // 商店按钮 (右下角)
-  // 暂时没有图片，使用文本按钮代替，或者创建一个简单的颜色块
-  _shopButton = Button::create();
-  _shopButton->setTitleText("SHOP");
-  _shopButton->setTitleFontSize(24);
-  _shopButton->setTitleColor(Color3B::WHITE);
-  // 暂时用一个简单的背景色，实际开发请换成 "images/ui/ShopButton.png"
-  // 这里为了看清按钮，我们不设置纹理，直接用文字，或者你可以自己加一个 DrawNode
-  _shopButton->setPosition(
-      Vec2(origin.x + visibleSize.width - 60, origin.y + 60));
+  _shopButton = Button::create("images/ui/Shop.png");
+  _shopButton->setScale(0.3f);  // 调整大小，根据实际图片大小修改
+  _shopButton->setPosition(Vec2(origin.x + visibleSize.width - 80,
+                                origin.y + 80));  // 调整位置，留出更多边距
   _shopButton->addClickEventListener([this](Ref* sender) {
     if (_onShopClick) {
       _onShopClick();
@@ -47,18 +57,25 @@ bool MainUILayer::init() {
   });
   this->addChild(_shopButton);
 
+  auto shopLabel = createLabel("商店");
+  shopLabel->setPosition(
+      Vec2(origin.x + visibleSize.width - 80, origin.y + 30));
+  this->addChild(shopLabel);
+
   // 进攻按钮 (左下角)
-  _attackButton = Button::create();
-  _attackButton->setTitleText("ATTACK");
-  _attackButton->setTitleFontSize(24);
-  _attackButton->setTitleColor(Color3B::RED);
-  _attackButton->setPosition(Vec2(origin.x + 60, origin.y + 60));
+  _attackButton = Button::create("images/ui/Attack.png");
+  _attackButton->setScale(0.8f);                                   // 调整大小
+  _attackButton->setPosition(Vec2(origin.x + 80, origin.y + 80));  // 调整位置
   _attackButton->addClickEventListener([this](Ref* sender) {
     if (_onAttackClick) {
       _onAttackClick();
     }
   });
   this->addChild(_attackButton);
+
+  auto attackLabel = createLabel("进攻");
+  attackLabel->setPosition(Vec2(origin.x + 80, origin.y + 30));
+  this->addChild(attackLabel);
 
   // 开启 update 用于实时刷新资源
   this->scheduleUpdate();
