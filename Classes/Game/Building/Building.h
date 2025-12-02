@@ -36,7 +36,8 @@ class Building : public Sprite {
    * @param imageScale 图片缩放比例
    */
   bool init(const std::string& imagePath, BuildingType type, const int& level,
-    const int& gridCount, const float& anchorRatioX, const float& anchorRatioY,const float& imageScale) ;
+            const int& gridCount, const float& anchorRatioX,
+            const float& anchorRatioY, const float& imageScale);
 
   // 建筑属性
   CC_SYNTHESIZE(BuildingType, _buildingType, BuildingType);
@@ -44,9 +45,9 @@ class Building : public Sprite {
   CC_SYNTHESIZE(int, _maxLevel, MaxLevel);
   CC_SYNTHESIZE(float, _centerX, CenterX);
   CC_SYNTHESIZE(float, _centerY, CenterY);
-  CC_SYNTHESIZE(int, _gridCount, GridCount);  // 建筑占用的网格数量
-  CC_SYNTHESIZE(int, _row, Row);      // 坐标编码：行
-  CC_SYNTHESIZE(int, _col, Col);      // 坐标编码：列
+  CC_SYNTHESIZE(int, _gridCount, GridCount);          // 建筑占用的网格数量
+  CC_SYNTHESIZE(int, _row, Row);                      // 坐标编码：行
+  CC_SYNTHESIZE(int, _col, Col);                      // 坐标编码：列
   CC_SYNTHESIZE(float, _anchorRatioX, AnchorRatioX);  // 建筑宽度比例
   CC_SYNTHESIZE(float, _anchorRatioY, AnchorRatioY);  // 建筑高度比例
   /**
@@ -71,7 +72,12 @@ class Building : public Sprite {
    */
   bool inDiamond(const Vec2& pos) const;
 
-                  
+  /**
+   * 设置放置状态是否有效
+   * @param isValid 是否有效
+   */
+  void setPlacementValid(bool isValid);
+
  protected:
   Building();
   virtual ~Building();
@@ -81,6 +87,8 @@ class Building : public Sprite {
   DrawNode* _glowNode;        // 光晕效果节点
   DrawNode* _anchorNode;      // 锚点标记节点（红点）
   Action* _glowAction;        // 光晕动画动作
+  Color4F _glowColor;         // 光晕颜色
+  LayerColor* _errorLayer;    // 错误状态遮罩层（红色半透明）
 
   /**
    * 创建默认建筑外观（如果图片不存在）

@@ -5,6 +5,24 @@
 USING_NS_CC;
 using namespace cocos2d::ui;
 
+namespace {
+const Color3B COLOR_PANEL_BG(40, 42, 54);
+const Color3B COLOR_CARD_BG(58, 60, 72);
+const Color4B COLOR_TEXT_NORMAL(200, 200, 200, 255);
+const Color4B COLOR_TEXT_DESC(210, 210, 210, 255);
+const Color4B COLOR_TEXT_PRICE(255, 215, 0, 255);
+const std::string FONT_NAME = "Arial";
+
+Label* createLabel(const std::string& text, int fontSize,
+                   const Color4B& color = Color4B::WHITE,
+                   const Vec2& anchor = Vec2::ANCHOR_MIDDLE) {
+  auto label = Label::createWithSystemFont(text, FONT_NAME, fontSize);
+  label->setTextColor(color);
+  label->setAnchorPoint(anchor);
+  return label;
+}
+}  // namespace
+
 ShopLayer* ShopLayer::createWithItems(const std::vector<ShopItem>& items) {
   ShopLayer* layer = new (std::nothrow) ShopLayer();
   if (layer && layer->initWithItems(items)) {
@@ -47,7 +65,7 @@ void ShopLayer::buildUI() {
   _panel = Layout::create();
   _panel->setContentSize(Size(900.0f, 600.0f));
   _panel->setBackGroundColorType(Layout::BackGroundColorType::SOLID);
-  _panel->setBackGroundColor(Color3B(40, 42, 54));
+  _panel->setBackGroundColor(COLOR_PANEL_BG);
   _panel->setBackGroundColorOpacity(235);
   _panel->setPosition(Vec2(
       origin.x + (visibleSize.width - _panel->getContentSize().width) / 2.0f,
@@ -56,7 +74,7 @@ void ShopLayer::buildUI() {
   this->addChild(_panel);
 
   // 标题
-  auto title = Label::createWithSystemFont("商店", "Arial", 32);
+  auto title = createLabel("商店", 32);
   title->setPosition(Vec2(_panel->getContentSize().width / 2.0f,
                           _panel->getContentSize().height - 35.0f));
   title->enableBold();
@@ -73,8 +91,7 @@ void ShopLayer::buildUI() {
   _panel->addChild(closeBtn);
 
   // 信息提示
-  _messageLabel = Label::createWithSystemFont(
-      "左右滑动查看更多建筑，点击购买放置", "Arial", 22);
+  _messageLabel = createLabel("左右滑动查看更多建筑，点击购买放置", 22);
   _messageLabel->setPosition(
       Vec2(_panel->getContentSize().width / 2.0f, 50.0f));
   _panel->addChild(_messageLabel);
@@ -95,8 +112,7 @@ void ShopLayer::buildUI() {
   _panel->addChild(_scrollView);
 
   // 空状态提示
-  _emptyLabel =
-      Label::createWithSystemFont("暂时没有可购买的建筑", "Arial", 22);
+  _emptyLabel = createLabel("暂时没有可购买的建筑", 22);
   _emptyLabel->setPosition(Vec2(_panel->getContentSize().width / 2.0f,
                                 scrollY + scrollSize.height / 2.0f));
   _emptyLabel->setVisible(false);
@@ -166,7 +182,7 @@ Layout* ShopLayer::createItemCard(const ShopItem& item, int globalIndex) {
   card->setContentSize(Size(cardWidth, cardHeight));
   card->setAnchorPoint(Vec2::ANCHOR_BOTTOM_LEFT);
   card->setBackGroundColorType(Layout::BackGroundColorType::SOLID);
-  card->setBackGroundColor(Color3B(58, 60, 72));
+  card->setBackGroundColor(COLOR_CARD_BG);
   card->setBackGroundColorOpacity(220);
 
   // 1. 占位预览 (顶部)
@@ -182,16 +198,14 @@ Layout* ShopLayer::createItemCard(const ShopItem& item, int globalIndex) {
   card->addChild(preview);
 
   // 序号
-  auto indexLabel = Label::createWithSystemFont(
-      StringUtils::format("#%d", globalIndex + 1), "Arial", 16);
-  indexLabel->setAnchorPoint(Vec2::ANCHOR_TOP_RIGHT);
+  auto indexLabel = createLabel(StringUtils::format("#%d", globalIndex + 1), 16,
+                                COLOR_TEXT_NORMAL, Vec2::ANCHOR_TOP_RIGHT);
   indexLabel->setPosition(Vec2(cardWidth - 10.0f, cardHeight - 10.0f));
-  indexLabel->setTextColor(Color4B(200, 200, 200, 255));
   card->addChild(indexLabel);
 
   // 2. 名称 (预览图下方)
-  auto nameLabel = Label::createWithSystemFont(item.displayName, "Arial", 22);
-  nameLabel->setAnchorPoint(Vec2::ANCHOR_TOP_LEFT);
+  auto nameLabel =
+      createLabel(item.displayName, 22, Color4B::WHITE, Vec2::ANCHOR_TOP_LEFT);
   nameLabel->setPosition(Vec2(padding, preview->getPositionY() - 10.0f));
   nameLabel->enableBold();
   card->addChild(nameLabel);
@@ -199,22 +213,20 @@ Layout* ShopLayer::createItemCard(const ShopItem& item, int globalIndex) {
   // 3. 描述 (名称下方)
   // 预留高度给描述
   float descHeight = 70.0f;
-  auto descLabel = Label::createWithSystemFont(item.description, "Arial", 18);
+  auto descLabel =
+      createLabel(item.description, 18, COLOR_TEXT_DESC, Vec2::ANCHOR_TOP_LEFT);
   descLabel->setDimensions(cardWidth - 2 * padding, descHeight);
-  descLabel->setAnchorPoint(Vec2::ANCHOR_TOP_LEFT);
   descLabel->setPosition(Vec2(padding, nameLabel->getPositionY() - 30.0f));
   descLabel->setAlignment(TextHAlignment::LEFT);
   descLabel->setVerticalAlignment(TextVAlignment::TOP);
-  descLabel->setTextColor(Color4B(210, 210, 210, 255));
   card->addChild(descLabel);
 
   // 4. 价格 (描述下方/底部上方)
   std::string priceText = StringUtils::format("金币: %d   圣水: %d",
                                               item.costGold, item.costElixir);
-  auto priceLabel = Label::createWithSystemFont(priceText, "Arial", 16);
-  priceLabel->setAnchorPoint(Vec2::ANCHOR_MIDDLE_BOTTOM);
+  auto priceLabel =
+      createLabel(priceText, 16, COLOR_TEXT_PRICE, Vec2::ANCHOR_MIDDLE_BOTTOM);
   priceLabel->setPosition(Vec2(cardWidth / 2.0f, 75.0f));
-  priceLabel->setTextColor(Color4B(255, 215, 0, 255));  // 金色
   card->addChild(priceLabel);
 
   // 5. 购买按钮 (底部)

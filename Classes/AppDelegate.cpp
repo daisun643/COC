@@ -57,7 +57,7 @@ bool AppDelegate::applicationDidFinishLaunching() {
   }
 
   // 设置 FPS 显示
-  director->setDisplayStats(true);
+  director->setDisplayStats(false);
 
   // 设置 FPS 为 60
   director->setAnimationInterval(1.0f / 60);

@@ -75,6 +75,10 @@ class BasicScene : public Scene {
    */
   void calculateP00();
 
+  /**
+   * 检查建筑放置是否有效（可被子类重写以添加额外规则，如重叠检测）
+   */
+  virtual bool isPlacementValid(Building* building) const;
 
   // 析构函数需要清理BuildingManager
   virtual ~BasicScene();

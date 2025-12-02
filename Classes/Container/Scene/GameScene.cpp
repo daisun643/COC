@@ -77,7 +77,6 @@ void GameScene::onMouseDown(Event* event) {
     // 右键点击：取消放置
     if (mouseEvent->getMouseButton() == EventMouse::MouseButton::BUTTON_RIGHT) {
       cancelPlacementMode(true);
-      showPopupDialog("提示", "已取消放置，资源已退回");
       return;
     }
     return;
@@ -106,6 +105,15 @@ void GameScene::onMouseMove(Event* event) {
 
   // 调用父类方法处理常规鼠标移动事件
   BasicScene::onMouseMove(event);
+
+  // 额外处理：如果正在拖动已有建筑，进行重叠检测并更新视觉状态
+  if (_draggingBuilding) {
+    if (isPlacementValid(_draggingBuilding)) {
+      _draggingBuilding->setPlacementValid(true);
+    } else {
+      _draggingBuilding->setPlacementValid(false);
+    }
+  }
 }
 
 void GameScene::onMouseUp(Event* event) {
@@ -134,7 +142,6 @@ void GameScene::onMouseUp(Event* event) {
       }
 
       if (!_placementPreviewValid) {
-        showPopupDialog("提示", "请选择有效的草地网格");
         return;
       }
 
@@ -155,12 +162,17 @@ void GameScene::onMouseUp(Event* event) {
       _placementBuilding->setCol(_placementPreviewCol);
 
       if (_placementBuilding->isOutOfBounds(_gridSize)) {
-        showPopupDialog("提示", "超出地图范围，无法放置");
+        return;
+      }
+
+      // 再次检查重叠（防止快速点击时的竞态条件）
+      if (checkBuildingOverlap(_placementBuilding)) {
         return;
       }
 
       _placementBuilding->setOpacity(255);
       _placementBuilding->hideGlow();
+      _placementBuilding->setPlacementValid(true);  // 恢复正常颜色
 
       if (_buildingManager) {
         _buildingManager->registerBuilding(_placementBuilding);
@@ -185,7 +197,6 @@ void GameScene::onMouseUp(Event* event) {
 
     if (mouseEvent->getMouseButton() == EventMouse::MouseButton::BUTTON_RIGHT) {
       cancelPlacementMode(true);
-      showPopupDialog("提示", "已取消放置，资源已退回");
       return;
     }
 
@@ -195,7 +206,6 @@ void GameScene::onMouseUp(Event* event) {
   // 调用父类方法处理常规鼠标抬起事件
   BasicScene::onMouseUp(event);
 }
-
 
 void GameScene::openShop() {
   if (this->getChildByName("ShopLayerUI")) {
@@ -469,6 +479,15 @@ void GameScene::updatePlacementPreview(const Vec2& worldPos) {
     _placementPreviewRow = row;
     _placementPreviewCol = col;
     _placementPreviewAnchor = nearestPos;
+
+    // 检查重叠
+    if (checkBuildingOverlap(_placementBuilding)) {
+      _placementPreviewValid = false;
+      showPlacementHint("位置已被占用");
+      _placementBuilding->setPlacementValid(false);
+    } else {
+      _placementBuilding->setPlacementValid(true);
+    }
   } else {
     // 未吸附时，直接跟随鼠标
     _placementBuilding->setPosition(mapPos);
@@ -479,7 +498,49 @@ void GameScene::updatePlacementPreview(const Vec2& worldPos) {
     showPlacementHint("无法吸附到网格");
     _placementPreviewValid = false;
     _placementPreviewAnchor = mapPos;
+    _placementBuilding->setPlacementValid(false);
   }
+}
+
+bool GameScene::checkBuildingOverlap(const Building* building) const {
+  if (!_buildingManager || !building) {
+    return false;
+  }
+
+  const auto& buildings = _buildingManager->getAllBuildings();
+  int r1 = building->getRow();
+  int c1 = building->getCol();
+  int g1 = building->getGridCount();
+
+  for (const auto& other : buildings) {
+    if (other == building) {
+      continue;
+    }
+
+    int r2 = other->getRow();
+    int c2 = other->getCol();
+    int g2 = other->getGridCount();
+
+    // 检查两个正方形区域是否重叠
+    // 区域中心为 (r, c)，边长为 g
+    // 重叠条件：|r1 - r2| < (g1 + g2) / 2.0 && |c1 - c2| < (g1 + g2) / 2.0
+    // 注意：这里使用浮点数比较，且阈值必须严格小于
+    // 例如 2x2 和 2x2，阈值是 2。距离为 1 时重叠，距离为 2 时不重叠。
+    if (std::abs(r1 - r2) < (g1 + g2) / 2.0f &&
+        std::abs(c1 - c2) < (g1 + g2) / 2.0f) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool GameScene::isPlacementValid(Building* building) const {
+  if (!BasicScene::isPlacementValid(building)) {
+    return false;
+  }
+  // 额外检查重叠
+  return !checkBuildingOverlap(building);
 }
 
 GameScene::~GameScene() {

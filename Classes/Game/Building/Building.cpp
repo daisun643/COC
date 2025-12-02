@@ -18,28 +18,35 @@ Building::Building()
       _isDragging(false),
       _glowNode(nullptr),
       _anchorNode(nullptr),
-      _glowAction(nullptr) {}
+      _glowAction(nullptr),
+      _glowColor(1.0f, 1.0f, 0.0f, 0.6f),
+      _errorLayer(nullptr) {}
 
 Building::~Building() {}
 
-
-bool Building::init(const std::string& imagePath, BuildingType type, const int& level,
-                    const int& gridCount, const float& anchorRatioX, const float& anchorRatioY,
+bool Building::init(const std::string& imagePath, BuildingType type,
+                    const int& level, const int& gridCount,
+                    const float& anchorRatioX, const float& anchorRatioY,
                     const float& imageScale) {
   _buildingType = type;
   _level = level;
   _gridCount = gridCount;
 
   // 尝试加载图片，如果失败则创建默认外观
-  if (!Sprite::initWithFile(imagePath)) {
+  if (imagePath.empty() || !Sprite::initWithFile(imagePath)) {
+    // 如果路径为空或加载失败，不调用initWithFile的默认行为（它可能已经失败了），
+    // 而是确保Sprite被初始化（即使是空的）以便作为容器使用
+    if (imagePath.empty()) {
+      Sprite::init();  // 初始化为空Sprite
+    }
     createDefaultAppearance();
   }
-
 
   this->setScale(imageScale);
 
   // 设置锚点
-  this->setAnchorPoint(Vec2(_anchorRatioX = anchorRatioX, _anchorRatioY = anchorRatioY));
+  this->setAnchorPoint(
+      Vec2(_anchorRatioX = anchorRatioX, _anchorRatioY = anchorRatioY));
 
   // 创建信息标签（初始隐藏）
   _infoLabel = Label::createWithSystemFont("", "Arial", 12);
@@ -53,6 +60,13 @@ bool Building::init(const std::string& imagePath, BuildingType type, const int& 
   _glowNode = DrawNode::create();
   _glowNode->setVisible(false);
   this->addChild(_glowNode, -1);  // 放在建筑后面
+
+  // 创建错误遮罩层（红色半透明，初始隐藏）
+  _errorLayer = LayerColor::create(Color4B(255, 0, 0, 128));
+  _errorLayer->setContentSize(this->getContentSize());
+  _errorLayer->setPosition(Vec2::ZERO);
+  _errorLayer->setVisible(false);
+  this->addChild(_errorLayer, 5);  // 放在内容之上，标签之下
 
   // 创建锚点标记节点（红点）
   _anchorNode = DrawNode::create();
@@ -97,7 +111,8 @@ void Building::createDefaultAppearance() {
 }
 
 bool Building::isOutOfBounds(int gridSize) const {
-  int topRow, topCol, rightRow, rightCol, bottomRow, bottomCol, leftRow,leftCol;
+  int topRow, topCol, rightRow, rightCol, bottomRow, bottomCol, leftRow,
+      leftCol;
 
   int halfGridCount = _gridCount / 2;
   topRow = _row + halfGridCount;
@@ -118,7 +133,7 @@ bool Building::isOutOfBounds(int gridSize) const {
   if (bottomRow < 0 || bottomRow >= gridSize || bottomCol < 0 ||
       bottomCol >= gridSize)
     return true;
-  if (leftRow < 0 || leftRow >= gridSize || leftCol < 0 || leftCol >= gridSize  )
+  if (leftRow < 0 || leftRow >= gridSize || leftCol < 0 || leftCol >= gridSize)
     return true;
 
   return false;
@@ -181,25 +196,42 @@ void Building::updateGlowDrawing() {
   float deltaY = constantConfig.deltaY;
 
   // 绘制光晕边框（使用黄色半透明）
-  Color4F glowColor(1.0f, 1.0f, 0.0f, 0.6f);  // 黄色，60%透明度
-  float glowWidth = 3.0f;                     // 光晕宽度
+  float glowWidth = 3.0f;  // 光晕宽度
 
   int gridCount = _gridCount;  // 使用getter方法获取宽度
-  Vec2 center(this->getContentSize().width * _anchorRatioX, 
-        this->getContentSize().height * _anchorRatioY);
+  Vec2 center(this->getContentSize().width * _anchorRatioX,
+              this->getContentSize().height * _anchorRatioY);
   Vec2 top = center + Vec2(0, gridCount * deltaY);
   Vec2 right = center + Vec2(gridCount * deltaX, 0);
-  Vec2 bottom = center + Vec2(0, - gridCount * deltaY);
-  Vec2 left = center + Vec2(- gridCount * deltaX, 0);
+  Vec2 bottom = center + Vec2(0, -gridCount * deltaY);
+  Vec2 left = center + Vec2(-gridCount * deltaX, 0);
   // Vec2 top(_gridCount * deltaX, 2 * _gridCount * deltaY);
   // Vec2 right(2 * _gridCount * deltaX, _gridCount * deltaY);
   // Vec2 bottom(_gridCount * deltaX, 0);
   // Vec2 left(0, _gridCount * deltaY);
   // 绘制四条边
-  _glowNode->drawSegment(top, right, glowWidth, glowColor);
-  _glowNode->drawSegment(right, bottom, glowWidth, glowColor);
-  _glowNode->drawSegment(bottom, left, glowWidth, glowColor);
-  _glowNode->drawSegment(left, top, glowWidth, glowColor);
+  _glowNode->drawSegment(top, right, glowWidth, _glowColor);
+  _glowNode->drawSegment(right, bottom, glowWidth, _glowColor);
+  _glowNode->drawSegment(bottom, left, glowWidth, _glowColor);
+  _glowNode->drawSegment(left, top, glowWidth, _glowColor);
+}
+
+void Building::setPlacementValid(bool isValid) {
+  if (isValid) {
+    // 有效：黄色光晕，正常颜色
+    _glowColor = Color4F(1.0f, 1.0f, 0.0f, 0.6f);
+    if (_errorLayer) {
+      _errorLayer->setVisible(false);
+    }
+  } else {
+    // 无效：红色光晕，红色叠加
+    _glowColor = Color4F(1.0f, 0.0f, 0.0f, 0.8f);
+    if (_errorLayer) {
+      _errorLayer->setVisible(true);
+    }
+  }
+  // 立即更新光晕
+  updateGlowDrawing();
 }
 
 void Building::hideGlow() {

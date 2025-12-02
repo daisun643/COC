@@ -23,7 +23,7 @@ class GameScene : public BasicScene {
   CREATE_FUNC(GameScene);
 
  private:
-  MainUILayer* _uiLayer;              // UI 层
+  MainUILayer* _uiLayer;  // UI 层
 
   /**
    * 打开商店界面
@@ -66,6 +66,16 @@ class GameScene : public BasicScene {
    * 更新放置预览位置
    */
   void updatePlacementPreview(const cocos2d::Vec2& worldPos);
+
+  /**
+   * 检查建筑是否与其他建筑重叠
+   */
+  bool checkBuildingOverlap(const Building* building) const;
+
+  /**
+   * 重写基类的放置有效性检查
+   */
+  virtual bool isPlacementValid(Building* building) const override;
 
   /**
    * 重写父类的鼠标事件处理方法，添加放置模式和商店相关逻辑

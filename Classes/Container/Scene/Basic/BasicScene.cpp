@@ -317,19 +317,23 @@ void BasicScene::onMouseMove(Event* event) {
 
       // 临时更新中心坐标（用于预览）
       _draggingBuilding->setCenterX(
-        nearestPos.x + _deltaX * _draggingBuilding->getGridCount());
+          nearestPos.x + _deltaX * _draggingBuilding->getGridCount());
       _draggingBuilding->setCenterY(nearestPos.y);
+
+      // 关键：更新网格坐标，以便进行重叠检测
+      _draggingBuilding->setRow(row);
+      _draggingBuilding->setCol(col);
     } else {
       // 如果找不到有效网格点，使用原始位置
       _draggingBuilding->setPosition(targetAnchorPos);
       _draggingBuilding->setCenterX(
-        targetAnchorPos.x + _deltaX * _draggingBuilding->getGridCount());
+          targetAnchorPos.x + _deltaX * _draggingBuilding->getGridCount());
       _draggingBuilding->setCenterY(targetAnchorPos.y);
     }
   } else if (_isDragging) {
     // 拖动地图（鼠标移动方向与地图移动方向相反，就像拖动物体）
     Vec2 delta = currentPos - _lastMousePos;
-    delta.x = delta.x;   // 水平分量保持原样
+    delta.x = delta.x;  // 水平分量保持原样
     _mapLayer->setPosition(_mapLayer->getPosition() + delta);
     _lastMousePos = currentPos;
   }
@@ -357,24 +361,27 @@ void BasicScene::onMouseUp(Event* event) {
             nearestPos.x + _deltaX * _draggingBuilding->getGridCount());
         _draggingBuilding->setCenterY(nearestPos.y);
         _draggingBuilding->setRow(row);
-        // 检查是否越界
-        if (_draggingBuilding->isOutOfBounds(_gridSize)) {
-          // 如果越界，恢复到之前的位置
+        // 检查是否有效（边界 + 子类规则）
+        if (!isPlacementValid(_draggingBuilding)) {
+          // 如果无效，恢复到之前的位置
           _draggingBuilding->setPosition(_buildingStartPos);
-          // 显示错误提示
-          showPopupDialog("错误", "建筑移动越界，已恢复到原位置");
-        } else {
-          // 位置有效，显示更新后的建筑格点坐标
-          std::string coordMsg = "建筑已移动到坐标: (" + std::to_string(row) +
-                                 ", " + std::to_string(col) + ")";
-          showPopupDialog("建筑位置", coordMsg);
+          // 恢复原来的网格坐标（重要！否则逻辑位置会错乱）
+          // 这里比较麻烦，因为我们没有保存原来的 row/col。
+          // 但 _buildingStartPos 对应的应该是原来的 row/col。
+          // 简单起见，我们假设 _buildingStartPos 是正确的。
+          // 实际上，如果恢复位置，下次点击时会重新计算 row/col。
+          // 但为了数据一致性，最好重新计算一下 startPos 的 row/col。
+          int startRow, startCol;
+          GridUtils::screenToGrid(_buildingStartPos, _p00, startRow, startCol);
+          _draggingBuilding->setRow(startRow);
+          _draggingBuilding->setCol(startCol);
         }
       } else {
         // 找不到有效网格点，恢复到之前的位置
         _draggingBuilding->setPosition(_buildingStartPos);
-        showPopupDialog("错误", "无法找到有效网格点，已恢复到原位置");
       }
 
+      _draggingBuilding->setPlacementValid(true);  // 恢复正常颜色
       _draggingBuilding->_isDragging = false;
       _draggingBuilding = nullptr;
       _isMouseDown = false;  // 标记鼠标已释放
@@ -392,7 +399,7 @@ void BasicScene::onMouseUp(Event* event) {
 }
 
 void BasicScene::showPopupDialog(const std::string& title,
-                                const std::string& message) {
+                                 const std::string& message) {
   auto visibleSize = Director::getInstance()->getVisibleSize();
   Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
@@ -471,6 +478,12 @@ void BasicScene::showPopupDialog(const std::string& title,
   };
 
   _eventDispatcher->addEventListenerWithSceneGraphPriority(listener, dialogBg);
+}
+
+bool BasicScene::isPlacementValid(Building* building) const {
+  // 基类只检查边界
+  if (!building) return false;
+  return !building->isOutOfBounds(_gridSize);
 }
 
 BasicScene::~BasicScene() {
