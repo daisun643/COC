@@ -5,8 +5,8 @@
 
 #include "Container/Scene/Basic/BasicScene.h"
 #include "Manager/PlayerManager.h"
-#include "UI/MainUILayer.h"
-#include "UI/ShopLayer.h"
+#include "Container/Layer/MainUILayer.h"
+#include "Container/Layer/ShopLayer.h"
 
 USING_NS_CC;
 

@@ -1,7 +1,7 @@
 #ifndef __MAIN_UI_LAYER_H__
 #define __MAIN_UI_LAYER_H__
 
-#include "ResourceWidget.h"
+#include "Container/Node/ResourceWidget.h"
 #include "cocos2d.h"
 #include "ui/CocosGUI.h"
 
