@@ -3,13 +3,10 @@
 
 #include <vector>
 
-#include "Game/Building/TownHall.h"
-#include "Manager/Building/BuildingManager.h"
+#include "Container/Scene/Basic/BasicScene.h"
 #include "Manager/PlayerManager.h"
 #include "UI/MainUILayer.h"
 #include "UI/ShopLayer.h"
-#include "Utils/GridUtils.h"
-#include "cocos2d.h"
 
 USING_NS_CC;
 
@@ -17,7 +14,7 @@ USING_NS_CC;
  * 游戏主场景
  * 展示村庄和所有建筑
  */
-class GameScene : public Scene {
+class GameScene : public BasicScene {
  public:
   static Scene* createScene();
 
@@ -26,60 +23,7 @@ class GameScene : public Scene {
   CREATE_FUNC(GameScene);
 
  private:
-  Layer* _mapLayer;             // 地图容器层，用于整体移动和缩放
-  float _currentScale;          // 当前缩放比例
-  Vec2 _lastMousePos;           // 上次鼠标位置，用于拖拽
-  Vec2 _mouseDownPos;           // 鼠标按下时的位置，用于判断是否开始拖动
-  bool _isDragging;             // 是否正在拖拽地图
-  bool _isMouseDown;            // 鼠标左键是否被按住
-  Building* _selectedBuilding;  // 当前选中的建筑（点击但未拖动）
-  Building* _draggingBuilding;  // 正在拖动的建筑
-  Vec2 _buildingStartPos;       // 建筑开始拖动时的位置
-
-  // 地图参数（从initGrassBackground中提取）
-  Vec2 _p00;      // 地图原点p[0][0]
-  float _deltaX;  // X方向间距
-  float _deltaY;  // Y方向间距
-  int _gridSize;  // 网格大小（44）
-
-  BuildingManager* _buildingManager;  // 建筑管理器
   MainUILayer* _uiLayer;              // UI 层
-  /**
-   * 初始化大本营
-   */
-  void initTownHall();
-
-  /**
-   * 初始化草地背景，创建44x44网格的菱形密铺
-   */
-  void initGrassBackground();
-
-  /**
-   * 初始化鼠标事件监听器（滚轮缩放和拖拽移动）
-   */
-  void initMouseEventListeners();
-
-  /**
-   * 处理鼠标滚轮事件
-   */
-  void onMouseScroll(Event* event);
-
-  /**
-   * 处理鼠标拖拽事件
-   */
-  void onMouseMove(Event* event);
-  void onMouseDown(Event* event);
-  void onMouseUp(Event* event);
-
-  /**
-   * 显示弹窗对话框
-   */
-  void showPopupDialog(const std::string& title, const std::string& message);
-
-  /**
-   * 计算地图原点p00
-   */
-  void calculateP00();
 
   /**
    * 打开商店界面
@@ -123,7 +67,15 @@ class GameScene : public Scene {
    */
   void updatePlacementPreview(const cocos2d::Vec2& worldPos);
 
-  // 析构函数需要清理BuildingManager
+  /**
+   * 重写父类的鼠标事件处理方法，添加放置模式和商店相关逻辑
+   */
+  void onMouseScroll(Event* event) override;
+  void onMouseDown(Event* event) override;
+  void onMouseMove(Event* event) override;
+  void onMouseUp(Event* event) override;
+
+  // 析构函数（清理放置模式相关资源，BuildingManager由父类清理）
   virtual ~GameScene();
 
   bool _isPlacingBuilding;                // 是否处于放置模式
