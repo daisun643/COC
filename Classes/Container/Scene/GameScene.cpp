@@ -2,6 +2,7 @@
 
 #include <float.h>
 
+#include "Container/Layer/AttackLayer.h"
 #include "Game/Building/PlaceholderBuilding.h"
 #include "Manager/Config/ConfigManager.h"
 
@@ -23,9 +24,23 @@ bool GameScene::init() {
   // 设置 UI 按钮回调
   _uiLayer->setOnShopClickCallback([this]() { this->openShop(); });
 
-  _uiLayer->setOnAttackClickCallback([]() {
-    CCLOG("Attack Button Clicked!");
-    // TODO: 切换到进攻场景
+  _uiLayer->setOnAttackClickCallback([this]() {
+    if (this->getChildByName("AttackLayerUI")) {
+      return;
+    }
+    auto attackLayer = AttackLayer::create();
+    if (attackLayer) {
+      attackLayer->setName("AttackLayerUI");
+      attackLayer->setOnSearchOpponentCallback([]() {
+        CCLOG("Search Opponent Clicked!");
+        // TODO: Implement search logic
+      });
+      attackLayer->setOnLevelSelectedCallback([](int levelId) {
+        CCLOG("Level %d Selected!", levelId);
+        // TODO: Implement level loading
+      });
+      this->addChild(attackLayer, 200);
+    }
   });
 
   // 初始化 GameScene 特有的放置模式相关变量
@@ -57,7 +72,7 @@ bool GameScene::init() {
 }
 
 void GameScene::onMouseScroll(Event* event) {
-  if (isShopOpen()) {
+  if (isPopupOpen()) {
     return;
   }
   // 调用父类方法处理缩放
@@ -67,7 +82,7 @@ void GameScene::onMouseScroll(Event* event) {
 void GameScene::onMouseDown(Event* event) {
   EventMouse* mouseEvent = static_cast<EventMouse*>(event);
 
-  if (isShopOpen()) {
+  if (isPopupOpen()) {
     return;
   }
 
@@ -91,7 +106,7 @@ void GameScene::onMouseMove(Event* event) {
   Vec2 currentPos = mouseEvent->getLocationInView();
   _currentMousePos = currentPos;
 
-  if (isShopOpen()) {
+  if (isPopupOpen()) {
     return;
   }
 
@@ -119,7 +134,7 @@ void GameScene::onMouseMove(Event* event) {
 void GameScene::onMouseUp(Event* event) {
   EventMouse* mouseEvent = static_cast<EventMouse*>(event);
 
-  if (isShopOpen()) {
+  if (isPopupOpen()) {
     return;
   }
 
@@ -229,8 +244,9 @@ void GameScene::openShop() {
   this->addChild(shopLayer, 200);
 }
 
-bool GameScene::isShopOpen() const {
-  return this->getChildByName("ShopLayerUI") != nullptr;
+bool GameScene::isPopupOpen() const {
+  return this->getChildByName("ShopLayerUI") != nullptr ||
+         this->getChildByName("AttackLayerUI") != nullptr;
 }
 
 std::vector<ShopItem> GameScene::buildShopCatalog() const {
