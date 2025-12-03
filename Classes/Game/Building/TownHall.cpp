@@ -1,4 +1,5 @@
 #include "TownHall.h"
+
 #include "Manager/Config/ConfigManager.h"
 
 TownHall::TownHall() {
@@ -14,8 +15,10 @@ TownHall* TownHall::create(int level) {
   auto constantConfig = ConfigManager::getInstance()->getConstantConfig();
   auto townHallConfig = ConfigManager::getInstance()->getTownHallConfig();
 
-  if (townHall && townHall->init(level, townHallConfig.image, townHallConfig.gridCount, townHallConfig.anchorRatioX, 
-      townHallConfig.anchorRatioY, townHallConfig.imageScale)) {
+  if (townHall &&
+      townHall->init(level, townHallConfig.image, townHallConfig.gridCount,
+                     townHallConfig.anchorRatioX, townHallConfig.anchorRatioY,
+                     townHallConfig.imageScale)) {
     townHall->autorelease();
     return townHall;
   }
@@ -23,10 +26,10 @@ TownHall* TownHall::create(int level) {
   return nullptr;
 }
 
-bool TownHall::init(int level,std::string imagePath, int gridCount, float anchorRatioX,
-                    float anchorRatioY,float imageScale) {
-  if (!Building::init(imagePath, BuildingType::TOWN_HALL,
-                      level, gridCount, anchorRatioX, anchorRatioY, imageScale)) {
+bool TownHall::init(int level, std::string imagePath, int gridCount,
+                    float anchorRatioX, float anchorRatioY, float imageScale) {
+  if (!Building::init(imagePath, BuildingType::TOWN_HALL, level, gridCount,
+                      anchorRatioX, anchorRatioY, imageScale)) {
     return false;
   }
   return true;

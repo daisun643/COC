@@ -32,8 +32,6 @@ ConfigManager::ConfigManager() {
   _backgroundConfig.largeHeight = 1536;
 
   _constantConfig.gridSize = 44;
-  _constantConfig.gridResolutionWidth = 79;
-  _constantConfig.gridResolutionHeight = 60;
   _constantConfig.grassImagePath = "images/backgrond/grass.png";
   _constantConfig.grassWidth = 158.0f;
   _constantConfig.grassHeight = 120.0f;
@@ -65,6 +63,16 @@ bool ConfigManager::init() {
 
   if (!loadBuildingConfig()) {
     CCLOG("Failed to load building config");
+    return false;
+  }
+
+  if (!loadSoldierConfig()) {
+    CCLOG("Failed to load soldier config");
+    return false;
+  }
+
+  if (!loadSpellConfig()) {
+    CCLOG("Failed to load spell config");
     return false;
   }
 
@@ -170,14 +178,6 @@ bool ConfigManager::loadConstantConfig() {
   if (doc.HasMember("GridSize") && doc["GridSize"].IsInt()) {
     _constantConfig.gridSize = doc["GridSize"].GetInt();
   }
-  if (doc.HasMember("GridResolutionWidth") &&
-      doc["GridResolutionWidth"].IsInt()) {
-    _constantConfig.gridResolutionWidth = doc["GridResolutionWidth"].GetInt();
-  }
-  if (doc.HasMember("GridResolutionHeight") &&
-      doc["GridResolutionHeight"].IsInt()) {
-    _constantConfig.gridResolutionHeight = doc["GridResolutionHeight"].GetInt();
-  }
 
   // 解析草地图片配置
   if (doc.HasMember("GrassImage") && doc["GrassImage"].IsObject()) {
@@ -256,4 +256,183 @@ bool ConfigManager::loadBuildingConfig() {
   }
 
   return true;
+}
+
+bool ConfigManager::loadSoldierConfig() {
+  // 直接加载到成员变量
+  if (!loadJsonFromFile("config/soilder.json", _soldierConfigDoc)) {
+    return false;
+  }
+
+  return true;
+}
+
+ConfigManager::SoldierConfig ConfigManager::getSoldierConfig(
+    const std::string& soldierType, int level) const {
+  SoldierConfig config;
+
+  // 检查文档是否有效
+  if (_soldierConfigDoc.IsNull() || !_soldierConfigDoc.IsObject()) {
+    CCLOG("Soldier config document is not loaded");
+    return config;
+  }
+
+  // 获取士兵类型配置
+  if (!_soldierConfigDoc.HasMember(soldierType.c_str()) ||
+      !_soldierConfigDoc[soldierType.c_str()].IsObject()) {
+    CCLOG("Soldier type '%s' not found in config", soldierType.c_str());
+    return config;
+  }
+
+  const rapidjson::Value& soldierTypeConfig =
+      _soldierConfigDoc[soldierType.c_str()];
+  // 攻击偏好
+  if (soldierTypeConfig.HasMember("AttackType") &&
+      soldierTypeConfig["AttackType"].IsString()) {
+    std::string attackTypeStr = soldierTypeConfig["AttackType"].GetString();
+    if (attackTypeStr == "Any") {
+      config.attackType = AttackType::ANY;
+    } else if (attackTypeStr == "Defense") {
+      config.attackType = AttackType::DEFENSE;
+    } else if (attackTypeStr == "Resource") {
+      config.attackType = AttackType::RESOURCE;
+    } else if (attackTypeStr == "TownHall") {
+      config.attackType = AttackType::TOWN_HALL;
+    } else {
+      CCLOG("Invalid attack type: %s", attackTypeStr.c_str());
+      return config;
+    }
+  }
+  // 士兵类型
+  if (soldierTypeConfig.HasMember("SoldierType") &&
+      soldierTypeConfig["SoldierType"].IsString()) {
+    std::string soldierTypeStr = soldierTypeConfig["SoldierType"].GetString();
+    if (soldierTypeStr == "LAND") {
+      config.soldierCategory = SoldierCategory::LAND;
+    } else if (soldierTypeStr == "AIR") {
+      config.soldierCategory = SoldierCategory::AIR;
+    } else {
+      CCLOG("Invalid soldier type: %s", soldierTypeStr.c_str());
+      return config;
+    }
+  }
+  // 获取等级配置
+  std::string levelKey = std::to_string(level);
+  if (!soldierTypeConfig.HasMember(levelKey.c_str()) ||
+      !soldierTypeConfig[levelKey.c_str()].IsObject()) {
+    CCLOG("Level %d not found for soldier type '%s'", level,
+          soldierType.c_str());
+    return config;
+  }
+
+  const rapidjson::Value& levelConfig = soldierTypeConfig[levelKey.c_str()];
+
+  // 读取配置值
+  if (levelConfig.HasMember("PanelImage") &&
+      levelConfig["PanelImage"].IsString()) {
+    config.panelImage = levelConfig["PanelImage"].GetString();
+  }
+  if (levelConfig.HasMember("MoveImage") &&
+      levelConfig["MoveImage"].IsString()) {
+    config.moveImage = levelConfig["MoveImage"].GetString();
+  }
+
+  if (levelConfig.HasMember("Attack") && levelConfig["Attack"].IsNumber()) {
+    config.attack = levelConfig["Attack"].GetFloat();
+  }
+
+  if (levelConfig.HasMember("Health") && levelConfig["Health"].IsNumber()) {
+    config.health = levelConfig["Health"].GetFloat();
+  }
+
+  if (levelConfig.HasMember("MoveSpeed") &&
+      levelConfig["MoveSpeed"].IsNumber()) {
+    config.moveSpeed = levelConfig["MoveSpeed"].GetFloat();
+  }
+
+  if (levelConfig.HasMember("AttackSpeed") &&
+      levelConfig["AttackSpeed"].IsNumber()) {
+    config.attackSpeed = levelConfig["AttackSpeed"].GetFloat();
+  }
+
+  if (levelConfig.HasMember("AttackRange") &&
+      levelConfig["AttackRange"].IsNumber()) {
+    config.attackRange = levelConfig["AttackRange"].GetFloat();
+  }
+  return config;
+}
+
+bool ConfigManager::loadSpellConfig() {
+  // 直接加载到成员变量
+  if (!loadJsonFromFile("config/spell.json", _spellConfigDoc)) {
+    return false;
+  }
+
+  return true;
+}
+
+ConfigManager::SpellConfig ConfigManager::getSpellConfig(
+    const std::string& spellType) const {
+  SpellConfig config;
+
+  // 设置默认值
+  config.category = SpellCategory::INSTANT;
+  config.duration = 0.0f;
+  config.radius = 100.0f;
+  config.amount = 100.0f;
+  config.ratio = 1.0f;  // 默认倍率为1.0（不提升）
+  config.panelImage = "";
+
+  // 检查文档是否有效
+  if (_spellConfigDoc.IsNull() || !_spellConfigDoc.IsObject()) {
+    CCLOG("Spell config document is not loaded");
+    return config;
+  }
+
+  // 获取法术类型配置
+  if (!_spellConfigDoc.HasMember(spellType.c_str()) ||
+      !_spellConfigDoc[spellType.c_str()].IsObject()) {
+    CCLOG("Spell type '%s' not found in config", spellType.c_str());
+    return config;
+  }
+
+  const rapidjson::Value& spellTypeConfig = _spellConfigDoc[spellType.c_str()];
+
+  // 读取配置值
+  if (spellTypeConfig.HasMember("Category") &&
+      spellTypeConfig["Category"].IsString()) {
+    std::string categoryStr = spellTypeConfig["Category"].GetString();
+    if (categoryStr == "INSTANT") {
+      config.category = SpellCategory::INSTANT;
+    } else if (categoryStr == "DURATION") {
+      config.category = SpellCategory::DURATION;
+    } else {
+      CCLOG("Invalid spell category: %s", categoryStr.c_str());
+      return config;
+    }
+  }
+
+  if (spellTypeConfig.HasMember("Duration") &&
+      spellTypeConfig["Duration"].IsNumber()) {
+    config.duration = spellTypeConfig["Duration"].GetFloat();
+  }
+
+  if (spellTypeConfig.HasMember("Radius") &&
+      spellTypeConfig["Radius"].IsNumber()) {
+    config.radius = spellTypeConfig["Radius"].GetFloat();
+  }
+
+  if (spellTypeConfig.HasMember("Amount") &&
+      spellTypeConfig["Amount"].IsNumber()) {
+    config.amount = spellTypeConfig["Amount"].GetFloat();
+  }
+  if (spellTypeConfig.HasMember("PanelImage") &&
+      spellTypeConfig["PanelImage"].IsString()) {
+    config.panelImage = spellTypeConfig["PanelImage"].GetString();
+  }
+  if (spellTypeConfig.HasMember("Ratio") &&
+      spellTypeConfig["Ratio"].IsNumber()) {
+    config.ratio = spellTypeConfig["Ratio"].GetFloat();
+  }
+  return config;
 }

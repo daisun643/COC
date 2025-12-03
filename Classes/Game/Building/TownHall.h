@@ -21,7 +21,9 @@ class TownHall : public Building {
   /**
    * 初始化TownHall（新版本，包含gridSize和anchorRatio）
    */
-  bool init(int level, std::string imagePath, int gridCount, float anchorRatioX, float anchorRatioY, float imageScale);
+  bool init(int level, std::string imagePath, int gridCount, float anchorRatioX,
+            float anchorRatioY, float imageScale);
+
  protected:
   TownHall();
   virtual ~TownHall();
