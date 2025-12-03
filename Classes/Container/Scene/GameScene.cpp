@@ -3,6 +3,7 @@
 #include <float.h>
 
 #include "Container/Layer/AttackLayer.h"
+#include "Container/Layer/ReplayLayer.h"
 #include "Game/Building/PlaceholderBuilding.h"
 #include "Manager/Config/ConfigManager.h"
 
@@ -40,6 +41,21 @@ bool GameScene::init() {
         // TODO: Implement level loading
       });
       this->addChild(attackLayer, 200);
+    }
+  });
+
+  _uiLayer->setOnReplayClickCallback([this]() {
+    if (this->getChildByName("ReplayLayerUI")) {
+      return;
+    }
+    auto replayLayer = ReplayLayer::create();
+    if (replayLayer) {
+      replayLayer->setName("ReplayLayerUI");
+      replayLayer->setOnReplaySelectedCallback([](int replayId) {
+        CCLOG("Replay %d Selected!", replayId);
+        // TODO: Implement replay playback
+      });
+      this->addChild(replayLayer, 200);
     }
   });
 
@@ -246,7 +262,8 @@ void GameScene::openShop() {
 
 bool GameScene::isPopupOpen() const {
   return this->getChildByName("ShopLayerUI") != nullptr ||
-         this->getChildByName("AttackLayerUI") != nullptr;
+         this->getChildByName("AttackLayerUI") != nullptr ||
+         this->getChildByName("ReplayLayerUI") != nullptr;
 }
 
 std::vector<ShopItem> GameScene::buildShopCatalog() const {
