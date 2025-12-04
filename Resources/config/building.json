@@ -1,5 +1,6 @@
 {
     "TownHall": {
+        "type": "TOWN_HALL",
         "image": "images/buildings/TownHall.png",
         "AnchorRatio": [
             0.55,
