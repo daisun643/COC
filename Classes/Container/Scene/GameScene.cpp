@@ -238,7 +238,7 @@ std::vector<ShopItem> GameScene::buildShopCatalog() const {
 
   auto configManager = ConfigManager::getInstance();
   if (configManager) {
-    auto townHallConfig = configManager->getTownHallConfig();
+    auto townHallConfig = configManager->getBuildingConfig("TownHall");
     ShopItem townHall;
     townHall.id = "TownHall";
     townHall.displayName = "大本营";

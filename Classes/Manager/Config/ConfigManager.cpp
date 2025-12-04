@@ -218,44 +218,56 @@ bool ConfigManager::loadBuildingConfig() {
     return false;
   }
 
-  // 解析TownHall配置
-  if (doc.HasMember("TownHall") && doc["TownHall"].IsObject()) {
-    const rapidjson::Value& townHall = doc["TownHall"];
+  // 遍历 JSON 对象中的所有 Key (例如 TownHall, Cannon, GoldMine...)
+  for (auto& m : doc.GetObject()) {
+    std::string name = m.name.GetString();
+    const rapidjson::Value& val = m.value;
 
-    if (townHall.HasMember("image") && townHall["image"].IsString()) {
-      _townHallConfig.image = townHall["image"].GetString();
-    }
+    if (val.IsObject()) {
+      BuildingConfig config;
+      
+      // 1. 读取基础通用属性
+      if (val.HasMember("type")) config.type = val["type"].GetString();
+      if (val.HasMember("image")) config.image = val["image"].GetString();
+      
+      if (val.HasMember("GridSize")) config.gridCount = val["GridSize"].GetInt();
+      if (val.HasMember("imageScale")) config.imageScale = val["imageScale"].GetFloat();
+      if (val.HasMember("maxLevel")) config.maxLevel = val["maxLevel"].GetInt();
 
-    // 解析AnchorRatio
-    if (townHall.HasMember("AnchorRatio") &&
-        townHall["AnchorRatio"].IsArray() &&
-        townHall["AnchorRatio"].Size() >= 2) {
-      _townHallConfig.anchorRatioX = townHall["AnchorRatio"][0].GetFloat();
-      _townHallConfig.anchorRatioY = townHall["AnchorRatio"][1].GetFloat();
-    } else {
-      // 默认值：左侧中点
-      _townHallConfig.anchorRatioX = 0.0f;
-      _townHallConfig.anchorRatioY = 0.5f;
-    }
+      if (val.HasMember("AnchorRatio") && val["AnchorRatio"].IsArray() && val["AnchorRatio"].Size() >= 2) {
+        config.anchorRatioX = val["AnchorRatio"][0].GetFloat();
+        config.anchorRatioY = val["AnchorRatio"][1].GetFloat();
+      }
 
-    if (townHall.HasMember("GridSize") && townHall["GridSize"].IsInt()) {
-      _townHallConfig.gridCount = townHall["GridSize"].GetInt();
-    }
+      // 2. 读取防御属性
+      if (val.HasMember("damage")) config.damage = val["damage"].GetInt();
+      if (val.HasMember("attackRange")) config.attackRange = val["attackRange"].GetFloat();
+      if (val.HasMember("attackSpeed")) config.attackSpeed = val["attackSpeed"].GetFloat();
 
-    if (townHall.HasMember("defaultLevel") &&
-        townHall["defaultLevel"].IsInt()) {
-      _townHallConfig.defaultLevel = townHall["defaultLevel"].GetInt();
-    }
+      // 3. 读取资源/储存属性
+      if (val.HasMember("productionRate")) config.productionRate = val["productionRate"].GetInt();
+      if (val.HasMember("capacity")) config.capacity = val["capacity"].GetInt();
+      if (val.HasMember("resourceType")) config.resourceType = val["resourceType"].GetString();
 
-    if (townHall.HasMember("maxLevel") && townHall["maxLevel"].IsInt()) {
-      _townHallConfig.maxLevel = townHall["maxLevel"].GetInt();
-    }
-    if (townHall.HasMember("imageScale") && townHall["imageScale"].IsNumber()) {
-      _townHallConfig.imageScale = townHall["imageScale"].GetFloat();
+      // 4. 读取兵营属性
+      if (val.HasMember("queueSize")) config.queueSize = val["queueSize"].GetInt();
+
+      // 存入 Map
+      _buildingConfigs[name] = config;
     }
   }
 
   return true;
+}
+
+// 实现获取接口
+ConfigManager::BuildingConfig ConfigManager::getBuildingConfig(const std::string& name) const {
+  auto it = _buildingConfigs.find(name);
+  if (it != _buildingConfigs.end()) {
+    return it->second;
+  }
+  CCLOG("Warning: Config for building '%s' not found, returning default.", name.c_str());
+  return BuildingConfig(); // 返回默认空配置
 }
 
 bool ConfigManager::loadSoldierConfig() {

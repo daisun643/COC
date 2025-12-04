@@ -2,6 +2,7 @@
 #define __CONFIG_MANAGER_H__
 
 #include <string>
+#include <map> 
 
 #include "Game/Soldier/BasicSoldier.h"
 #include "Game/Spell/BasicSpell.h"
@@ -51,16 +52,31 @@ class ConfigManager {
   };
 
   /**
-   * 获取建筑配置
+   * 获取建筑配置(扩展后的全能配置结构体)
    */
   struct BuildingConfig {
+    // 基础属性
+    std::string type;         // 关键字段：TOWN_HALL, DEFENSE, RESOURCE, STORAGE, BARRACKS
     std::string image;
-    float anchorRatioX;  // 锚点X比例
-    float anchorRatioY;  // 锚点Y比例
-    int gridCount;       // 建筑占用的网格大小（菱形边长）
-    int defaultLevel;
-    int maxLevel;
-    float imageScale;
+    float anchorRatioX = 0.5f;
+    float anchorRatioY = 0.5f;
+    int gridCount = 1;
+    int defaultLevel = 1;
+    int maxLevel = 10;
+    float imageScale = 1.0f;
+
+    // 防御属性 (Defense)
+    float attackRange = 0.0f;
+    int damage = 0;
+    float attackSpeed = 0.0f;
+
+    // 资源与储存属性 (Resource & Storage)
+    int productionRate = 0;
+    int capacity = 0;
+    std::string resourceType; // "Gold" or "Elixir"
+
+    // 兵营属性 (Barracks)
+    int queueSize = 0;
   };
 
   /**
@@ -102,9 +118,9 @@ class ConfigManager {
   ConstantConfig getConstantConfig() const { return _constantConfig; }
 
   /**
-   * 获取TownHall配置
+   * 获取指定名称建筑的配置
    */
-  BuildingConfig getTownHallConfig() const { return _townHallConfig; }
+  BuildingConfig getBuildingConfig(const std::string& name) const;
 
   /**
    * 获取士兵配置
@@ -164,6 +180,9 @@ class ConfigManager {
   rapidjson::Document _spellConfigDoc;    // 法术配置JSON文档
 
   static ConfigManager* _instance;
+
+  // 存储所有建筑配置的字典
+  std::map<std::string, BuildingConfig> _buildingConfigs;
 };
 
 #endif  // __CONFIG_MANAGER_H__

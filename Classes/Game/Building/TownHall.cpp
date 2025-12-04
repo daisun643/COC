@@ -13,7 +13,7 @@ TownHall::~TownHall() {}
 TownHall* TownHall::create(int level) {
   TownHall* townHall = new (std::nothrow) TownHall();
   auto constantConfig = ConfigManager::getInstance()->getConstantConfig();
-  auto townHallConfig = ConfigManager::getInstance()->getTownHallConfig();
+  auto townHallConfig = ConfigManager::getInstance()->getBuildingConfig("TownHall");
 
   if (townHall &&
       townHall->init(level, townHallConfig.image, townHallConfig.gridCount,

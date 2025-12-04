@@ -5,7 +5,13 @@
 #include <fstream>
 #include <sstream>
 
+// 包含所有具体的建筑头文件
 #include "Game/Building/TownHall.h"
+#include "Game/Building/DefenseBuilding.h"
+#include "Game/Building/ResourceBuilding.h"
+#include "Game/Building/StorageBuilding.h"
+#include "Game/Building/BarracksBuilding.h"
+
 #include "Manager/Config/ConfigManager.h"
 #include "Utils/GridUtils.h"
 #include "json/document.h"
@@ -66,29 +72,28 @@ bool BuildingManager::loadBuildingMap() {
     return false;
   }
 
-  // 获取配置管理器
-  auto configManager = ConfigManager::getInstance();
-  if (!configManager) {
-    return false;
-  }
-  // TODO 这里 进一步适配
-  std::vector<std::string> buildingTypes = {"TownHall"};
+  // 遍历 JSON 中的所有键 (TownHall, Cannon, etc.)
+  for (auto& m : doc.GetObject()) {
+    std::string buildingName = m.name.GetString();
+    
+    // 跳过可能的非建筑字段 (如 tips)
+    if (buildingName == "tips") continue;
 
-  // 解析TownHall配置
-  if (doc.HasMember("TownHall") && doc["TownHall"].IsArray()) {
-    const rapidjson::Value& townHallArray = doc["TownHall"];
-    for (rapidjson::SizeType i = 0; i < townHallArray.Size(); ++i) {
-      const rapidjson::Value& item = townHallArray[i];
-      if (item.IsObject() && item.HasMember("row") && item.HasMember("col") &&
-          item.HasMember("level")) {
-        int row = item["row"].GetInt();
-        int col = item["col"].GetInt();
-        int level = item["level"].GetInt();
+    // 对应的值必须是一个数组，包含多个坐标对象
+    if (m.value.IsArray()) {
+      const rapidjson::Value& array = m.value;
+      for (rapidjson::SizeType i = 0; i < array.Size(); ++i) {
+        const rapidjson::Value& item = array[i];
+        if (item.IsObject() && item.HasMember("row") && item.HasMember("col")) {
+          int row = item["row"].GetInt();
+          int col = item["col"].GetInt();
+          int level = item.HasMember("level") ? item["level"].GetInt() : 1;
 
-        Building* building = createBuilding("TownHall", row, col, level);
-        if (building) {
-          building->retain();
-          _buildings.push_back(building);
+          // 调用工厂方法创建建筑
+          Building* building = createBuilding(buildingName, row, col, level);
+          if (building) {
+            registerBuilding(building);
+          }
         }
       }
     }
@@ -97,30 +102,52 @@ bool BuildingManager::loadBuildingMap() {
   return true;
 }
 
-Building* BuildingManager::createBuilding(const std::string& buildingType,
+Building* BuildingManager::createBuilding(const std::string& buildingName,
                                           int row, int col, int level) {
   auto configManager = ConfigManager::getInstance();
   if (!configManager) {
     return nullptr;
   }
 
+  // 1. 获取该建筑的配置
+  auto config = configManager->getBuildingConfig(buildingName);
+  
+  // 2. 获取类型 (TOWN_HALL, DEFENSE, RESOURCE...)
+  std::string type = config.type; 
+
   Building* building = nullptr;
 
-  if (buildingType == "TownHall") {
-    auto townHallConfig = configManager->getTownHallConfig();
-    auto constantConfig = configManager->getConstantConfig();
-
-    // 使用TownHall的create方法，传入gridCount和anchorRatio
+  // 3. 根据类型分发创建
+  if (type == "TOWN_HALL") {
     building = TownHall::create(level);
+  } 
+  else if (type == "DEFENSE") {
+    // 传入 buildingName (例如 "Cannon")，以便 DefenseBuilding 内部再次读取伤害、范围等参数
+    building = DefenseBuilding::create(level, buildingName);
+  }
+  else if (type == "RESOURCE") {
+    building = ResourceBuilding::create(level, buildingName);
+  }
+  else if (type == "STORAGE") {
+    building = StorageBuilding::create(level, buildingName);
+  }
+  else if (type == "BARRACKS") {
+    building = BarracksBuilding::create(level, buildingName);
+  }
+  else {
+    CCLOG("Unknown building type '%s' for building '%s'", type.c_str(), buildingName.c_str());
+    return nullptr;
+  }
 
+  // 4. 设置位置 (通用逻辑)
+  if (building) {
     Vec2 anchorPos = GridUtils::gridToScene(row, col, _p00);
-    building->setPosition(anchorPos);  // 设置锚点位置
+    building->setPosition(anchorPos);
     building->setCenterX(anchorPos.x);
     building->setCenterY(anchorPos.y);
     building->setRow(row);
     building->setCol(col);
   }
-  // 可以在这里添加其他建筑类型的创建逻辑
 
   return building;
 }

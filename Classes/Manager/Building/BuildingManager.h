@@ -71,8 +71,9 @@ class BuildingManager {
 
   /**
    * 创建建筑实例
+   * @param buildingName 建筑的具体名称（如 "Cannon", "TownHall"），对应配置文件中的Key
    */
-  Building* createBuilding(const std::string& buildingType, int row, int col,
+  Building* createBuilding(const std::string& buildingName, int row, int col,
                            int level);
 
   std::vector<Building*> _buildings;  // 所有建筑的列表
