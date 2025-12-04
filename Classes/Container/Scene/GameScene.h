@@ -78,6 +78,14 @@ class GameScene : public BasicScene {
   virtual bool isPlacementValid(Building* building) const override;
 
   /**
+   * 尝试吸附到网格（辅助函数）
+   * @param building 目标建筑
+   * @param mapPos 地图层坐标
+   * @return 是否成功吸附
+   */
+  bool snapToGrid(Building* building, const Vec2& mapPos);
+
+  /**
    * 重写父类的鼠标事件处理方法，添加放置模式和商店相关逻辑
    */
   void onMouseScroll(Event* event) override;
@@ -88,18 +96,26 @@ class GameScene : public BasicScene {
   // 析构函数（清理放置模式相关资源，BuildingManager由父类清理）
   virtual ~GameScene();
 
-  bool _isPlacingBuilding;                // 是否处于放置模式
-  Building* _placementBuilding;           // 正在放置的建筑
+  // --- 放置模式变量 ---
+  bool _isPlacingBuilding;                // 是否处于放置模式（新建）
+  Building* _placementBuilding;           // 正在放置的新建筑
   ShopItem _placementItem;                // 当前放置商品
   cocos2d::Label* _placementHintLabel;    // 放置提示文本
   bool _isPlacementMouseDown;             // 放置模式左键是否按下
-  bool _placementDraggingMap;             // 放置模式是否正在拖动地图
-  cocos2d::Vec2 _placementMouseDownPos;   // 放置模式按下位置
-  cocos2d::Vec2 _placementLastMousePos;   // 放置模式最后一次鼠标位置
   bool _placementPreviewValid;            // 当前预览是否有效
   int _placementPreviewRow;               // 预览所在行
   int _placementPreviewCol;               // 预览所在列
   cocos2d::Vec2 _placementPreviewAnchor;  // 预览锚点位置
+  
+  // --- 拖拽已有建筑变量 ---
+  Building* _draggingBuilding;            // 当前正在拖动的已有建筑
+  cocos2d::Vec2 _dragOffset;              // 鼠标点击位置相对于建筑锚点的偏移
+  bool _isDraggingExisting;               // 标记是否正在拖动已有建筑
+  cocos2d::Vec2 _originalPos;             // 拖动前的原始位置（用于取消或无效时回滚）
+  int _originalRow;                       // 拖动前的原始行
+  int _originalCol;                       // 拖动前的原始列
+
+  // --- 通用鼠标状态 ---
   cocos2d::Vec2 _currentMousePos;         // 当前鼠标位置
   bool _ignoreNextMouseUp;                // 是否忽略下一次鼠标抬起事件
 };

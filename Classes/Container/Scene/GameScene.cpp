@@ -8,34 +8,32 @@
 Scene* GameScene::createScene() { return GameScene::create(); }
 
 bool GameScene::init() {
-  // 先调用父类的初始化
   if (!BasicScene::init()) {
     return false;
+  }
+
+  // 必须将 BuildingManager 管理的建筑添加到地图层
+  if (_buildingManager && _mapLayer) {
+    _buildingManager->addBuildingsToLayer(_mapLayer);
   }
 
   auto visibleSize = Director::getInstance()->getVisibleSize();
   Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
-  // 创建 UI 层 (ZOrder 设为 100，保证在最上层)
   _uiLayer = MainUILayer::create();
   this->addChild(_uiLayer, 100);
 
-  // 设置 UI 按钮回调
   _uiLayer->setOnShopClickCallback([this]() { this->openShop(); });
 
   _uiLayer->setOnAttackClickCallback([]() {
     CCLOG("Attack Button Clicked!");
-    // TODO: 切换到进攻场景
   });
 
-  // 初始化 GameScene 特有的放置模式相关变量
+  // 初始化放置模式变量
   _isPlacingBuilding = false;
   _placementBuilding = nullptr;
   _placementHintLabel = nullptr;
   _isPlacementMouseDown = false;
-  _placementDraggingMap = false;
-  _placementMouseDownPos = Vec2::ZERO;
-  _placementLastMousePos = Vec2::ZERO;
   _placementPreviewValid = false;
   _placementPreviewRow = 0;
   _placementPreviewCol = 0;
@@ -43,7 +41,11 @@ bool GameScene::init() {
   _currentMousePos = Vec2::ZERO;
   _ignoreNextMouseUp = false;
 
-  // 创建放置提示标签
+  // 初始化拖拽变量
+  _draggingBuilding = nullptr;
+  _isDraggingExisting = false;
+  _dragOffset = Vec2::ZERO;
+
   _placementHintLabel = Label::createWithSystemFont("", "Arial", 20);
   if (_placementHintLabel) {
     _placementHintLabel->setColor(Color3B::YELLOW);
@@ -66,145 +68,189 @@ void GameScene::onMouseScroll(Event* event) {
 
 void GameScene::onMouseDown(Event* event) {
   EventMouse* mouseEvent = static_cast<EventMouse*>(event);
+  if (isShopOpen()) return;
 
-  if (isShopOpen()) {
-    return;
-  }
+  // 1. 获取鼠标在地图层（MapLayer）中的坐标
+  Vec2 mousePosInView = mouseEvent->getLocationInView();
+  Vec2 mousePosGL = Director::getInstance()->convertToGL(mousePosInView);
+  Vec2 nodePos = _mapLayer->convertToNodeSpace(mousePosGL);
 
+  // 2. 如果处于【新建放置模式】
   if (_isPlacingBuilding) {
-    // 放置模式下：
-    // 左键点击：不做处理，等待 MouseUp
-    // 右键点击：取消放置
     if (mouseEvent->getMouseButton() == EventMouse::MouseButton::BUTTON_RIGHT) {
       cancelPlacementMode(true);
-      return;
     }
     return;
   }
 
-  // 调用父类方法处理常规鼠标按下事件
+  // 3. 尝试拾取已有建筑
+  if (mouseEvent->getMouseButton() == EventMouse::MouseButton::BUTTON_LEFT) {
+    Building* clickedBuilding = _buildingManager->getBuildingAtPosition(nodePos);
+    
+    if (clickedBuilding) {
+      // 选中建筑，开始拖拽
+      _draggingBuilding = clickedBuilding;
+      _isDraggingExisting = true;
+      _dragOffset = clickedBuilding->getPosition() - nodePos;
+      
+      // 记录原始信息，以便无效放置时回滚
+      _originalPos = clickedBuilding->getPosition();
+      _originalRow = clickedBuilding->getRow();
+      _originalCol = clickedBuilding->getCol();
+
+      // 视觉反馈
+      _draggingBuilding->setLocalZOrder(100); // 提到最上层
+      _draggingBuilding->showGlow();
+      
+      return; // 消费事件，不传递给地图拖动
+    }
+  }
+
+  // 4. 如果没点中建筑，则进行地图拖动（调用父类逻辑）
   BasicScene::onMouseDown(event);
 }
 
 void GameScene::onMouseMove(Event* event) {
   EventMouse* mouseEvent = static_cast<EventMouse*>(event);
-  Vec2 currentPos = mouseEvent->getLocationInView();
-  _currentMousePos = currentPos;
+  Vec2 mousePosInView = mouseEvent->getLocationInView();
+  Vec2 mousePosGL = Director::getInstance()->convertToGL(mousePosInView);
+  Vec2 nodePos = _mapLayer->convertToNodeSpace(mousePosGL);
+  
+  _currentMousePos = mousePosGL;
 
-  if (isShopOpen()) {
+  if (isShopOpen()) return;
+
+  // 1. 处理【新建放置模式】预览
+  if (_isPlacingBuilding && _placementBuilding) {
+    updatePlacementPreview(mousePosGL);
     return;
   }
 
-  if (_isPlacingBuilding) {
-    // 放置模式下禁用地图拖动，仅更新建筑预览位置
-    if (_placementBuilding) {
-      updatePlacementPreview(currentPos);
-    }
+  // 2. 处理【拖拽已有建筑】
+  if (_isDraggingExisting && _draggingBuilding) {
+    // 移动建筑（跟随鼠标 + 偏移）
+    Vec2 newPos = nodePos + _dragOffset;
+    _draggingBuilding->setPosition(newPos);
+    
+    // 实时检测有效性（吸附预览逻辑可复用 snapToGrid 的计算部分，这里简化为变色）
+    int tempRow, tempCol;
+    Vec2 tempAnchor;
+    bool canSnap = GridUtils::findNearestGrassVertex(newPos, _p00, tempRow, tempCol, tempAnchor);
+    
+    // 临时更新 Grid 坐标以便 checkBuildingOverlap 使用
+    int savedRow = _draggingBuilding->getRow();
+    int savedCol = _draggingBuilding->getCol();
+    _draggingBuilding->setRow(tempRow);
+    _draggingBuilding->setCol(tempCol);
+
+    bool isValid = canSnap && !checkBuildingOverlap(_draggingBuilding);
+    _draggingBuilding->setPlacementValid(isValid);
+
+    // 恢复 Grid 坐标（因为还没松手）
+    _draggingBuilding->setRow(savedRow);
+    _draggingBuilding->setCol(savedCol);
+    
     return;
   }
 
-  // 调用父类方法处理常规鼠标移动事件
+  // 3. 地图拖动
   BasicScene::onMouseMove(event);
-
-  // 额外处理：如果正在拖动已有建筑，进行重叠检测并更新视觉状态
-  if (_draggingBuilding) {
-    if (isPlacementValid(_draggingBuilding)) {
-      _draggingBuilding->setPlacementValid(true);
-    } else {
-      _draggingBuilding->setPlacementValid(false);
-    }
-  }
 }
 
 void GameScene::onMouseUp(Event* event) {
   EventMouse* mouseEvent = static_cast<EventMouse*>(event);
-
-  if (isShopOpen()) {
-    return;
-  }
-
+  if (isShopOpen()) return;
   if (_ignoreNextMouseUp) {
     _ignoreNextMouseUp = false;
     return;
   }
 
+  Vec2 mousePosInView = mouseEvent->getLocationInView();
+  Vec2 mousePosGL = Director::getInstance()->convertToGL(mousePosInView);
+  Vec2 nodePos = _mapLayer->convertToNodeSpace(mousePosGL);
+
+  // 1. 处理【新建放置模式】
   if (_isPlacingBuilding) {
-    Vec2 mousePos = mouseEvent->getLocationInView();
-    // Vec2 worldPos = Director::getInstance()->convertToGL(mousePos);
-    Vec2 worldPos = mousePos;
-
     if (mouseEvent->getMouseButton() == EventMouse::MouseButton::BUTTON_LEFT) {
-      // 放置模式下点击左键：尝试放置建筑
-      updatePlacementPreview(worldPos);
-
-      if (!_placementBuilding) {
-        return;
-      }
-
-      if (!_placementPreviewValid) {
-        return;
-      }
-
-      _placementBuilding->setPosition(_placementPreviewAnchor);
-
-      auto configManager = ConfigManager::getInstance();
-      if (configManager) {
-        auto constantConfig = configManager->getConstantConfig();
-        float deltaX = constantConfig.deltaX;
-        _placementBuilding->setCenterX(_placementPreviewAnchor.x +
-                                       deltaX *
-                                           _placementBuilding->getGridCount());
-      } else {
-        _placementBuilding->setCenterX(_placementPreviewAnchor.x);
-      }
-      _placementBuilding->setCenterY(_placementPreviewAnchor.y);
-      _placementBuilding->setRow(_placementPreviewRow);
-      _placementBuilding->setCol(_placementPreviewCol);
-
-      if (_placementBuilding->isOutOfBounds(_gridSize)) {
-        return;
-      }
-
-      // 再次检查重叠（防止快速点击时的竞态条件）
-      if (checkBuildingOverlap(_placementBuilding)) {
-        return;
-      }
-
-      _placementBuilding->setOpacity(255);
-      _placementBuilding->hideGlow();
-      _placementBuilding->setPlacementValid(true);  // 恢复正常颜色
-
-      if (_buildingManager) {
+      updatePlacementPreview(mousePosGL); // 确保数据最新
+      if (_placementBuilding && _placementPreviewValid) {
+        // 确认放置
+        snapToGrid(_placementBuilding, _placementPreviewAnchor);
+        _placementBuilding->setOpacity(255);
+        _placementBuilding->hideGlow();
+        _placementBuilding->setPlacementValid(true);
         _buildingManager->registerBuilding(_placementBuilding);
+        
+        showPlacementHint("建筑已放置");
+        _placementBuilding = nullptr;
+        _isPlacingBuilding = false;
       }
-
-      _selectedBuilding = _placementBuilding;
-      _placementBuilding = nullptr;
-      _isPlacingBuilding = false;
-      _placementPreviewValid = false;
-      _isPlacementMouseDown = false;
-      _placementMouseDownPos = Vec2::ZERO;
-      showPlacementHint("建筑已放置");
-
-      if (_placementHintLabel) {
-        _placementHintLabel->stopAllActions();
-        auto delay = DelayTime::create(1.5f);
-        auto clear = CallFunc::create([this]() { showPlacementHint(""); });
-        _placementHintLabel->runAction(Sequence::create(delay, clear, nullptr));
-      }
-      return;
     }
-
-    if (mouseEvent->getMouseButton() == EventMouse::MouseButton::BUTTON_RIGHT) {
-      cancelPlacementMode(true);
-      return;
-    }
-
     return;
   }
 
-  // 调用父类方法处理常规鼠标抬起事件
+  // 2. 处理【拖拽已有建筑】
+  if (_isDraggingExisting && _draggingBuilding) {
+    bool success = false;
+    
+    // 计算最终吸附位置
+    // 使用当前建筑位置（因为已经跟随鼠标移动了）作为判定点
+    if (snapToGrid(_draggingBuilding, _draggingBuilding->getPosition())) {
+        // 检查重叠
+        if (!checkBuildingOverlap(_draggingBuilding)) {
+            success = true;
+            showPlacementHint("移动成功");
+        }
+    }
+
+    if (!success) {
+        // 失败回滚
+        _draggingBuilding->setPosition(_originalPos);
+        _draggingBuilding->setRow(_originalRow);
+        _draggingBuilding->setCol(_originalCol);
+        _draggingBuilding->setPlacementValid(true); // 恢复颜色
+        showPlacementHint("位置无效，已回退");
+    }
+
+    // 重置状态
+    _draggingBuilding->setLocalZOrder(1); // 恢复层级（或者根据Y轴排序）
+    _draggingBuilding->hideGlow();
+    _draggingBuilding = nullptr;
+    _isDraggingExisting = false;
+    return;
+  }
+
+  // 3. 地图拖动结束
   BasicScene::onMouseUp(event);
+}
+
+// 辅助函数：将建筑吸附到最近网格，并设置 row/col
+bool GameScene::snapToGrid(Building* building, const Vec2& mapPos) {
+    int row = 0;
+    int col = 0;
+    Vec2 nearestPos;
+    
+    // 查找最近的网格点
+    if (GridUtils::findNearestGrassVertex(mapPos, _p00, row, col, nearestPos)) {
+        auto configManager = ConfigManager::getInstance();
+        float deltaX = configManager ? configManager->getConstantConfig().deltaX : 0.0f;
+
+        // 设置位置
+        building->setPosition(nearestPos);
+        // 修正 CenterX/Y 用于逻辑计算
+        if (deltaX > 0.0f) {
+            building->setCenterX(nearestPos.x + deltaX * building->getGridCount());
+        } else {
+            building->setCenterX(nearestPos.x);
+        }
+        building->setCenterY(nearestPos.y);
+        
+        // 设置逻辑坐标
+        building->setRow(row);
+        building->setCol(col);
+        return true;
+    }
+    return false;
 }
 
 void GameScene::openShop() {
@@ -413,9 +459,6 @@ void GameScene::cancelPlacementMode(bool refundResources) {
   _placementItem = ShopItem();
   showPlacementHint("");
   _isPlacementMouseDown = false;
-  _placementDraggingMap = false;
-  _placementMouseDownPos = Vec2::ZERO;
-  _placementLastMousePos = Vec2::ZERO;
   _placementPreviewValid = false;
   _placementPreviewRow = 0;
   _placementPreviewCol = 0;
