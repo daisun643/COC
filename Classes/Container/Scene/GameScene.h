@@ -97,17 +97,18 @@ class GameScene : public BasicScene {
   virtual ~GameScene();
 
   // --- 放置模式变量 ---
-  bool _isPlacingBuilding;
-  Building* _placementBuilding;
-  ShopItem _placementItem;
-  cocos2d::Label* _placementHintLabel;
-  bool _placementPreviewValid;
-  cocos2d::Vec2 _placementPreviewAnchor;
-  int _placementPreviewRow;
-  int _placementPreviewCol;
-  bool _isPlacementMouseDown;
+  bool _isPlacingBuilding;                // 是否处于放置模式（新建）
+  Building* _placementBuilding;           // 正在放置的新建筑
+  ShopItem _placementItem;                // 当前放置商品
+  cocos2d::Label* _placementHintLabel;    // 放置提示文本
+  bool _isPlacementMouseDown;             // 放置模式左键是否按下
+  bool _placementPreviewValid;            // 当前预览是否有效
+  int _placementPreviewRow;               // 预览所在行
+  int _placementPreviewCol;               // 预览所在列
+  cocos2d::Vec2 _placementPreviewAnchor;  // 预览锚点位置
   
   // --- 拖拽已有建筑变量 ---
+  Building* _draggingBuilding;            // 当前正在拖动的已有建筑
   cocos2d::Vec2 _dragOffset;              // 鼠标点击位置相对于建筑锚点的偏移
   bool _isDraggingExisting;               // 标记是否正在拖动已有建筑
   cocos2d::Vec2 _originalPos;             // 拖动前的原始位置（用于取消或无效时回滚）
