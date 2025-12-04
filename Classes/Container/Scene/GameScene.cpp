@@ -12,7 +12,8 @@ bool GameScene::init() {
     return false;
   }
 
-  // 必须将 BuildingManager 管理的建筑添加到地图层
+  // 确保建筑被添加到地图层
+  // BasicScene::init 已经创建了 _buildingManager，这里确保显示
   if (_buildingManager && _mapLayer) {
     _buildingManager->addBuildingsToLayer(_mapLayer);
   }
@@ -24,27 +25,23 @@ bool GameScene::init() {
   this->addChild(_uiLayer, 100);
 
   _uiLayer->setOnShopClickCallback([this]() { this->openShop(); });
+  _uiLayer->setOnAttackClickCallback([]() { CCLOG("Attack!"); });
 
-  _uiLayer->setOnAttackClickCallback([]() {
-    CCLOG("Attack Button Clicked!");
-  });
-
-  // 初始化放置模式变量
+  // 初始化变量
   _isPlacingBuilding = false;
   _placementBuilding = nullptr;
   _placementHintLabel = nullptr;
-  _isPlacementMouseDown = false;
   _placementPreviewValid = false;
-  _placementPreviewRow = 0;
-  _placementPreviewCol = 0;
   _placementPreviewAnchor = Vec2::ZERO;
-  _currentMousePos = Vec2::ZERO;
-  _ignoreNextMouseUp = false;
-
-  // 初始化拖拽变量
+  
+  // 确保父类变量也被清理
   _draggingBuilding = nullptr;
+  _selectedBuilding = nullptr;
   _isDraggingExisting = false;
   _dragOffset = Vec2::ZERO;
+  
+  _currentMousePos = Vec2::ZERO;
+  _ignoreNextMouseUp = false;
 
   _placementHintLabel = Label::createWithSystemFont("", "Arial", 20);
   if (_placementHintLabel) {
@@ -70,90 +67,103 @@ void GameScene::onMouseDown(Event* event) {
   EventMouse* mouseEvent = static_cast<EventMouse*>(event);
   if (isShopOpen()) return;
 
-  // 1. 获取鼠标在地图层（MapLayer）中的坐标
-  Vec2 mousePosInView = mouseEvent->getLocationInView();
-  Vec2 mousePosGL = Director::getInstance()->convertToGL(mousePosInView);
+  Vec2 mousePosGL = Director::getInstance()->convertToGL(mouseEvent->getLocationInView());
   Vec2 nodePos = _mapLayer->convertToNodeSpace(mousePosGL);
 
-  // 2. 如果处于【新建放置模式】
+  // 1. 放置模式：右键取消
   if (_isPlacingBuilding) {
     if (mouseEvent->getMouseButton() == EventMouse::MouseButton::BUTTON_RIGHT) {
       cancelPlacementMode(true);
     }
-    return;
+    return; // 放置模式下完全拦截，不传给父类
   }
 
-  // 3. 尝试拾取已有建筑
+  // 2. 正常模式：尝试拾取建筑
   if (mouseEvent->getMouseButton() == EventMouse::MouseButton::BUTTON_LEFT) {
     Building* clickedBuilding = _buildingManager->getBuildingAtPosition(nodePos);
     
     if (clickedBuilding) {
-      // 选中建筑，开始拖拽
-      _draggingBuilding = clickedBuilding;
+      // --- 命中建筑 ---
+      
+      // 更新选中光晕
+      if (_selectedBuilding && _selectedBuilding != clickedBuilding) {
+          _selectedBuilding->hideGlow();
+      }
+      _selectedBuilding = clickedBuilding;
+      _selectedBuilding->showGlow();
+
+      // 设置拖拽状态
+      _draggingBuilding = clickedBuilding; // 使用父类成员，确保兼容性
       _isDraggingExisting = true;
       _dragOffset = clickedBuilding->getPosition() - nodePos;
       
-      // 记录原始信息，以便无效放置时回滚
+      // 记录回滚数据
       _originalPos = clickedBuilding->getPosition();
       _originalRow = clickedBuilding->getRow();
       _originalCol = clickedBuilding->getCol();
 
-      // 视觉反馈
-      _draggingBuilding->setLocalZOrder(100); // 提到最上层
-      _draggingBuilding->showGlow();
+      // 视觉反馈：提到最上层
+      _draggingBuilding->setLocalZOrder(100); 
       
-      return; // 消费事件，不传递给地图拖动
+      // 【关键】直接返回，不调用 BasicScene::onMouseDown。
+      // 这样父类就不会进入地图拖拽模式 (_isDragging = false)
+      return; 
+    } else {
+        // 点击空地：取消选中
+        if (_selectedBuilding) {
+            _selectedBuilding->hideGlow();
+            _selectedBuilding = nullptr;
+        }
     }
   }
 
-  // 4. 如果没点中建筑，则进行地图拖动（调用父类逻辑）
+  // 3. 未命中任何建筑，透传给父类处理地图拖拽
   BasicScene::onMouseDown(event);
 }
 
 void GameScene::onMouseMove(Event* event) {
   EventMouse* mouseEvent = static_cast<EventMouse*>(event);
-  Vec2 mousePosInView = mouseEvent->getLocationInView();
-  Vec2 mousePosGL = Director::getInstance()->convertToGL(mousePosInView);
+  Vec2 mousePosGL = Director::getInstance()->convertToGL(mouseEvent->getLocationInView());
   Vec2 nodePos = _mapLayer->convertToNodeSpace(mousePosGL);
-  
   _currentMousePos = mousePosGL;
 
   if (isShopOpen()) return;
 
-  // 1. 处理【新建放置模式】预览
+  // 1. 放置预览
   if (_isPlacingBuilding && _placementBuilding) {
     updatePlacementPreview(mousePosGL);
     return;
   }
 
-  // 2. 处理【拖拽已有建筑】
+  // 2. 拖拽已有建筑
   if (_isDraggingExisting && _draggingBuilding) {
-    // 移动建筑（跟随鼠标 + 偏移）
+    // 跟随鼠标移动
     Vec2 newPos = nodePos + _dragOffset;
     _draggingBuilding->setPosition(newPos);
     
-    // 实时检测有效性（吸附预览逻辑可复用 snapToGrid 的计算部分，这里简化为变色）
-    int tempRow, tempCol;
-    Vec2 tempAnchor;
-    bool canSnap = GridUtils::findNearestGrassVertex(newPos, _p00, tempRow, tempCol, tempAnchor);
+    // 实时吸附检测（仅变色反馈）
+    int r, c;
+    Vec2 p;
+    bool canSnap = GridUtils::findNearestGrassVertex(newPos, _p00, r, c, p);
     
-    // 临时更新 Grid 坐标以便 checkBuildingOverlap 使用
-    int savedRow = _draggingBuilding->getRow();
-    int savedCol = _draggingBuilding->getCol();
-    _draggingBuilding->setRow(tempRow);
-    _draggingBuilding->setCol(tempCol);
-
-    bool isValid = canSnap && !checkBuildingOverlap(_draggingBuilding);
-    _draggingBuilding->setPlacementValid(isValid);
-
-    // 恢复 Grid 坐标（因为还没松手）
-    _draggingBuilding->setRow(savedRow);
-    _draggingBuilding->setCol(savedCol);
+    // 临时更新 Grid 坐标以检测重叠
+    int saveR = _draggingBuilding->getRow();
+    int saveC = _draggingBuilding->getCol();
+    _draggingBuilding->setRow(r);
+    _draggingBuilding->setCol(c);
     
-    return;
+    bool valid = canSnap && !checkBuildingOverlap(_draggingBuilding);
+    _draggingBuilding->setPlacementValid(valid);
+
+    // 恢复坐标，直到松手确认
+    _draggingBuilding->setRow(saveR);
+    _draggingBuilding->setCol(saveC);
+    
+    // 【关键】直接返回，防止父类 BasicScene::onMouseMove 移动地图
+    return; 
   }
 
-  // 3. 地图拖动
+  // 3. 普通移动，透传给父类（处理地图拖拽）
   BasicScene::onMouseMove(event);
 }
 
@@ -165,22 +175,22 @@ void GameScene::onMouseUp(Event* event) {
     return;
   }
 
-  Vec2 mousePosInView = mouseEvent->getLocationInView();
-  Vec2 mousePosGL = Director::getInstance()->convertToGL(mousePosInView);
-  Vec2 nodePos = _mapLayer->convertToNodeSpace(mousePosGL);
+  Vec2 mousePosGL = Director::getInstance()->convertToGL(mouseEvent->getLocationInView());
 
-  // 1. 处理【新建放置模式】
+  // 1. 放置模式确认
   if (_isPlacingBuilding) {
     if (mouseEvent->getMouseButton() == EventMouse::MouseButton::BUTTON_LEFT) {
-      updatePlacementPreview(mousePosGL); // 确保数据最新
+      updatePlacementPreview(mousePosGL);
       if (_placementBuilding && _placementPreviewValid) {
-        // 确认放置
         snapToGrid(_placementBuilding, _placementPreviewAnchor);
         _placementBuilding->setOpacity(255);
         _placementBuilding->hideGlow();
         _placementBuilding->setPlacementValid(true);
         _buildingManager->registerBuilding(_placementBuilding);
         
+        _selectedBuilding = _placementBuilding;
+        _selectedBuilding->showGlow();
+
         showPlacementHint("建筑已放置");
         _placementBuilding = nullptr;
         _isPlacingBuilding = false;
@@ -189,14 +199,11 @@ void GameScene::onMouseUp(Event* event) {
     return;
   }
 
-  // 2. 处理【拖拽已有建筑】
+  // 2. 拖拽已有建筑确认
   if (_isDraggingExisting && _draggingBuilding) {
     bool success = false;
-    
-    // 计算最终吸附位置
-    // 使用当前建筑位置（因为已经跟随鼠标移动了）作为判定点
+    // 尝试吸附当前位置
     if (snapToGrid(_draggingBuilding, _draggingBuilding->getPosition())) {
-        // 检查重叠
         if (!checkBuildingOverlap(_draggingBuilding)) {
             success = true;
             showPlacementHint("移动成功");
@@ -208,19 +215,25 @@ void GameScene::onMouseUp(Event* event) {
         _draggingBuilding->setPosition(_originalPos);
         _draggingBuilding->setRow(_originalRow);
         _draggingBuilding->setCol(_originalCol);
-        _draggingBuilding->setPlacementValid(true); // 恢复颜色
+        _draggingBuilding->setPlacementValid(true);
         showPlacementHint("位置无效，已回退");
     }
 
-    // 重置状态
-    _draggingBuilding->setLocalZOrder(1); // 恢复层级（或者根据Y轴排序）
-    _draggingBuilding->hideGlow();
+    // 恢复层级
+    _draggingBuilding->setLocalZOrder(1);
+    
+    // 保持选中状态
+    _selectedBuilding = _draggingBuilding;
+    
+    // 清理拖拽状态
     _draggingBuilding = nullptr;
     _isDraggingExisting = false;
+    
+    // 【关键】直接返回
     return;
   }
 
-  // 3. 地图拖动结束
+  // 3. 地图拖拽结束，透传给父类
   BasicScene::onMouseUp(event);
 }
 
