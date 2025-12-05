@@ -419,6 +419,21 @@ void AttackScene::placeSoldier(const Vec2& worldPos, const TroopItem& item) {
     _mapLayer->addChild(soldier, 5);
     _placedSoldiers.push_back(soldier);
 
+    // 设置建筑查找回调
+    soldier->setBuildingFinderCallback([this]() {
+      std::vector<Building*> buildings;
+      if (_buildingManager) {
+        const auto& allBuildings = _buildingManager->getAllBuildings();
+        // 只返回存活的建筑
+        for (Building* building : allBuildings) {
+          if (building && building->isVisible() && building->isAlive()) {
+            buildings.push_back(building);
+          }
+        }
+      }
+      return buildings;
+    });
+
     // 通过 TroopManager 减少数量
     if (_troopManager) {
       if (!_troopManager->consumeTroop(item.soldierType, item.level)) {
@@ -471,15 +486,27 @@ void AttackScene::castSpell(const Vec2& worldPos, const SpellItem& item) {
       // 从 BuildingManager 获取建筑列表
       std::vector<Building*> buildings;
       if (_buildingManager) {
-        // TODO: 实现获取建筑列表的方法
+        const auto& allBuildings = _buildingManager->getAllBuildings();
+        // 只返回存活的建筑
+        for (Building* building : allBuildings) {
+          if (building && building->isVisible() && building->isAlive()) {
+            buildings.push_back(building);
+          }
+        }
       }
       return buildings;
     });
 
-    // 获取所有建筑
+    // 获取所有建筑（用于cast方法）
     std::vector<Building*> buildings;
     if (_buildingManager) {
-      // TODO: 从 BuildingManager 获取建筑列表
+      const auto& allBuildings = _buildingManager->getAllBuildings();
+      // 只返回存活的建筑
+      for (Building* building : allBuildings) {
+        if (building && building->isVisible() && building->isAlive()) {
+          buildings.push_back(building);
+        }
+      }
     }
 
     // 施放法术

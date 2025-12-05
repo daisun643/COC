@@ -39,12 +39,11 @@ void LightningSpell::applyEffect(const std::vector<BasicSoldier*>& soldiers,
   }
 
   // 对范围内的建筑造成伤害
-  // 注意：Building 类可能还没有 takeDamage 方法，这里先记录日志
   for (Building* building : buildings) {
-    if (building && building->isVisible()) {
-      CCLOG("LightningSpell: Dealt %.1f damage to building", _amount);
-      // TODO: 如果 Building 有 takeDamage 方法，取消注释
-      // building->takeDamage(_amount);
+    if (building && building->isVisible() && building->isAlive()) {
+      building->takeDamage(_amount);
+      CCLOG("LightningSpell: Dealt %.1f damage to building, building HP: %.1f/%.1f",
+            _amount, building->getCurrentHP(), building->getMaxHP());
     }
   }
 }

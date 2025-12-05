@@ -1,6 +1,9 @@
 #ifndef __BASIC_SOILDER_H__
 #define __BASIC_SOILDER_H__
 
+#include <functional>
+#include <vector>
+
 #include "Game/Building/Building.h"
 #include "cocos2d.h"
 
@@ -111,6 +114,13 @@ class BasicSoldier : public Sprite {
   bool findTarget(const std::vector<Building*>& buildings);
 
   /**
+   * 设置建筑查找回调函数
+   * @param callback 返回建筑列表的回调函数
+   */
+  void setBuildingFinderCallback(
+      std::function<std::vector<Building*>()> callback);
+
+  /**
    * 检查目标是否在攻击范围内
    * @param targetPos 目标位置
    * @return 是否在范围内
@@ -166,6 +176,8 @@ class BasicSoldier : public Sprite {
   DrawNode* _hpBarBackground;  // 生命值条背景
   DrawNode* _hpBarForeground;  // 生命值条前景
   Label* _infoLabel;           // 信息显示标签
+  std::function<std::vector<Building*>()>
+      _buildingFinderCallback;  // 建筑查找回调函数
 };
 
 #endif  // __BASIC_SOILDER_H__

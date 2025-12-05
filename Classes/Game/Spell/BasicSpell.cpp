@@ -166,7 +166,7 @@ void BasicSpell::findTargetsInRange(const std::vector<BasicSoldier*>& soldiers,
 
   // 查找范围内的建筑
   for (Building* building : buildings) {
-    if (building && building->isVisible()) {
+    if (building && building->isVisible() && building->isAlive()) {
       Vec2 buildingPos = building->getPosition();
       if (isInRange(buildingPos, _castPosition, _radius)) {
         outBuildings.push_back(building);

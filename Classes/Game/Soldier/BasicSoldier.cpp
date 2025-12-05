@@ -23,18 +23,29 @@ BasicSoldier::BasicSoldier()
       _attackCooldown(0.0f),
       _hpBarBackground(nullptr),
       _hpBarForeground(nullptr),
-      _infoLabel(nullptr) {}
+      _infoLabel(nullptr),
+      _buildingFinderCallback(nullptr) {}
 
 BasicSoldier::~BasicSoldier() {
-  if (_hpBarBackground) {
+  // 停止更新调度，避免析构后继续调用update
+  this->unscheduleUpdate();
+  
+  // 注意：在Cocos2d-x中，父节点销毁时会自动清理所有子节点
+  // 这里只需要将指针置空，避免重复析构
+  // 如果子节点已经被移除，removeFromParent()是安全的（会检查父节点）
+  if (_hpBarBackground && _hpBarBackground->getParent()) {
     _hpBarBackground->removeFromParent();
   }
-  if (_hpBarForeground) {
+  if (_hpBarForeground && _hpBarForeground->getParent()) {
     _hpBarForeground->removeFromParent();
   }
-  if (_infoLabel) {
+  if (_infoLabel && _infoLabel->getParent()) {
     _infoLabel->removeFromParent();
   }
+  // 将指针置空，避免悬空指针
+  _hpBarBackground = nullptr;
+  _hpBarForeground = nullptr;
+  _infoLabel = nullptr;
 }
 
 BasicSoldier* BasicSoldier::create(SoldierType soldierType, int level) {
@@ -221,7 +232,17 @@ void BasicSoldier::updateState(float delta) {
   switch (_state) {
     case SoldierState::IDLE:
       // 待机状态：寻找目标
-      // 注意：这里需要外部传入建筑列表，暂时不处理
+      if (_buildingFinderCallback) {
+        std::vector<Building*> buildings = _buildingFinderCallback();
+        if (findTarget(buildings)) {
+          // 找到目标，状态会在findTarget中设置
+          if (_target && isInRange(_target->getPosition())) {
+            _state = SoldierState::ATTACKING;
+          } else if (_target) {
+            _state = SoldierState::MOVING;
+          }
+        }
+      }
       break;
 
     case SoldierState::MOVING:
@@ -231,7 +252,7 @@ void BasicSoldier::updateState(float delta) {
 
     case SoldierState::ATTACKING:
       // 攻击状态：攻击目标
-      if (_target && _target->isVisible()) {
+      if (_target && _target->isVisible() && _target->isAlive()) {
         // 检查目标是否还在范围内
         Vec2 targetPos = _target->getPosition();
         if (isInRange(targetPos)) {
@@ -242,8 +263,9 @@ void BasicSoldier::updateState(float delta) {
           _state = SoldierState::MOVING;
         }
       } else {
-        // 目标消失，回到待机状态
+        // 目标消失或被摧毁，回到待机状态
         _target = nullptr;
+        _targetPosition = Vec2::ZERO;
         _state = SoldierState::IDLE;
       }
       break;
@@ -283,18 +305,23 @@ void BasicSoldier::moveToTarget(float delta) {
   Vec2 newPos = currentPos + direction * moveDistance;
   this->setPosition(newPos);
 
-  // 如果正在攻击目标，检查是否进入攻击范围
-  if (_target && _target->isVisible()) {
+  // 如果正在移动向目标，检查是否进入攻击范围
+  if (_target && _target->isVisible() && _target->isAlive()) {
     Vec2 targetPos = _target->getPosition();
     if (isInRange(targetPos)) {
       _state = SoldierState::ATTACKING;
       _targetPosition = Vec2::ZERO;
     }
+  } else if (_target && (!_target->isVisible() || !_target->isAlive())) {
+    // 目标被摧毁或消失，清除目标并回到待机状态
+    _target = nullptr;
+    _targetPosition = Vec2::ZERO;
+    _state = SoldierState::IDLE;
   }
 }
 
 void BasicSoldier::attackTarget(float delta) {
-  if (!_target || !_target->isVisible()) {
+  if (!_target || !_target->isVisible() || !_target->isAlive()) {
     _target = nullptr;
     _state = SoldierState::IDLE;
     return;
@@ -306,15 +333,20 @@ void BasicSoldier::attackTarget(float delta) {
   }
 
   // 执行攻击
-  // 注意：这里需要建筑有 takeDamage 方法，暂时先记录日志
+  if (_target) {
+    _target->takeDamage(_attackDamage);
+    CCLOG("Soldier attacks building, damage: %.1f, building HP: %.1f/%.1f",
+          _attackDamage, _target->getCurrentHP(), _target->getMaxHP());
+  }
 
   // 重置攻击冷却
   _attackCooldown = 1.0f / _attackSpeed;
 
-  // TODO: 实际对目标造成伤害
-  // if (_target) {
-  //   _target->takeDamage(_attackDamage);
-  // }
+  // 如果目标被摧毁，清除目标并回到待机状态
+  if (!_target->isAlive()) {
+    _target = nullptr;
+    _state = SoldierState::IDLE;
+  }
 }
 
 void BasicSoldier::takeDamage(float damage) {
@@ -365,7 +397,7 @@ bool BasicSoldier::findTarget(const std::vector<Building*>& buildings) {
 
   // 根据攻击类型选择目标
   for (Building* building : buildings) {
-    if (!building || !building->isVisible()) {
+    if (!building || !building->isVisible() || !building->isAlive()) {
       continue;
     }
 
@@ -416,9 +448,11 @@ bool BasicSoldier::findTarget(const std::vector<Building*>& buildings) {
     // 如果目标在攻击范围内，直接攻击
     if (isInRange(targetPos)) {
       _state = SoldierState::ATTACKING;
+      _targetPosition = Vec2::ZERO;  // 清除移动目标
     } else {
       // 否则移动到目标位置
       setTargetPosition(targetPos);
+      _state = SoldierState::MOVING;
     }
     return true;
   }
@@ -437,6 +471,11 @@ float BasicSoldier::getDistanceTo(const Vec2& pos) const {
   return diff.length();
 }
 
+void BasicSoldier::setBuildingFinderCallback(
+    std::function<std::vector<Building*>()> callback) {
+  _buildingFinderCallback = callback;
+}
+
 void BasicSoldier::updateHPBar() {
   if (!_hpBarBackground || !_hpBarForeground) {
     return;
@@ -445,15 +484,21 @@ void BasicSoldier::updateHPBar() {
   // 生命值条尺寸
   float barWidth = 40.0f;
   float barHeight = 4.0f;
-  float barY = this->getContentSize().height / 2 + 15.0f;
+  
+  // 在Cocos2d-x中，设置锚点后，本地坐标系的原点(0,0)就是锚点位置
+  // 兵种锚点为中心(0.5, 0.5)
+  float barY = this->getContentSize().height;   // 血条的Y坐标（相对于锚点，即本地坐标系原点）
+  float anchorX = this->getContentSize().width * 0.5f;  // 锚点X坐标（兵种锚点是0.5）
+  float anchorY = this->getContentSize().height * 0.5f;  // 锚点Y坐标（兵种锚点是0.5）
 
   // 清除之前的绘制
   _hpBarBackground->clear();
   _hpBarForeground->clear();
 
   // 绘制背景（红色）
-  Vec2 bgStart(-barWidth / 2, barY);
-  Vec2 bgEnd(barWidth / 2, barY);
+  // 血条中心在(anchorX, barY)，所以起点和终点相对于中心
+  Vec2 bgStart(anchorX - barWidth / 2, barY);
+  Vec2 bgEnd(anchorX + barWidth / 2, barY);
   _hpBarBackground->drawSegment(bgStart, bgEnd, barHeight,
                                 Color4F(0.5f, 0.0f, 0.0f, 1.0f));
 
@@ -469,8 +514,8 @@ void BasicSoldier::updateHPBar() {
 
     float foregroundWidth = barWidth * hpRatio;
     if (foregroundWidth > 0) {
-      Vec2 fgStart(-barWidth / 2, barY);
-      Vec2 fgEnd(-barWidth / 2 + foregroundWidth, barY);
+      Vec2 fgStart(anchorX - barWidth / 2, barY);
+      Vec2 fgEnd(anchorX - barWidth / 2 + foregroundWidth, barY);
 
       // 根据生命值比例改变颜色
       Color4F barColor;

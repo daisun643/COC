@@ -50,6 +50,8 @@ class Building : public Sprite {
   CC_SYNTHESIZE(int, _col, Col);                      // 坐标编码：列
   CC_SYNTHESIZE(float, _anchorRatioX, AnchorRatioX);  // 建筑宽度比例
   CC_SYNTHESIZE(float, _anchorRatioY, AnchorRatioY);  // 建筑高度比例
+  CC_SYNTHESIZE(float, _maxHP, MaxHP);                // 最大生命值
+  CC_SYNTHESIZE(float, _currentHP, CurrentHP);       // 当前生命值
   /**
    * 检查建筑是否越界
    */
@@ -78,6 +80,24 @@ class Building : public Sprite {
    */
   void setPlacementValid(bool isValid);
 
+  /**
+   * 设置当前生命值并更新血条显示
+   * @param hp 新的生命值
+   */
+  void setCurrentHPAndUpdate(float hp);
+
+  /**
+   * 受到伤害
+   * @param damage 伤害值
+   */
+  void takeDamage(float damage);
+
+  /**
+   * 是否存活（HP > 0）
+   * @return 是否存活
+   */
+  bool isAlive() const;
+
  protected:
   Building();
   virtual ~Building();
@@ -99,6 +119,14 @@ class Building : public Sprite {
    * 更新光晕绘制（内部方法）
    */
   void updateGlowDrawing();
+
+  /**
+   * 更新生命值条显示（内部方法）
+   */
+  void updateHPBar();
+
+  DrawNode* _hpBarBackground;  // 生命值条背景
+  DrawNode* _hpBarForeground;  // 生命值条前景
 };
 
 #endif  // __BUILDING_H__
