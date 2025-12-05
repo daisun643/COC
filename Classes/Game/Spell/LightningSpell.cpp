@@ -84,7 +84,7 @@ void LightningSpell::createVisualEffect() {
         nextPoint += Vec2(offsetX, offsetY);
       }
 
-      Color4F lightningColor(1.0f, 1.0f, 1.0f, 0.7f);  // 白色，70%透明度
+      Color4F lightningColor(0.55f, 0.75f, 1.0f, 0.7f);   // 淡蓝色
       drawNode->drawSegment(currentPoint, nextPoint, 2.0f, lightningColor);
 
       currentPoint = nextPoint;
@@ -95,7 +95,7 @@ void LightningSpell::createVisualEffect() {
   auto fadeOut = FadeOut::create(0.1f);
   auto fadeIn = FadeIn::create(0.1f);
   auto sequence = Sequence::create(fadeOut, fadeIn, nullptr);
-  auto repeat = Repeat::create(sequence, 3);  // 闪烁3次
+  auto repeat = Repeat::create(sequence, 10);  // 闪烁3次
   auto remove =
       CallFunc::create([drawNode]() { drawNode->removeFromParent(); });
   auto finalSequence = Sequence::create(repeat, remove, nullptr);
