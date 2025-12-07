@@ -1,0 +1,24 @@
+{
+    "tip": "Catagory:作用效果分类（Instant:瞬时效果, Duration:持续效果）；PanelImage:法术panel图片路径；Duration:持续时间(s)；Radius:作用范围；Amount:作用效果总计",
+    "Heal": {
+        "Category": "DURATION",
+        "PanelImage": "images/spell/Heal.png",
+        "Duration": 10,
+        "Radius": 100,
+        "Amount": 100
+    },
+    "Lightning": {
+        "Category": "INSTANT",
+        "PanelImage": "images/spell/Lighting.png",
+        "Radius": 10,
+        "Amount": 100
+    },
+    "Rage": {
+        "Category": "DURATION",
+        "PanelImage": "images/spell/Rage.png",
+        "Duration": 10,
+        "Radius": 100,
+        "Ratio": 1.5,
+        "tips": "Ratio: 提升代表士兵攻击速度和移动速度的倍率"
+    }
+}

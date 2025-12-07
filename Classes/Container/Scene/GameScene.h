@@ -3,10 +3,10 @@
 
 #include <vector>
 
-#include "Container/Scene/Basic/BasicScene.h"
-#include "Manager/PlayerManager.h"
 #include "Container/Layer/MainUILayer.h"
 #include "Container/Layer/ShopLayer.h"
+#include "Container/Scene/Basic/BasicScene.h"
+#include "Manager/PlayerManager.h"
 
 USING_NS_CC;
 
