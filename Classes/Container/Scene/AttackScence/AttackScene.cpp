@@ -7,6 +7,8 @@
 #include "Game/Spell/LightningSpell.h"
 #include "Game/Spell/RageSpell.h"
 #include "Manager/Troop/TroopManager.h"
+#include "Manager/Record/RecordManager.h"
+#include "ui/CocosGUI.h"
 
 Scene* AttackScene::createScene() { return AttackScene::create(); }
 
@@ -31,6 +33,11 @@ bool AttackScene::init() {
   _troopManager = nullptr;
   _troopIconBgs.clear();
   _spellIconBgs.clear();
+  _isAttackStarted = false;
+  _countdownSeconds = ATTACK_DURATION;
+  _startAttackButton = nullptr;
+  _endAttackButton = nullptr;
+  _countdownLabel = nullptr;
 
   // 创建并初始化 TroopManager
   _troopManager = new (std::nothrow) TroopManager();
@@ -43,12 +50,23 @@ bool AttackScene::init() {
   _troopItems = _troopManager->getTroopItems();
   _spellItems = _troopManager->getSpellItems();
 
+  // 创建并初始化 RecordManager
+  _recordManager = new (std::nothrow) RecordManager();
+  if (!_recordManager || !_recordManager->init()) {
+    CCLOG("Failed to create RecordManager");
+    CC_SAFE_DELETE(_recordManager);
+    return false;
+  }
+
   // 清空图标背景列表
   _troopIconBgs.clear();
   _spellIconBgs.clear();
 
   // 创建底部状态栏
   createStatusBar();
+
+  // 创建进攻控制按钮
+  createAttackButtons();
 
   return true;
 }
@@ -450,6 +468,13 @@ void AttackScene::placeSoldier(const Vec2& worldPos, const TroopItem& item) {
       createStatusBar();
     }
 
+    // 记录兵种布置
+    if (_recordManager && _isAttackStarted) {
+      int timestamp = _recordManager->getCurrentTimestamp();
+      _recordManager->recordTroopPlacement(item.soldierType, item.level,
+                                           worldPos.x, worldPos.y, timestamp);
+    }
+
     CCLOG("Placed soldier at (%.1f, %.1f)", worldPos.x, worldPos.y);
   }
 }
@@ -528,6 +553,13 @@ void AttackScene::castSpell(const Vec2& worldPos, const SpellItem& item) {
           _statusBarLayer->removeAllChildren();
         }
         createStatusBar();
+      }
+
+      // 记录法术布置
+      if (_recordManager && _isAttackStarted) {
+        int timestamp = _recordManager->getCurrentTimestamp();
+        _recordManager->recordSpellPlacement(item.spellType, worldPos.x,
+                                             worldPos.y, timestamp);
       }
 
       CCLOG("Cast spell at (%.1f, %.1f)", worldPos.x, worldPos.y);
@@ -747,8 +779,159 @@ void AttackScene::onMouseUp(Event* event) {
   }
 }
 
+void AttackScene::createAttackButtons() {
+  // 如果按钮已存在，不重复创建
+  if (_startAttackButton && _endAttackButton && _countdownLabel) {
+    return;
+  }
+
+  auto visibleSize = Director::getInstance()->getVisibleSize();
+  Vec2 origin = Director::getInstance()->getVisibleOrigin();
+
+  // 创建开始进攻按钮（右上角）
+  if (!_startAttackButton) {
+    _startAttackButton = ui::Button::create();
+    _startAttackButton->setTitleText("开始进攻");
+    _startAttackButton->setTitleFontSize(20);
+    _startAttackButton->setContentSize(Size(120, 40));
+    _startAttackButton->setPosition(
+        Vec2(origin.x + visibleSize.width - 100, origin.y + visibleSize.height - 50));
+    _startAttackButton->addClickEventListener([this](Ref* sender) {
+      this->startAttack();
+    });
+    this->addChild(_startAttackButton, 200);
+  }
+
+  // 创建结束进攻按钮（右上角，在开始按钮下方）
+  if (!_endAttackButton) {
+    _endAttackButton = ui::Button::create();
+    _endAttackButton->setTitleText("结束进攻");
+    _endAttackButton->setTitleFontSize(20);
+    _endAttackButton->setContentSize(Size(120, 40));
+    _endAttackButton->setPosition(
+        Vec2(origin.x + visibleSize.width - 100, origin.y + visibleSize.height - 100));
+    _endAttackButton->setEnabled(false);
+    _endAttackButton->setBright(false);
+    _endAttackButton->addClickEventListener([this](Ref* sender) {
+      this->endAttack();
+    });
+    this->addChild(_endAttackButton, 200);
+  }
+
+  // 创建倒计时标签（右上角，在结束按钮下方）
+  if (!_countdownLabel) {
+    _countdownLabel = Label::createWithSystemFont("", "Arial", 24);
+    _countdownLabel->setColor(Color3B::YELLOW);
+    _countdownLabel->setPosition(
+        Vec2(origin.x + visibleSize.width - 100, origin.y + visibleSize.height - 150));
+    _countdownLabel->setString(formatTime(ATTACK_DURATION));
+    this->addChild(_countdownLabel, 200);
+  }
+}
+
+void AttackScene::startAttack() {
+  if (_isAttackStarted) {
+    return;
+  }
+
+  _isAttackStarted = true;
+  _countdownSeconds = ATTACK_DURATION;
+
+  // 更新按钮状态
+  if (_startAttackButton) {
+    _startAttackButton->setEnabled(false);
+    _startAttackButton->setBright(false);
+  }
+  if (_endAttackButton) {
+    _endAttackButton->setEnabled(true);
+    _endAttackButton->setBright(true);
+  }
+
+  // 开始记录
+  if (_recordManager) {
+    _recordManager->startAttack();
+  }
+
+  // 启动倒计时更新
+  this->schedule([this](float dt) { this->updateCountdown(dt); }, 1.0f, "updateCountdown");
+
+  CCLOG("Attack started, countdown: %d seconds", _countdownSeconds);
+}
+
+void AttackScene::endAttack() {
+  if (!_isAttackStarted) {
+    return;
+  }
+
+  // 停止倒计时
+  this->unschedule("updateCountdown");
+
+  // 保存记录
+  if (_recordManager) {
+    _recordManager->endAttackAndSave("Resources/record/dev.json");
+  }
+
+  // 重置状态
+  _isAttackStarted = false;
+  _countdownSeconds = ATTACK_DURATION;
+
+  // 更新按钮状态
+  if (_startAttackButton) {
+    _startAttackButton->setEnabled(true);
+    _startAttackButton->setBright(true);
+  }
+  if (_endAttackButton) {
+    _endAttackButton->setEnabled(false);
+    _endAttackButton->setBright(false);
+  }
+  if (_countdownLabel) {
+    _countdownLabel->setString(formatTime(ATTACK_DURATION));
+  }
+
+  CCLOG("Attack ended, records saved");
+}
+
+void AttackScene::updateCountdown(float dt) {
+  if (!_isAttackStarted) {
+    return;
+  }
+
+  _countdownSeconds--;
+  if (_countdownSeconds < 0) {
+    _countdownSeconds = 0;
+  }
+
+  // 更新倒计时标签
+  if (_countdownLabel) {
+    _countdownLabel->setString(formatTime(_countdownSeconds));
+    if (_countdownSeconds <= 10) {
+      _countdownLabel->setColor(Color3B::RED);
+    } else {
+      _countdownLabel->setColor(Color3B::YELLOW);
+    }
+  }
+
+  // 倒计时结束，自动结束进攻
+  if (_countdownSeconds <= 0) {
+    endAttack();
+  }
+}
+
+std::string AttackScene::formatTime(int seconds) const {
+  int minutes = seconds / 60;
+  int secs = seconds % 60;
+  char buffer[16];
+  snprintf(buffer, sizeof(buffer), "%02d:%02d", minutes, secs);
+  return std::string(buffer);
+}
+
 AttackScene::~AttackScene() {
   cancelPlacementMode();
+
+  // 停止倒计时
+  if (_isAttackStarted) {
+    this->unschedule("updateCountdown");
+  }
 
   // 清理士兵和法术
   // for (auto soldier : _placedSoldiers) {
@@ -765,6 +948,7 @@ AttackScene::~AttackScene() {
   // }
   // _activeSpells.clear();
 
-  // 清理 TroopManager
+  // 清理管理器
   CC_SAFE_DELETE(_troopManager);
+  CC_SAFE_DELETE(_recordManager);
 }
