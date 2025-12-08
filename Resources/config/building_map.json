@@ -19,5 +19,14 @@
     ],
     "Barracks": [
         { "row": 15, "col": 20, "level": 1 }
+    ],
+    "ElixirPump":[
+        {"row": 35, "col": 20, "level": 1}
+    ],
+    "ArcherTower":[
+         {"row": 20, "col": 35, "level": 1}
+    ],
+    "ElixirBottle":[
+         {"row": 25, "col": 25, "level": 1}
     ]
 }

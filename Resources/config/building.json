@@ -61,6 +61,15 @@
         "capacity": 10000,
         "resourceType": "Gold"
     },
+    "ElixirBottle": {
+        "type": "STORAGE",
+        "image": "images/buildings/elixir_bottle.png",
+        "GridSize": 3,
+        "AnchorRatio": [0.5, 0.5],
+        "imageScale": 1.0,
+        "capacity": 10000,
+        "resourceType": "Elixir"
+    },
     "Barracks": {
         "type": "BARRACKS",
         "image": "images/buildings/barracks.png",
