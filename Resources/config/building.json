@@ -6,8 +6,8 @@
             0.55,
             0.30
         ],
-        "imageScale": 0.6,
-        "GridSize": 4,
+        "imageScale": 0.8,
+        "GridSize": 3,
         "defaultLevel": 1,
         "maxLevel": 10,
         "tips": "GridPosition表示建筑中心所在的网格坐标，GridSize表示建筑占用的菱形边长"
@@ -17,7 +17,7 @@
         "image": "images/buildings/cannon.png",
         "GridSize": 3,
         "AnchorRatio": [0.5, 0.5],
-        "imageScale": 1.0,
+        "imageScale": 1.5,
         "attackRange": 7.0,
         "damage": 50,
         "attackSpeed": 1.2
@@ -27,7 +27,7 @@
         "image": "images/buildings/archer_tower.png",
         "GridSize": 3,
         "AnchorRatio": [0.5, 0.5],
-        "imageScale": 1.0,
+        "imageScale": 1.5,
         "attackRange": 10.0,
         "damage": 35,
         "attackSpeed": 0.8
@@ -37,7 +37,7 @@
         "image": "images/buildings/gold_mine.png",
         "GridSize": 3,
         "AnchorRatio": [0.5, 0.5],
-        "imageScale": 1.0,
+        "imageScale": 1.5,
         "productionRate": 200,
         "capacity": 500,
         "resourceType": "Gold"
@@ -45,7 +45,7 @@
     "ElixirPump": {
         "type": "RESOURCE",
         "image": "images/buildings/elixir_pump.png",
-        "GridSize": 3,
+        "GridSize": 4,
         "AnchorRatio": [0.5, 0.5],
         "imageScale": 1.0,
         "productionRate": 200,
@@ -55,9 +55,9 @@
     "GoldStorage": {
         "type": "STORAGE",
         "image": "images/buildings/gold_storage.png",
-        "GridSize": 3,
+        "GridSize": 4,
         "AnchorRatio": [0.5, 0.5],
-        "imageScale": 1.0,
+        "imageScale": 0.8,
         "capacity": 10000,
         "resourceType": "Gold"
     },
@@ -73,7 +73,7 @@
     "Barracks": {
         "type": "BARRACKS",
         "image": "images/buildings/barracks.png",
-        "GridSize": 3,
+        "GridSize": 4,
         "AnchorRatio": [0.5, 0.5],
         "imageScale": 1.0,
         "queueSize": 20
