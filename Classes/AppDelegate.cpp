@@ -1,6 +1,7 @@
 #include "AppDelegate.h"
 
 #include "Container/Scene/AttackScence/AttackScene.h"
+#include "Container/Scene/Record/RecordScene.h"
 #include "Container/Scene/GameScene.h"
 #include "Manager/Config/ConfigManager.h"
 
@@ -86,7 +87,8 @@ bool AppDelegate::applicationDidFinishLaunching() {
 
   // 创建游戏场景
   // auto scene = GameScene::createScene();
-  auto scene = AttackScene::createScene();
+  // auto scene = AttackScene::createScene();
+  auto scene = RecordScene::createScene();
   director->runWithScene(scene);
 
   return true;
