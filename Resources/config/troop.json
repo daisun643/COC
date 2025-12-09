@@ -1,0 +1,34 @@
+{
+    "tip": "进攻时的军队和法术配置",
+    "troop": [
+        {
+            "Category": "barbarian",
+            "Level": 1,
+            "Count": 10
+        },
+        {
+            "Category": "barbarian",
+            "Level": 2,
+            "Count": 10
+        },
+        {
+            "Category": "barbarian",
+            "Level": 3,
+            "Count": 10
+        }
+    ],
+    "spell": [
+        {
+            "Category": "Heal",
+            "Count": 1
+        },
+        {
+            "Category": "Lightning",
+            "Count": 1
+        },
+        {
+            "Category": "Rage",
+            "Count": 1
+        }
+    ]
+}

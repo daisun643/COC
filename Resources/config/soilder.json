@@ -1,0 +1,34 @@
+{
+    "tip": "兵种的属性配置",
+    "barbarian": {
+        "AttackType": "Any",
+        "SoldierType": "LAND",
+        "1": {
+            "PanelImage": "images/soldier/panel/barbarian.png",
+            "MoveImage": "images/soldier/live/barbarian/1.png",
+            "Attack": 10,
+            "Health": 100,
+            "MoveSpeed": 100,
+            "AttackSpeed": 100,
+            "AttackRange": 100
+        },
+        "2": {
+            "PanelImage": "images/soldier/panel/barbarian.png",
+            "MoveImage": "images/soldier/live/barbarian/1.png",
+            "Attack": 10,
+            "Health": 100,
+            "MoveSpeed": 100,
+            "AttackSpeed": 100,
+            "AttackRange": 100
+        },
+        "3": {
+            "PanelImage": "images/soldier/panel/barbarian.png",
+            "MoveImage": "images/soldier/live/barbarian/1.png",
+            "Attack": 10,
+            "Health": 100,
+            "MoveSpeed": 100,
+            "AttackSpeed": 100,
+            "AttackRange": 100
+        }
+    }
+}
