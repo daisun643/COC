@@ -6,6 +6,7 @@
 
 #include "Game/Building/Building.h"
 #include "Manager/Config/ConfigManager.h"
+#include "Manager/PlayerManager.h"
 #include "Utils/GridUtils.h"
 #include "cocos2d.h"
 
@@ -59,6 +60,11 @@ class BuildingManager {
   void registerBuilding(Building* building);
 
   /**
+   * 更新玩家资源统计数据（上限和产出）
+   */
+  void updatePlayerResourcesStats();
+
+  /**
    * 析构函数
    */
   ~BuildingManager();
@@ -71,7 +77,8 @@ class BuildingManager {
 
   /**
    * 创建建筑实例
-   * @param buildingName 建筑的具体名称（如 "Cannon", "TownHall"），对应配置文件中的Key
+   * @param buildingName 建筑的具体名称（如 "Cannon",
+   * "TownHall"），对应配置文件中的Key
    */
   Building* createBuilding(const std::string& buildingName, int row, int col,
                            int level);

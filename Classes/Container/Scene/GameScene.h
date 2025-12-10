@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include "Container/Layer/BuildingMenuLayer.h"
 #include "Container/Layer/MainUILayer.h"
 #include "Container/Layer/ShopLayer.h"
 #include "Container/Scene/Basic/BasicScene.h"
@@ -23,7 +24,8 @@ class GameScene : public BasicScene {
   CREATE_FUNC(GameScene);
 
  private:
-  MainUILayer* _uiLayer;  // UI 层
+  MainUILayer* _uiLayer;                  // UI 层
+  BuildingMenuLayer* _buildingMenuLayer;  // 建筑菜单层
 
   /**
    * 打开商店界面

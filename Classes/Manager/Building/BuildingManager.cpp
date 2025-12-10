@@ -6,13 +6,9 @@
 #include <sstream>
 
 // 包含所有具体的建筑头文件
-#include "Game/Building/TownHall.h"
-#include "Game/Building/DefenseBuilding.h"
-#include "Game/Building/ResourceBuilding.h"
-#include "Game/Building/StorageBuilding.h"
-#include "Game/Building/BarracksBuilding.h"
-
+#include "Game/Building/AllBuildings.h"
 #include "Manager/Config/ConfigManager.h"
+#include "Manager/PlayerManager.h"
 #include "Utils/GridUtils.h"
 #include "json/document.h"
 
@@ -40,6 +36,9 @@ bool BuildingManager::init() {
     CCLOG("Failed to load building map!");
     return false;
   }
+
+  // 初始计算一次资源统计
+  updatePlayerResourcesStats();
 
   return true;
 }
@@ -75,7 +74,7 @@ bool BuildingManager::loadBuildingMap() {
   // 遍历 JSON 中的所有键 (TownHall, Cannon, etc.)
   for (auto& m : doc.GetObject()) {
     std::string buildingName = m.name.GetString();
-    
+
     // 跳过可能的非建筑字段 (如 tips)
     if (buildingName == "tips") continue;
 
@@ -111,31 +110,28 @@ Building* BuildingManager::createBuilding(const std::string& buildingName,
 
   // 1. 获取该建筑的配置
   auto config = configManager->getBuildingConfig(buildingName);
-  
+
   // 2. 获取类型 (TOWN_HALL, DEFENSE, RESOURCE...)
-  std::string type = config.type; 
+  std::string type = config.type;
 
   Building* building = nullptr;
 
   // 3. 根据类型分发创建
   if (type == "TOWN_HALL") {
     building = TownHall::create(level);
-  } 
-  else if (type == "DEFENSE") {
-    // 传入 buildingName (例如 "Cannon")，以便 DefenseBuilding 内部再次读取伤害、范围等参数
+  } else if (type == "DEFENSE") {
+    // 传入 buildingName (例如 "Cannon")，以便 DefenseBuilding
+    // 内部再次读取伤害、范围等参数
     building = DefenseBuilding::create(level, buildingName);
-  }
-  else if (type == "RESOURCE") {
+  } else if (type == "RESOURCE") {
     building = ResourceBuilding::create(level, buildingName);
-  }
-  else if (type == "STORAGE") {
+  } else if (type == "STORAGE") {
     building = StorageBuilding::create(level, buildingName);
-  }
-  else if (type == "BARRACKS") {
+  } else if (type == "BARRACKS") {
     building = BarracksBuilding::create(level, buildingName);
-  }
-  else {
-    CCLOG("Unknown building type '%s' for building '%s'", type.c_str(), buildingName.c_str());
+  } else {
+    CCLOG("Unknown building type '%s' for building '%s'", type.c_str(),
+          buildingName.c_str());
     return nullptr;
   }
 
@@ -213,4 +209,63 @@ void BuildingManager::registerBuilding(Building* building) {
 
   building->retain();
   _buildings.push_back(building);
+
+  // 更新资源统计
+  updatePlayerResourcesStats();
+}
+
+void BuildingManager::updatePlayerResourcesStats() {
+  auto playerManager = PlayerManager::getInstance();
+  if (!playerManager) {
+    return;
+  }
+
+  int maxGold = 0;
+  int maxElixir = 0;
+  int goldProd = 0;
+  int elixirProd = 0;
+
+  // 基础容量（例如大本营自带的，或者系统默认的）
+  // 这里假设默认有1000容量，避免初始为0
+  maxGold = 1000;
+  maxElixir = 1000;
+
+  for (auto building : _buildings) {
+    if (!building) continue;
+
+    if (building->getBuildingType() == BuildingType::STORAGE) {
+      auto storage = dynamic_cast<StorageBuilding*>(building);
+      if (storage) {
+        if (storage->getResourceType() == "Gold") {
+          maxGold += storage->getCapacity();
+        } else if (storage->getResourceType() == "Elixir") {
+          maxElixir += storage->getCapacity();
+        }
+      }
+    } else if (building->getBuildingType() == BuildingType::RESOURCE) {
+      auto resource = dynamic_cast<ResourceBuilding*>(building);
+      if (resource) {
+        if (resource->getResourceType() == "Gold") {
+          maxGold += resource->getCapacity();
+          goldProd += resource->getProductionRate();
+        } else if (resource->getResourceType() == "Elixir") {
+          maxElixir += resource->getCapacity();
+          elixirProd += resource->getProductionRate();
+        }
+      }
+    }
+  }
+
+  playerManager->setMaxGold(maxGold);
+  playerManager->setMaxElixir(maxElixir);
+  playerManager->setGoldProduction(goldProd);
+  playerManager->setElixirProduction(elixirProd);
+
+  // 确保当前资源不超过新上限
+  if (playerManager->getGold() > maxGold) {
+    playerManager->setGold(maxGold);
+  }
+  if (playerManager->getElixir() > maxElixir) {
+    playerManager->setElixir(maxElixir);
+  }
 }

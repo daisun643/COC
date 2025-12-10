@@ -16,6 +16,7 @@ struct ShopItem {
   int costElixir = 0;                              // 圣水价格
   int defaultLevel = 1;                            // 初始等级
   BuildingType category = BuildingType::RESOURCE;  // 分类
+  std::string imagePath;                           // 建筑图片路径
   cocos2d::Color4B placeholderColor = cocos2d::Color4B::WHITE;
   int gridCount = 2;          // 占用网格大小（菱形边长）
   float anchorRatioX = 0.5f;  // 锚点X比例
