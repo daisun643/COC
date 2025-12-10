@@ -165,7 +165,7 @@ class BasicSoldier : public Sprite {
    * 攻击目标
    * @param delta 时间间隔
    */
-  void attackTarget(float delta);
+  virtual void attackTarget(float delta);
 
   /**
    * 死亡处理

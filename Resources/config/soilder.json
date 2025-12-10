@@ -99,29 +99,29 @@
         "1": {
             "PanelImage": "images/soldier/panel/bomber.png",
             "MoveImage": "images/soldier/live/bomber/1.png",
-            "Attack": 10,
+            "Attack": 100,
             "Health": 100,
             "MoveSpeed": 100,
             "AttackSpeed": 100,
-            "AttackRange": 50
+            "AttackRange": 10
         },
         "2": {
             "PanelImage": "images/soldier/panel/bomber.png",
             "MoveImage": "images/soldier/live/bomber/1.png",
-            "Attack": 10,
+            "Attack": 100,
             "Health": 100,
             "MoveSpeed": 100,
             "AttackSpeed": 100,
-            "AttackRange": 50
+            "AttackRange": 10
         },
         "3": {
             "PanelImage": "images/soldier/panel/bomber.png",
             "MoveImage": "images/soldier/live/bomber/1.png",
-            "Attack": 10,
+            "Attack": 100,
             "Health": 100,
             "MoveSpeed": 100,
             "AttackSpeed": 100,
-            "AttackRange": 50
+            "AttackRange": 10
         }
     }
 }

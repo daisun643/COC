@@ -48,42 +48,22 @@
         },
         {
             "row": 10,
-            "col": 15,
+            "col": 11,
             "level": 1
         },
         {
             "row": 10,
-            "col": 20,
+            "col": 12,
             "level": 1
         },
         {
-            "row": 15,
-            "col": 10,
+            "row": 10,
+            "col": 13,
             "level": 1
         },
         {
-            "row": 15,
-            "col": 15,
-            "level": 1
-        },
-        {
-            "row": 15,
-            "col": 20,
-            "level": 1
-        },
-        {
-            "row": 20,
-            "col": 10,
-            "level": 1
-        },
-        {
-            "row": 20,
-            "col": 15,
-            "level": 1
-        },
-        {
-            "row": 20,
-            "col": 20,
+            "row": 10,
+            "col": 14,
             "level": 1
         }
     ]

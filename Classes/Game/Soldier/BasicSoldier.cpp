@@ -3,6 +3,10 @@
 #include <cmath>
 #include <string>
 
+#include "Game/Soldier/Archer.h"
+#include "Game/Soldier/Barbarian.h"
+#include "Game/Soldier/Bomber.h"
+#include "Game/Soldier/Gaint.h"
 #include "Manager/Config/ConfigManager.h"
 
 BasicSoldier::BasicSoldier()
@@ -49,13 +53,34 @@ BasicSoldier::~BasicSoldier() {
 }
 
 BasicSoldier* BasicSoldier::create(SoldierType soldierType, int level) {
-  BasicSoldier* soldier = new (std::nothrow) BasicSoldier();
-  if (soldier && soldier->init(soldierType, level)) {
-    soldier->autorelease();
-    return soldier;
+  BasicSoldier* soldier = nullptr;
+  
+  // 根据士兵类型创建对应的派生类对象
+  switch (soldierType) {
+    case SoldierType::BARBARIAN:
+      soldier = Barbarian::create(level);
+      break;
+    case SoldierType::ARCHER:
+      soldier = Archer::create(level);
+      break;
+    case SoldierType::GIANT:
+      soldier = Gaint::create(level);
+      break;
+    case SoldierType::BOMBER:
+      soldier = Bomber::create(level);
+      break;
+    default:
+      // 默认创建 BasicSoldier（不应该到达这里）
+      soldier = new (std::nothrow) BasicSoldier();
+      if (soldier && soldier->init(soldierType, level)) {
+        soldier->autorelease();
+        return soldier;
+      }
+      CC_SAFE_DELETE(soldier);
+      return nullptr;
   }
-  CC_SAFE_DELETE(soldier);
-  return nullptr;
+  
+  return soldier;
 }
 
 bool BasicSoldier::init(SoldierType soldierType, int level) {
@@ -409,7 +434,9 @@ bool BasicSoldier::findTarget(const std::vector<Building*>& buildings) {
     bool isPreferred = false;
     switch (_attackType) {
       case AttackType::ANY:
-        isPreferred = true;  // 任意目标都是优先的
+        if(buildingType != BuildingType::WALL) {
+          isPreferred = true;  
+        }
         break;
       case AttackType::DEFENSE:
         isPreferred = (buildingType == BuildingType::DEFENSE);

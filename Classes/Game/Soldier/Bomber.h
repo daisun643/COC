@@ -31,6 +31,13 @@ class Bomber : public BasicSoldier {
    */
   virtual void createDefaultAppearance() override;
 
+  /**
+   * 攻击目标（重写基类方法）
+   * 炸弹人特殊逻辑：对半径100像素内的所有城墙造成伤害，然后自己死亡
+   * @param delta 时间间隔
+   */
+  virtual void attackTarget(float delta) override;
+
   Bomber();
   virtual ~Bomber();
 };

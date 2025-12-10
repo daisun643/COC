@@ -1,5 +1,6 @@
 #include "Bomber.h"
 
+#include "Game/Building/Building.h"
 #include "Manager/Config/ConfigManager.h"
 
 Bomber::Bomber() { _soldierType = SoldierType::BOMBER; }
@@ -43,5 +44,52 @@ void Bomber::createDefaultAppearance() {
 
   // 设置内容大小
   this->setContentSize(Size(40, 40));
+}
+
+void Bomber::attackTarget(float delta) {
+  // 检查攻击冷却
+  if (_attackCooldown > 0) {
+    _attackCooldown -= delta;
+    return;
+  }
+
+  // 炸弹人特殊攻击逻辑：对半径100像素内的所有城墙造成伤害
+  if (!_buildingFinderCallback) {
+    // 如果没有建筑查找回调，使用默认攻击逻辑
+    BasicSoldier::attackTarget(delta);
+    return;
+  }
+
+  // 获取所有建筑
+  std::vector<Building*> buildings = _buildingFinderCallback();
+  float explosionRadius = 100.0f;  // 爆炸半径100像素
+  int wallCount = 0;
+
+  // 遍历所有建筑，找到半径100像素内的城墙
+  for (Building* building : buildings) {
+    if (!building || !building->isVisible() || !building->isAlive()) {
+      continue;
+    }
+
+
+    // 计算距离
+    Vec2 buildingPos = building->getPosition();
+    float distance = getDistanceTo(buildingPos);
+
+    // 如果在爆炸半径内，造成伤害
+    if (distance <= explosionRadius) {
+      building->takeDamage(_attackDamage);
+      wallCount++;
+      CCLOG("Bomber explodes! Wall at distance %.1f takes damage: %.1f, wall HP: %.1f/%.1f",
+            distance, _attackDamage, building->getCurrentHP(), building->getMaxHP());
+    }
+  }
+
+  if (wallCount > 0) {
+    CCLOG("Bomber explodes and damages %d wall(s), then dies", wallCount);
+  }
+
+  // 炸弹人攻击后立即死亡
+  die();
 }
 
