@@ -105,14 +105,10 @@ bool BuildingManager::loadBuildingMap() {
 Building* BuildingManager::createBuilding(const std::string& buildingName,
                                           int row, int col, int level) {
   auto configManager = ConfigManager::getInstance();
-  if (!configManager) {
-    return nullptr;
-  }
+  if (!configManager) return nullptr;
 
-  // 1. 获取该建筑的配置
-  auto config = configManager->getBuildingConfig(buildingName);
-  
-  // 2. 获取类型 (TOWN_HALL, DEFENSE, RESOURCE...)
+  // 1. 获取该建筑的配置 (默认拿 Level 1 来判断 Type)
+  auto config = configManager->getBuildingConfig(buildingName, level);
   std::string type = config.type; 
 
   Building* building = nullptr;
@@ -122,7 +118,6 @@ Building* BuildingManager::createBuilding(const std::string& buildingName,
     building = TownHall::create(level);
   } 
   else if (type == "DEFENSE") {
-    // 传入 buildingName (例如 "Cannon")，以便 DefenseBuilding 内部再次读取伤害、范围等参数
     building = DefenseBuilding::create(level, buildingName);
   }
   else if (type == "RESOURCE") {
@@ -139,7 +134,7 @@ Building* BuildingManager::createBuilding(const std::string& buildingName,
     return nullptr;
   }
 
-  // 4. 设置位置 (通用逻辑)
+  // 4. 设置位置
   if (building) {
     Vec2 anchorPos = GridUtils::gridToScene(row, col, _p00);
     building->setPosition(anchorPos);

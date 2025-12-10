@@ -19,7 +19,7 @@ ResourceBuilding* ResourceBuilding::create(int level, const std::string& buildin
 }
 
 bool ResourceBuilding::init(int level, const std::string& buildingName) {
-  auto config = ConfigManager::getInstance()->getBuildingConfig(buildingName);
+  auto config = ConfigManager::getInstance()->getBuildingConfig(buildingName, level);
   _buildingName = buildingName;
 
   if (!Building::init(config.image, BuildingType::RESOURCE, level, 
@@ -32,4 +32,12 @@ bool ResourceBuilding::init(int level, const std::string& buildingName) {
   this->_resourceType = config.resourceType;
 
   return true;
+}
+
+void ResourceBuilding::upgrade() {
+    Building::upgrade();
+    auto config = ConfigManager::getInstance()->getBuildingConfig(_buildingName, _level);
+    this->_productionRate = config.productionRate;
+    this->_capacity = config.capacity;
+    CCLOG("ResourceBuilding upgraded: Rate -> %d", _productionRate);
 }

@@ -269,3 +269,63 @@ bool Building::inDiamond(const Vec2& pos) const {
 
   return manhattanDist <= _gridCount;
 }
+
+// 建筑升级：包含重新设置纹理和刷新血量
+void Building::upgrade() {
+  if (_level >= _maxLevel) {
+    CCLOG("Building %s reached max level %d", _buildingName.c_str(), _maxLevel);
+    return;
+  }
+
+  _level++;
+  
+  // 使用新的 ConfigManager 接口
+  auto config = ConfigManager::getInstance()->getBuildingConfig(_buildingName, _level);
+  
+  if (!config.image.empty()) {
+    this->setTexture(config.image);
+  }
+  
+  // 更新血量
+  _maxHealth = config.health;
+  _currentHealth = _maxHealth;
+  
+  updateHPBar();
+  
+  CCLOG("Upgraded %s to level %d. HP: %.0f", _buildingName.c_str(), _level, _maxHealth);
+}
+
+// 摧毁建筑
+void Building::takeDamage(float damage) {
+    if (_currentHealth <= 0) return;
+    
+    _currentHealth -= damage;
+    if (_currentHealth < 0) _currentHealth = 0;
+    
+    updateHPBar();
+    
+    if (_currentHealth == 0) {
+        // 建筑被摧毁逻辑 (变灰或移除)
+        this->setColor(Color3B::GRAY);
+    }
+}
+
+// 更新建筑血条
+void Building::updateHPBar() {
+    if (!_hpBarNode) return;
+    _hpBarNode->clear();
+    
+    if (_currentHealth >= _maxHealth) return; // 满血不显示
+    
+    float width = 60.0f;
+    float height = 6.0f;
+    Vec2 origin(this->getContentSize().width * _anchorRatioX - width/2, 
+                this->getContentSize().height + 10);
+                
+    // 背景(红)
+    _hpBarNode->drawSolidRect(origin, origin + Vec2(width, height), Color4F(1, 0, 0, 1));
+    
+    // 前景(绿)
+    float ratio = _currentHealth / _maxHealth;
+    _hpBarNode->drawSolidRect(origin, origin + Vec2(width * ratio, height), Color4F(0, 1, 0, 1));
+}

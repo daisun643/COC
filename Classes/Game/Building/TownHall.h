@@ -9,20 +9,19 @@
  */
 class TownHall : public Building {
  public:
-  // static TownHall* create(int level = 1);
-
   /**
-   * 创建TownHall（新版本，包含gridSize和anchorRatio）
+   * 创建TownHall
    */
   static TownHall* create(int level);
 
-  // bool init(int level);
-
   /**
-   * 初始化TownHall（新版本，包含gridSize和anchorRatio）
+   * 初始化TownHall
+   * 内部会从ConfigManager读取 "TownHall" 的配置
    */
-  bool init(int level, std::string imagePath, int gridCount, float anchorRatioX,
-            float anchorRatioY, float imageScale);
+  bool init(int level);
+  
+  // 重写升级方法
+  virtual void upgrade() override;
 
  protected:
   TownHall();

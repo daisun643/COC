@@ -74,7 +74,7 @@ class BuildingManager {
    * @param buildingName 建筑的具体名称（如 "Cannon", "TownHall"），对应配置文件中的Key
    */
   Building* createBuilding(const std::string& buildingName, int row, int col,
-                           int level);
+                           int level=1);
 
   std::vector<Building*> _buildings;  // 所有建筑的列表
   Vec2 _p00;                          // 地图原点

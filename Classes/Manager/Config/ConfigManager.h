@@ -56,26 +56,32 @@ class ConfigManager {
    */
   struct BuildingConfig {
     // 基础属性
-    std::string type;         // 关键字段：TOWN_HALL, DEFENSE, RESOURCE, STORAGE, BARRACKS
+    std::string type;         
     std::string image;
     float anchorRatioX = 0.5f;
     float anchorRatioY = 0.5f;
     int gridCount = 1;
-    int defaultLevel = 1;
     int maxLevel = 10;
+    
+    // --- 修改点：添加 defaultLevel ---
+    int defaultLevel = 1; 
+    
     float imageScale = 1.0f;
+    
+    // --- 修改点：确保有 health ---
+    int health = 0; 
 
-    // 防御属性 (Defense)
+    // 防御属性
     float attackRange = 0.0f;
     int damage = 0;
     float attackSpeed = 0.0f;
 
-    // 资源与储存属性 (Resource & Storage)
+    // 资源与储存属性
     int productionRate = 0;
     int capacity = 0;
-    std::string resourceType; // "Gold" or "Elixir"
+    std::string resourceType; 
 
-    // 兵营属性 (Barracks)
+    // 兵营属性
     int queueSize = 0;
   };
 
@@ -120,7 +126,7 @@ class ConfigManager {
   /**
    * 获取指定名称建筑的配置
    */
-  BuildingConfig getBuildingConfig(const std::string& name) const;
+  BuildingConfig getBuildingConfig(const std::string& name, int level = 1) const;
 
   /**
    * 获取士兵配置
@@ -182,7 +188,7 @@ class ConfigManager {
   static ConfigManager* _instance;
 
   // 存储所有建筑配置的字典
-  std::map<std::string, BuildingConfig> _buildingConfigs;
+  std::map<std::string, std::map<int, BuildingConfig>> _buildingConfigs;
 };
 
 #endif  // __CONFIG_MANAGER_H__
