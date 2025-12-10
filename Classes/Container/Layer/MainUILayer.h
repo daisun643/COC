@@ -14,6 +14,7 @@ class MainUILayer : public cocos2d::Layer {
   // 设置回调
   void setOnShopClickCallback(std::function<void()> callback);
   void setOnAttackClickCallback(std::function<void()> callback);
+  void setOnReplayClickCallback(std::function<void()> callback);
 
  private:
   ResourceWidget* _goldWidget;
@@ -21,9 +22,11 @@ class MainUILayer : public cocos2d::Layer {
 
   cocos2d::ui::Button* _shopButton;
   cocos2d::ui::Button* _attackButton;
+  cocos2d::ui::Button* _replayButton;
 
   std::function<void()> _onShopClick;
   std::function<void()> _onAttackClick;
+  std::function<void()> _onReplayClick;
 };
 
 #endif  // __MAIN_UI_LAYER_H__

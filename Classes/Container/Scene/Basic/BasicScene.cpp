@@ -385,7 +385,12 @@ void BasicScene::onMouseUp(Event* event) {
       _draggingBuilding->_isDragging = false;
       _draggingBuilding = nullptr;
       _isMouseDown = false;  // 标记鼠标已释放
-      // 注意：不隐藏光晕，保持选中状态
+
+      // 拖动结束后自动取消选中状态
+      if (_selectedBuilding) {
+        _selectedBuilding->hideGlow();
+        _selectedBuilding = nullptr;
+      }
     } else if (_selectedBuilding) {
       // 如果只是选中了建筑但没有拖动，保持选中状态（光晕继续显示）
       // 可以在这里添加其他点击行为（如显示建筑信息）

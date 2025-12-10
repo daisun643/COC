@@ -2,7 +2,9 @@
 
 #include <float.h>
 
-#include "Game/Building/PlaceholderBuilding.h"
+#include "Container/Layer/AttackLayer.h"
+#include "Container/Layer/ReplayLayer.h"
+#include "Game/Building/AllBuildings.h"
 #include "Manager/Config/ConfigManager.h"
 
 Scene* GameScene::createScene() { return GameScene::create(); }
@@ -23,9 +25,38 @@ bool GameScene::init() {
   // 设置 UI 按钮回调
   _uiLayer->setOnShopClickCallback([this]() { this->openShop(); });
 
-  _uiLayer->setOnAttackClickCallback([]() {
-    CCLOG("Attack Button Clicked!");
-    // TODO: 切换到进攻场景
+  _uiLayer->setOnAttackClickCallback([this]() {
+    if (this->getChildByName("AttackLayerUI")) {
+      return;
+    }
+    auto attackLayer = AttackLayer::create();
+    if (attackLayer) {
+      attackLayer->setName("AttackLayerUI");
+      attackLayer->setOnSearchOpponentCallback([]() {
+        CCLOG("Search Opponent Clicked!");
+        // TODO: Implement search logic
+      });
+      attackLayer->setOnLevelSelectedCallback([](int levelId) {
+        CCLOG("Level %d Selected!", levelId);
+        // TODO: Implement level loading
+      });
+      this->addChild(attackLayer, 200);
+    }
+  });
+
+  _uiLayer->setOnReplayClickCallback([this]() {
+    if (this->getChildByName("ReplayLayerUI")) {
+      return;
+    }
+    auto replayLayer = ReplayLayer::create();
+    if (replayLayer) {
+      replayLayer->setName("ReplayLayerUI");
+      replayLayer->setOnReplaySelectedCallback([](int replayId) {
+        CCLOG("Replay %d Selected!", replayId);
+        // TODO: Implement replay playback
+      });
+      this->addChild(replayLayer, 200);
+    }
   });
 
   // 初始化 GameScene 特有的放置模式相关变量
@@ -48,16 +79,64 @@ bool GameScene::init() {
   if (_placementHintLabel) {
     _placementHintLabel->setColor(Color3B::YELLOW);
     _placementHintLabel->setVisible(false);
+    // 将提示信息位置上移，避免被底部的建筑菜单按钮遮挡
     _placementHintLabel->setPosition(
-        Vec2(origin.x + visibleSize.width / 2.0f, origin.y + 80.0f));
+        Vec2(origin.x + visibleSize.width / 2.0f, origin.y + 250.0f));
     this->addChild(_placementHintLabel, 150);
   }
+
+  // 创建建筑菜单层 (ZOrder 150, above map but below popups)
+  _buildingMenuLayer = BuildingMenuLayer::create();
+  this->addChild(_buildingMenuLayer, 150);
+
+  // 设置回调
+  _buildingMenuLayer->setOnInfoCallback([](Building* b) {
+    CCLOG("Info clicked for building type: %d", (int)b->getBuildingType());
+    // TODO: Show info dialog
+  });
+  _buildingMenuLayer->setOnUpgradeCallback([](Building* b) {
+    CCLOG("Upgrade clicked for building level: %d", b->getLevel());
+    // TODO: Implement upgrade logic
+  });
+  _buildingMenuLayer->setOnCollectCallback([this](Building* b) {
+    CCLOG("Collect clicked");
+    auto resourceBuilding = dynamic_cast<ResourceBuilding*>(b);
+    if (resourceBuilding) {
+      auto playerManager = PlayerManager::getInstance();
+      if (playerManager) {
+        // 使用新的 collect 方法获取当前暂存的资源
+        int amount = resourceBuilding->collect();
+
+        if (amount > 0) {
+          if (resourceBuilding->getResourceType() == "Gold") {
+            playerManager->addGold(amount);
+            showPlacementHint("收集了 " + std::to_string(amount) + " 金币");
+          } else if (resourceBuilding->getResourceType() == "Elixir") {
+            playerManager->addElixir(amount);
+            showPlacementHint("收集了 " + std::to_string(amount) + " 圣水");
+          }
+        } else {
+          showPlacementHint("没有资源可收集");
+        }
+
+        // 提示动画
+        if (_placementHintLabel) {
+          _placementHintLabel->stopAllActions();
+          _placementHintLabel->setVisible(true);
+          auto delay = DelayTime::create(1.5f);
+          auto clear = CallFunc::create([this]() { showPlacementHint(""); });
+          _placementHintLabel->runAction(
+              Sequence::create(delay, clear, nullptr));
+        }
+      }
+    }
+  });
 
   return true;
 }
 
 void GameScene::onMouseScroll(Event* event) {
-  if (isShopOpen()) {
+  if (isPopupOpen()) {
     return;
   }
   // 调用父类方法处理缩放
@@ -67,7 +146,13 @@ void GameScene::onMouseScroll(Event* event) {
 void GameScene::onMouseDown(Event* event) {
   EventMouse* mouseEvent = static_cast<EventMouse*>(event);
 
-  if (isShopOpen()) {
+  if (isPopupOpen()) {
+    return;
+  }
+
+  // 检查是否点击了建筑菜单
+  if (_buildingMenuLayer &&
+      _buildingMenuLayer->isPointInMenu(mouseEvent->getLocationInView())) {
     return;
   }
 
@@ -91,7 +176,7 @@ void GameScene::onMouseMove(Event* event) {
   Vec2 currentPos = mouseEvent->getLocationInView();
   _currentMousePos = currentPos;
 
-  if (isShopOpen()) {
+  if (isPopupOpen()) {
     return;
   }
 
@@ -108,6 +193,11 @@ void GameScene::onMouseMove(Event* event) {
 
   // 额外处理：如果正在拖动已有建筑，进行重叠检测并更新视觉状态
   if (_draggingBuilding) {
+    // 拖动时隐藏菜单
+    if (_buildingMenuLayer) {
+      _buildingMenuLayer->hideOptions();
+    }
+
     if (isPlacementValid(_draggingBuilding)) {
       _draggingBuilding->setPlacementValid(true);
     } else {
@@ -119,7 +209,7 @@ void GameScene::onMouseMove(Event* event) {
 void GameScene::onMouseUp(Event* event) {
   EventMouse* mouseEvent = static_cast<EventMouse*>(event);
 
-  if (isShopOpen()) {
+  if (isPopupOpen()) {
     return;
   }
 
@@ -186,6 +276,9 @@ void GameScene::onMouseUp(Event* event) {
       _placementMouseDownPos = Vec2::ZERO;
       showPlacementHint("建筑已放置");
 
+      // 放置新建筑时不自动显示菜单，需要用户再次点击选中
+      _selectedBuilding = nullptr;
+
       if (_placementHintLabel) {
         _placementHintLabel->stopAllActions();
         auto delay = DelayTime::create(1.5f);
@@ -203,8 +296,27 @@ void GameScene::onMouseUp(Event* event) {
     return;
   }
 
+  // 检查是否正在拖动（在父类处理前检查）
+  bool wasDragging = _draggingBuilding != nullptr;
+
+  // 检查是否点击了建筑菜单
+  if (_buildingMenuLayer &&
+      _buildingMenuLayer->isPointInMenu(mouseEvent->getLocationInView())) {
+    return;
+  }
+
   // 调用父类方法处理常规鼠标抬起事件
   BasicScene::onMouseUp(event);
+
+  // 更新建筑菜单显示状态
+  if (_buildingMenuLayer) {
+    // 如果刚才在拖动，或者没有选中建筑，则隐藏菜单
+    if (_selectedBuilding && !wasDragging) {
+      _buildingMenuLayer->showBuildingOptions(_selectedBuilding);
+    } else {
+      _buildingMenuLayer->hideOptions();
+    }
+  }
 }
 
 void GameScene::openShop() {
@@ -229,8 +341,10 @@ void GameScene::openShop() {
   this->addChild(shopLayer, 200);
 }
 
-bool GameScene::isShopOpen() const {
-  return this->getChildByName("ShopLayerUI") != nullptr;
+bool GameScene::isPopupOpen() const {
+  return this->getChildByName("ShopLayerUI") != nullptr ||
+         this->getChildByName("AttackLayerUI") != nullptr ||
+         this->getChildByName("ReplayLayerUI") != nullptr;
 }
 
 std::vector<ShopItem> GameScene::buildShopCatalog() const {
@@ -247,58 +361,116 @@ std::vector<ShopItem> GameScene::buildShopCatalog() const {
     townHall.costElixir = 0;
     townHall.defaultLevel = townHallConfig.defaultLevel;
     townHall.category = BuildingType::TOWN_HALL;
+    townHall.imagePath = townHallConfig.image;
     townHall.placeholderColor = Color4B(139, 69, 19, 255);
     townHall.gridCount = townHallConfig.gridCount;
     townHall.anchorRatioX = townHallConfig.anchorRatioX;
     townHall.anchorRatioY = townHallConfig.anchorRatioY;
     townHall.imageScale = townHallConfig.imageScale;
     items.push_back(townHall);
+
+    auto goldMineConfig = configManager->getBuildingConfig("GoldMine");
+    ShopItem goldMine;
+    goldMine.id = "GoldMine";
+    goldMine.displayName = "金矿";
+    goldMine.description = "持续生产金币的基础建筑";
+    goldMine.costGold = 300;
+    goldMine.costElixir = 0;
+    goldMine.defaultLevel = 1;
+    goldMine.category = BuildingType::RESOURCE;
+    goldMine.imagePath = goldMineConfig.image;
+    goldMine.placeholderColor = Color4B(212, 175, 55, 255);
+    goldMine.gridCount = goldMineConfig.gridCount;
+    goldMine.anchorRatioX = goldMineConfig.anchorRatioX;
+    goldMine.anchorRatioY = goldMineConfig.anchorRatioY;
+    goldMine.imageScale = goldMineConfig.imageScale;
+    items.push_back(goldMine);
+
+    auto elixirPumpConfig = configManager->getBuildingConfig("ElixirPump");
+    ShopItem elixirPump;
+    elixirPump.id = "ElixirPump";
+    elixirPump.displayName = "圣水采集器";
+    elixirPump.description = "产出圣水的基础设施";
+    elixirPump.costGold = 0;
+    elixirPump.costElixir = 350;
+    elixirPump.defaultLevel = 1;
+    elixirPump.category = BuildingType::RESOURCE;
+    elixirPump.imagePath = elixirPumpConfig.image;
+    elixirPump.placeholderColor = Color4B(140, 90, 200, 255);
+    elixirPump.gridCount = elixirPumpConfig.gridCount;
+    elixirPump.anchorRatioX = elixirPumpConfig.anchorRatioX;
+    elixirPump.anchorRatioY = elixirPumpConfig.anchorRatioY;
+    elixirPump.imageScale = elixirPumpConfig.imageScale;
+    items.push_back(elixirPump);
+
+    auto cannonConfig = configManager->getBuildingConfig("Cannon");
+    ShopItem cannon;
+    cannon.id = "Cannon";
+    cannon.displayName = "加农炮";
+    cannon.description = "基础防御建筑，守护村庄安全";
+    cannon.costGold = 800;
+    cannon.costElixir = 200;
+    cannon.defaultLevel = 1;
+    cannon.category = BuildingType::DEFENSE;
+    cannon.imagePath = cannonConfig.image;
+    cannon.placeholderColor = Color4B(120, 120, 120, 255);
+    cannon.gridCount = cannonConfig.gridCount;
+    cannon.anchorRatioX = cannonConfig.anchorRatioX;
+    cannon.anchorRatioY = cannonConfig.anchorRatioY;
+    cannon.imageScale = cannonConfig.imageScale;
+    items.push_back(cannon);
+
+    auto archerTowerConfig = configManager->getBuildingConfig("ArcherTower");
+    ShopItem archerTower;
+    archerTower.id = "ArcherTower";
+    archerTower.displayName = "箭塔";
+    archerTower.description = "远程防御建筑，可攻击空中和地面目标";
+    archerTower.costGold = 1000;
+    archerTower.costElixir = 0;
+    archerTower.defaultLevel = 1;
+    archerTower.category = BuildingType::DEFENSE;
+    archerTower.imagePath = archerTowerConfig.image;
+    archerTower.placeholderColor = Color4B(100, 100, 100, 255);
+    archerTower.gridCount = archerTowerConfig.gridCount;
+    archerTower.anchorRatioX = archerTowerConfig.anchorRatioX;
+    archerTower.anchorRatioY = archerTowerConfig.anchorRatioY;
+    archerTower.imageScale = archerTowerConfig.imageScale;
+    items.push_back(archerTower);
+
+    auto goldStorageConfig = configManager->getBuildingConfig("GoldStorage");
+    ShopItem goldStorage;
+    goldStorage.id = "GoldStorage";
+    goldStorage.displayName = "储金罐";
+    goldStorage.description = "储存大量金币";
+    goldStorage.costGold = 500;
+    goldStorage.costElixir = 0;
+    goldStorage.defaultLevel = 1;
+    goldStorage.category = BuildingType::STORAGE;
+    goldStorage.imagePath = goldStorageConfig.image;
+    goldStorage.placeholderColor = Color4B(255, 215, 0, 255);
+    goldStorage.gridCount = goldStorageConfig.gridCount;
+    goldStorage.anchorRatioX = goldStorageConfig.anchorRatioX;
+    goldStorage.anchorRatioY = goldStorageConfig.anchorRatioY;
+    goldStorage.imageScale = goldStorageConfig.imageScale;
+    items.push_back(goldStorage);
+
+    auto barracksConfig = configManager->getBuildingConfig("Barracks");
+    ShopItem barracks;
+    barracks.id = "Barracks";
+    barracks.displayName = "兵营";
+    barracks.description = "训练军队的地方";
+    barracks.costGold = 200;
+    barracks.costElixir = 0;
+    barracks.defaultLevel = 1;
+    barracks.category = BuildingType::BARRACKS;
+    barracks.imagePath = barracksConfig.image;
+    barracks.placeholderColor = Color4B(139, 0, 0, 255);
+    barracks.gridCount = barracksConfig.gridCount;
+    barracks.anchorRatioX = barracksConfig.anchorRatioX;
+    barracks.anchorRatioY = barracksConfig.anchorRatioY;
+    barracks.imageScale = barracksConfig.imageScale;
+    items.push_back(barracks);
   }
-
-  ShopItem goldMine;
-  goldMine.id = "GoldMine";
-  goldMine.displayName = "金矿";
-  goldMine.description = "持续生产金币的基础建筑";
-  goldMine.costGold = 300;
-  goldMine.costElixir = 0;
-  goldMine.defaultLevel = 1;
-  goldMine.category = BuildingType::RESOURCE;
-  goldMine.placeholderColor = Color4B(212, 175, 55, 255);
-  goldMine.gridCount = 2;
-  goldMine.anchorRatioX = 0.5f;
-  goldMine.anchorRatioY = 0.25f;
-  goldMine.imageScale = 0.7f;
-  items.push_back(goldMine);
-
-  ShopItem elixirCollector;
-  elixirCollector.id = "ElixirCollector";
-  elixirCollector.displayName = "圣水采集器";
-  elixirCollector.description = "产出圣水的基础设施";
-  elixirCollector.costGold = 0;
-  elixirCollector.costElixir = 350;
-  elixirCollector.defaultLevel = 1;
-  elixirCollector.category = BuildingType::RESOURCE;
-  elixirCollector.placeholderColor = Color4B(140, 90, 200, 255);
-  elixirCollector.gridCount = 2;
-  elixirCollector.anchorRatioX = 0.5f;
-  elixirCollector.anchorRatioY = 0.3f;
-  elixirCollector.imageScale = 0.7f;
-  items.push_back(elixirCollector);
-
-  ShopItem cannon;
-  cannon.id = "Cannon";
-  cannon.displayName = "加农炮";
-  cannon.description = "基础防御建筑，守护村庄安全";
-  cannon.costGold = 800;
-  cannon.costElixir = 200;
-  cannon.defaultLevel = 1;
-  cannon.category = BuildingType::DEFENSE;
-  cannon.placeholderColor = Color4B(120, 120, 120, 255);
-  cannon.gridCount = 2;
-  cannon.anchorRatioX = 0.5f;
-  cannon.anchorRatioY = 0.35f;
-  cannon.imageScale = 0.65f;
-  items.push_back(cannon);
 
   return items;
 }
@@ -423,13 +595,23 @@ void GameScene::cancelPlacementMode(bool refundResources) {
 }
 
 Building* GameScene::createBuildingForItem(const ShopItem& item) {
-  if (item.id == "TownHall") {
-    return TownHall::create(item.defaultLevel);
+  switch (item.category) {
+    case BuildingType::TOWN_HALL:
+      return TownHall::create(item.defaultLevel);
+    case BuildingType::RESOURCE:
+      return ResourceBuilding::create(item.defaultLevel, item.id);
+    case BuildingType::DEFENSE:
+      return DefenseBuilding::create(item.defaultLevel, item.id);
+    case BuildingType::STORAGE:
+      return StorageBuilding::create(item.defaultLevel, item.id);
+    case BuildingType::BARRACKS:
+      return BarracksBuilding::create(item.defaultLevel, item.id);
+    default:
+      return PlaceholderBuilding::create(
+          item.displayName, item.category, item.placeholderColor,
+          item.defaultLevel, item.gridCount, item.anchorRatioX,
+          item.anchorRatioY, item.imageScale);
   }
-
-  return PlaceholderBuilding::create(
-      item.displayName, item.category, item.placeholderColor, item.defaultLevel,
-      item.gridCount, item.anchorRatioX, item.anchorRatioY, item.imageScale);
 }
 
 void GameScene::showPlacementHint(const std::string& text) {
