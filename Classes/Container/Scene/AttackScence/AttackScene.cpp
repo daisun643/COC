@@ -426,8 +426,8 @@ void AttackScene::placeSoldier(const Vec2& worldPos, const TroopItem& item) {
     soldierType = SoldierType::ARCHER;
   } else if (item.soldierType == "giant") {
     soldierType = SoldierType::GIANT;
-  } else if (item.soldierType == "goblin") {
-    soldierType = SoldierType::GOBLIN;
+  } else if (item.soldierType == "bomber") {
+    soldierType = SoldierType::BOMBER;
   }
 
   // 创建士兵

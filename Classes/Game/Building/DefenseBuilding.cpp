@@ -34,5 +34,8 @@ bool DefenseBuilding::init(int level, const std::string& buildingName) {
   this->_damage = config.damage; // 实际游戏中可能需要乘以 level 系数
   this->_attackSpeed = config.attackSpeed;
 
+  // 设置最大生命值（当前生命值将在 BuildingManager 中设置，默认为 MaxHP）
+  this->_maxHP = config.maxHP;
+
   return true;
 }

@@ -32,7 +32,7 @@ enum class SoldierType {
   BARBARIAN,  // 野蛮人
   ARCHER,     // 弓箭手
   GIANT,      // 巨人
-  GOBLIN      // 哥布林
+  BOMBER      // 炸弹人
 };
 // TODO 大本营删除
 /**
@@ -42,7 +42,8 @@ enum class AttackType {
   ANY,       // 任意目标
   DEFENSE,   // 优先防御建筑
   RESOURCE,  // 优先资源建筑
-  TOWN_HALL  // 优先大本营
+  TOWN_HALL, // 优先大本营
+  WALL       // 优先墙
 };
 
 /**

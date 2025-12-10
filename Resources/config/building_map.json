@@ -8,16 +8,83 @@
         }
     ],
     "Cannon": [
-        { "row": 12, "col": 12, "level": 1 },
-        { "row": 18, "col": 12, "level": 1 }
+        {
+            "row": 12,
+            "col": 12,
+            "level": 1
+        },
+        {
+            "row": 18,
+            "col": 12,
+            "level": 1
+        }
     ],
     "GoldMine": [
-        { "row": 10, "col": 15, "level": 1 }
+        {
+            "row": 10,
+            "col": 15,
+            "level": 1
+        }
     ],
     "GoldStorage": [
-        { "row": 20, "col": 15, "level": 1 }
+        {
+            "row": 20,
+            "col": 15,
+            "level": 1
+        }
     ],
     "Barracks": [
-        { "row": 15, "col": 20, "level": 1 }
+        {
+            "row": 15,
+            "col": 20,
+            "level": 1
+        }
+    ],
+    "Wall": [
+        {
+            "row": 10,
+            "col": 10,
+            "level": 1
+        },
+        {
+            "row": 10,
+            "col": 15,
+            "level": 1
+        },
+        {
+            "row": 10,
+            "col": 20,
+            "level": 1
+        },
+        {
+            "row": 15,
+            "col": 10,
+            "level": 1
+        },
+        {
+            "row": 15,
+            "col": 15,
+            "level": 1
+        },
+        {
+            "row": 15,
+            "col": 20,
+            "level": 1
+        },
+        {
+            "row": 20,
+            "col": 10,
+            "level": 1
+        },
+        {
+            "row": 20,
+            "col": 15,
+            "level": 1
+        },
+        {
+            "row": 20,
+            "col": 20,
+            "level": 1
+        }
     ]
 }

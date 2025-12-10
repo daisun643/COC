@@ -86,12 +86,12 @@ bool BasicSoldier::init(SoldierType soldierType, int level) {
     case SoldierType::GIANT:
       soldierTypeKey = "giant";
       break;
-    case SoldierType::GOBLIN:
-      soldierTypeKey = "goblin";
+    case SoldierType::BOMBER:
+      soldierTypeKey = "bomber";
       break;
     default:
-      soldierTypeKey = "barbarian";
-      break;
+      CCLOG("Unknown soldier type: %d", static_cast<int>(soldierType));
+      return false;
   }
 
   // 从 ConfigManager 获取配置
@@ -188,7 +188,7 @@ void BasicSoldier::createDefaultAppearance() {
     case SoldierType::GIANT:
       color = Color4B(128, 128, 128, 255);  // 灰色
       break;
-    case SoldierType::GOBLIN:
+    case SoldierType::BOMBER:
       color = Color4B(0, 255, 0, 255);  // 绿色
       break;
     default:
@@ -419,6 +419,9 @@ bool BasicSoldier::findTarget(const std::vector<Building*>& buildings) {
         break;
       case AttackType::TOWN_HALL:
         isPreferred = (buildingType == BuildingType::TOWN_HALL);
+        break;
+      case AttackType::WALL:
+        isPreferred = (buildingType == BuildingType::WALL);
         break;
     }
 

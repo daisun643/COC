@@ -123,6 +123,9 @@ void Building::createDefaultAppearance() {
     case BuildingType::BARRACKS:
       color = Color4B(0, 255, 0, 255);  // 绿色
       break;
+    case BuildingType::WALL:
+      color = Color4B(128, 128, 128, 255);  // 灰色
+      break;
   }
 
   // 创建彩色矩形作为默认外观
@@ -135,10 +138,10 @@ void Building::createDefaultAppearance() {
 }
 
 bool Building::isOutOfBounds(int gridSize) const {
-  int topRow, topCol, rightRow, rightCol, bottomRow, bottomCol, leftRow,
+  float topRow, topCol, rightRow, rightCol, bottomRow, bottomCol, leftRow,
       leftCol;
 
-  int halfGridCount = _gridCount / 2;
+  float halfGridCount = _gridCount / 2.0f;
   topRow = _row + halfGridCount;
   topCol = _col - halfGridCount;
   rightRow = _row + halfGridCount;

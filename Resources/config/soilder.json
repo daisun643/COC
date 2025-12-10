@@ -30,5 +30,98 @@
             "AttackSpeed": 100,
             "AttackRange": 100
         }
+    },
+    "archer": {
+        "AttackType": "Any",
+        "SoldierType": "LAND",
+        "1": {
+            "PanelImage": "images/soldier/panel/archer.png",
+            "MoveImage": "images/soldier/live/archer/1.png",
+            "Attack": 10,
+            "Health": 100,
+            "MoveSpeed": 100,
+            "AttackSpeed": 100,
+            "AttackRange": 200
+        },
+        "2": {
+            "PanelImage": "images/soldier/panel/archer.png",
+            "MoveImage": "images/soldier/live/archer/1.png",
+            "Attack": 10,
+            "Health": 100,
+            "MoveSpeed": 100,
+            "AttackSpeed": 100,
+            "AttackRange": 200
+        },
+        "3": {
+            "PanelImage": "images/soldier/panel/archer.png",
+            "MoveImage": "images/soldier/live/archer/1.png",
+            "Attack": 10,
+            "Health": 100,
+            "MoveSpeed": 100,
+            "AttackSpeed": 100,
+            "AttackRange": 200
+        }
+    },
+    "giant": {
+        "AttackType": "Defense",
+        "SoldierType": "LAND",
+        "1": {
+            "PanelImage": "images/soldier/panel/giant.png",
+            "MoveImage": "images/soldier/live/giant/1.png",
+            "Attack": 10,
+            "Health": 100,
+            "MoveSpeed": 100,
+            "AttackSpeed": 100,
+            "AttackRange": 100
+        },
+        "2": {
+            "PanelImage": "images/soldier/panel/giant.png",
+            "MoveImage": "images/soldier/live/giant/1.png",
+            "Attack": 10,
+            "Health": 100,
+            "MoveSpeed": 100,
+            "AttackSpeed": 100,
+            "AttackRange": 100
+        },
+        "3": {
+            "PanelImage": "images/soldier/panel/giant.png",
+            "MoveImage": "images/soldier/live/giant/1.png",
+            "Attack": 10,
+            "Health": 100,
+            "MoveSpeed": 100,
+            "AttackSpeed": 100,
+            "AttackRange": 100
+        }
+    },
+    "bomber": {
+        "AttackType": "WALL",
+        "SoldierType": "LAND",
+        "1": {
+            "PanelImage": "images/soldier/panel/bomber.png",
+            "MoveImage": "images/soldier/live/bomber/1.png",
+            "Attack": 10,
+            "Health": 100,
+            "MoveSpeed": 100,
+            "AttackSpeed": 100,
+            "AttackRange": 50
+        },
+        "2": {
+            "PanelImage": "images/soldier/panel/bomber.png",
+            "MoveImage": "images/soldier/live/bomber/1.png",
+            "Attack": 10,
+            "Health": 100,
+            "MoveSpeed": 100,
+            "AttackSpeed": 100,
+            "AttackRange": 50
+        },
+        "3": {
+            "PanelImage": "images/soldier/panel/bomber.png",
+            "MoveImage": "images/soldier/live/bomber/1.png",
+            "Attack": 10,
+            "Health": 100,
+            "MoveSpeed": 100,
+            "AttackSpeed": 100,
+            "AttackRange": 50
+        }
     }
 }
