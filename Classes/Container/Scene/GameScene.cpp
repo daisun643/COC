@@ -79,8 +79,9 @@ bool GameScene::init() {
   if (_placementHintLabel) {
     _placementHintLabel->setColor(Color3B::YELLOW);
     _placementHintLabel->setVisible(false);
+    // 将提示信息位置上移，避免被底部的建筑菜单按钮遮挡
     _placementHintLabel->setPosition(
-        Vec2(origin.x + visibleSize.width / 2.0f, origin.y + 80.0f));
+        Vec2(origin.x + visibleSize.width / 2.0f, origin.y + 250.0f));
     this->addChild(_placementHintLabel, 150);
   }
 
@@ -103,16 +104,19 @@ bool GameScene::init() {
     if (resourceBuilding) {
       auto playerManager = PlayerManager::getInstance();
       if (playerManager) {
-        // 暂时模拟收集：每次收集固定数量，或者根据生产逻辑
-        // 由于ResourceBuilding目前没有实现随时间生产的逻辑，我们先假设每次收集100
-        int amount = 100;
+        // 使用新的 collect 方法获取当前暂存的资源
+        int amount = resourceBuilding->collect();
 
-        if (resourceBuilding->getResourceType() == "Gold") {
-          playerManager->addGold(amount);
-          showPlacementHint("收集了 " + std::to_string(amount) + " 金币");
-        } else if (resourceBuilding->getResourceType() == "Elixir") {
-          playerManager->addElixir(amount);
-          showPlacementHint("收集了 " + std::to_string(amount) + " 圣水");
+        if (amount > 0) {
+          if (resourceBuilding->getResourceType() == "Gold") {
+            playerManager->addGold(amount);
+            showPlacementHint("收集了 " + std::to_string(amount) + " 金币");
+          } else if (resourceBuilding->getResourceType() == "Elixir") {
+            playerManager->addElixir(amount);
+            showPlacementHint("收集了 " + std::to_string(amount) + " 圣水");
+          }
+        } else {
+          showPlacementHint("没有资源可收集");
         }
 
         // 提示动画

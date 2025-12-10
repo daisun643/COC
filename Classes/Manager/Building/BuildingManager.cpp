@@ -246,10 +246,12 @@ void BuildingManager::updatePlayerResourcesStats() {
       auto resource = dynamic_cast<ResourceBuilding*>(building);
       if (resource) {
         if (resource->getResourceType() == "Gold") {
-          maxGold += resource->getCapacity();
+          // Resource buildings store their own resources, do not add to global
+          // capacity
           goldProd += resource->getProductionRate();
         } else if (resource->getResourceType() == "Elixir") {
-          maxElixir += resource->getCapacity();
+          // Resource buildings store their own resources, do not add to global
+          // capacity
           elixirProd += resource->getProductionRate();
         }
       }
