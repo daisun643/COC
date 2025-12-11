@@ -7,6 +7,7 @@
 #include "Container/Scene/Basic/BasicScene.h"
 #include "Game/Soldier/BasicSoldier.h"
 #include "Game/Spell/BasicSpell.h"
+#include "Game/Building/DefenseBuilding.h"
 #include "Manager/Troop/TroopManager.h"
 #include "Manager/Record/RecordManager.h"
 #include "ui/CocosGUI.h"
@@ -109,6 +110,12 @@ class AttackScene : public BasicScene {
    * 格式化倒计时时间显示
    */
   std::string formatTime(int seconds) const;
+
+  /**
+   * 更新防御建筑攻击（每帧调用）
+   * @param delta 时间间隔
+   */
+  void updateDefenseBuildings(float delta);
 
   TroopManager* _troopManager;         // 军队管理器实例
   RecordManager* _recordManager;       // 记录管理器实例

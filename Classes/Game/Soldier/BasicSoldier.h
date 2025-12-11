@@ -85,6 +85,7 @@ class BasicSoldier : public Sprite {
   CC_SYNTHESIZE(float, _attackRange, AttackRange);  // 攻击范围（像素）
   CC_SYNTHESIZE(AttackType, _attackType, AttackType);
   CC_SYNTHESIZE(SoldierState, _state, State);
+  CC_SYNTHESIZE(SoldierCategory, _soldierCategory, SoldierCategory);
   CC_SYNTHESIZE(float, _centerX, CenterX);
   CC_SYNTHESIZE(float, _centerY, CenterY);
   CC_SYNTHESIZE(Building*, _target, Target);

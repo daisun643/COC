@@ -6,6 +6,7 @@
 #include "Game/Spell/HealSpell.h"
 #include "Game/Spell/LightningSpell.h"
 #include "Game/Spell/RageSpell.h"
+#include "Game/Building/DefenseBuilding.h"
 #include "Manager/Troop/TroopManager.h"
 #include "Manager/Record/RecordManager.h"
 #include "ui/CocosGUI.h"
@@ -855,6 +856,9 @@ void AttackScene::startAttack() {
   // 启动倒计时更新
   this->schedule([this](float dt) { this->updateCountdown(dt); }, 1.0f, "updateCountdown");
 
+  // 启动防御建筑攻击更新（每帧更新，使用 0.0f 表示每帧调用）
+  this->schedule([this](float dt) { this->updateDefenseBuildings(dt); }, 0.0f, "updateDefenseBuildings");
+
   CCLOG("Attack started, countdown: %d seconds", _countdownSeconds);
 }
 
@@ -865,6 +869,9 @@ void AttackScene::endAttack() {
 
   // 停止倒计时
   this->unschedule("updateCountdown");
+
+  // 停止防御建筑攻击更新
+  this->unschedule("updateDefenseBuildings");
 
   // 保存记录
   if (_recordManager) {
@@ -925,12 +932,58 @@ std::string AttackScene::formatTime(int seconds) const {
   return std::string(buffer);
 }
 
+void AttackScene::updateDefenseBuildings(float delta) {
+  // 如果攻击未开始，不更新防御建筑
+  if (!_isAttackStarted) {
+    return;
+  }
+
+  // 如果没有建筑管理器或没有士兵，直接返回
+  if (!_buildingManager || _placedSoldiers.empty()) {
+    return;
+  }
+
+  // 获取所有建筑
+  const auto& allBuildings = _buildingManager->getAllBuildings();
+  
+  // 遍历所有建筑，找到防御建筑并更新攻击
+  for (Building* building : allBuildings) {
+    if (!building || !building->isVisible() || !building->isAlive()) {
+      continue;
+    }
+
+    // 检查是否为防御建筑
+    if (building->getBuildingType() != BuildingType::DEFENSE) {
+      continue;
+    }
+
+    // 转换为防御建筑
+    DefenseBuilding* defenseBuilding = dynamic_cast<DefenseBuilding*>(building);
+    if (!defenseBuilding) {
+      continue;
+    }
+
+    // 根据建筑名称决定攻击类别
+    // 默认攻击所有类别，可以根据需要扩展
+    std::vector<SoldierCategory> targetCategories = {SoldierCategory::LAND, SoldierCategory::AIR};
+    
+    // 可以根据建筑名称设置不同的攻击类别
+    // 例如：防空火箭只攻击空军，加农炮只攻击陆军等
+    // 这里先实现攻击所有类别，后续可以根据配置扩展
+    // 如果 targetCategories 为空，attackSoldiers 会攻击所有类别
+    
+    // 调用防御建筑的攻击方法
+    defenseBuilding->attackSoldiers(_placedSoldiers, targetCategories, delta);
+  }
+}
+
 AttackScene::~AttackScene() {
   cancelPlacementMode();
 
   // 停止倒计时
   if (_isAttackStarted) {
     this->unschedule("updateCountdown");
+    this->unschedule("updateDefenseBuildings");
   }
 
   // 清理士兵和法术

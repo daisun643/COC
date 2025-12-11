@@ -20,6 +20,7 @@ BasicSoldier::BasicSoldier()
       _attackRange(100.0f),
       _attackType(AttackType::ANY),
       _state(SoldierState::IDLE),
+      _soldierCategory(SoldierCategory::LAND),
       _centerX(0.0f),
       _centerY(0.0f),
       _target(nullptr),
@@ -142,6 +143,7 @@ bool BasicSoldier::init(SoldierType soldierType, int level) {
   }
 
   _attackType = soldierConfig.attackType;
+  _soldierCategory = soldierConfig.soldierCategory;
 
   // 尝试加载图片（使用 MoveImage 作为实际游戏中的士兵图像）
   bool imageLoaded = false;
