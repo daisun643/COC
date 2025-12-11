@@ -7,6 +7,7 @@
 #include "Game/Spell/HealSpell.h"
 #include "Game/Spell/LightningSpell.h"
 #include "Game/Spell/RageSpell.h"
+#include "Game/Building/DefenseBuilding.h"
 #include "json/document.h"
 #include "platform/CCFileUtils.h"
 
@@ -167,10 +168,15 @@ void RecordScene::createPlaybackButtons() {
     if (_isPlaying && !_isPaused) {
       _isPaused = true;
       this->unschedule("updatePlayback");
+      // 暂停时停止防御建筑攻击更新
+      this->unschedule("updateDefenseBuildings");
     } else if (_isPaused) {
       _isPaused = false;
       this->schedule([this](float dt) { this->updatePlayback(dt); }, 0.1f,
                      "updatePlayback");
+      // 恢复时重新启动防御建筑攻击更新
+      this->schedule([this](float dt) { this->updateDefenseBuildings(dt); }, 0.0f,
+                     "updateDefenseBuildings");
     }
   });
   this->addChild(_pauseButton, 200);
@@ -249,6 +255,8 @@ void RecordScene::startPlayback() {
   // 启动回放更新
   this->schedule([this](float dt) { this->updatePlayback(dt); }, 0.1f,
                  "updatePlayback");
+  this->schedule([this](float dt) { this->updateDefenseBuildings(dt); }, 0.0f, 
+                 "updateDefenseBuildings");
 
   CCLOG("RecordScene: Playback started");
 }
@@ -260,6 +268,9 @@ void RecordScene::stopPlayback() {
 
   // 停止回放更新
   this->unschedule("updatePlayback");
+  
+  // 停止防御建筑攻击更新
+  this->unschedule("updateDefenseBuildings");
 
   // 重置状态
   _isPlaying = false;
@@ -369,8 +380,8 @@ void RecordScene::createSoldierFromRecord(const PlacementRecord& record) {
     soldierType = SoldierType::ARCHER;
   } else if (record.category == "giant") {
     soldierType = SoldierType::GIANT;
-  } else if (record.category == "goblin") {
-    soldierType = SoldierType::GOBLIN;
+  } else if (record.category == "bomber") {
+    soldierType = SoldierType::BOMBER;
   }
 
   // 创建士兵
@@ -469,10 +480,56 @@ void RecordScene::createSpellFromRecord(const PlacementRecord& record) {
   }
 }
 
+void RecordScene::updateDefenseBuildings(float delta) {
+  // 如果回放未开始或已暂停，不更新防御建筑
+  if (!_isPlaying || _isPaused) {
+    return;
+  }
+
+  // 如果没有建筑管理器或没有士兵，直接返回
+  if (!_buildingManager || _placedSoldiers.empty()) {
+    return;
+  }
+
+  // 获取所有建筑
+  const auto& allBuildings = _buildingManager->getAllBuildings();
+  
+  // 遍历所有建筑，找到防御建筑并更新攻击
+  for (Building* building : allBuildings) {
+    if (!building || !building->isVisible() || !building->isAlive()) {
+      continue;
+    }
+
+    // 检查是否为防御建筑
+    if (building->getBuildingType() != BuildingType::DEFENSE) {
+      continue;
+    }
+
+    // 转换为防御建筑
+    DefenseBuilding* defenseBuilding = dynamic_cast<DefenseBuilding*>(building);
+    if (!defenseBuilding) {
+      continue;
+    }
+
+    // 根据建筑名称决定攻击类别
+    // 默认攻击所有类别，可以根据需要扩展
+    std::vector<SoldierCategory> targetCategories = {SoldierCategory::LAND, SoldierCategory::AIR};
+    
+    // 可以根据建筑名称设置不同的攻击类别
+    // 例如：防空火箭只攻击空军，加农炮只攻击陆军等
+    // 这里先实现攻击所有类别，后续可以根据配置扩展
+    // 如果 targetCategories 为空，attackSoldiers 会攻击所有类别
+    
+    // 调用防御建筑的攻击方法
+    defenseBuilding->attackSoldiers(_placedSoldiers, targetCategories, delta);
+  }
+}
+
 RecordScene::~RecordScene() {
   // 停止回放
   if (_isPlaying) {
     this->unschedule("updatePlayback");
+    this->unschedule("updateDefenseBuildings");
   }
 
   // 清理士兵和法术

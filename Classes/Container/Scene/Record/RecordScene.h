@@ -7,6 +7,7 @@
 #include "Container/Scene/Basic/BasicScene.h"
 #include "Game/Soldier/BasicSoldier.h"
 #include "Game/Spell/BasicSpell.h"
+#include "Game/Building/DefenseBuilding.h"
 #include "Manager/Record/RecordManager.h"
 #include "ui/CocosGUI.h"
 
@@ -61,6 +62,12 @@ class RecordScene : public BasicScene {
    * 创建回放控制按钮
    */
   void createPlaybackButtons();
+
+  /**
+   * 更新防御建筑攻击（每帧调用）
+   * @param delta 时间间隔
+   */
+  void updateDefenseBuildings(float delta);
 
   std::vector<PlacementRecord> _records;      // 记录列表
   std::vector<BasicSoldier*> _placedSoldiers;  // 已布置的士兵列表
