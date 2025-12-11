@@ -71,6 +71,7 @@ BasicSoldier* BasicSoldier::create(SoldierType soldierType, int level) {
       soldier = Bomber::create(level);
       break;
     default:
+      CCLOG("BasicSoldier::create: Unknown soldier type: %d", static_cast<int>(soldierType));
       // 默认创建 BasicSoldier（不应该到达这里）
       soldier = new (std::nothrow) BasicSoldier();
       if (soldier && soldier->init(soldierType, level)) {
@@ -95,7 +96,7 @@ bool BasicSoldier::init(SoldierType soldierType, int level) {
   // 从配置文件加载士兵数据
   auto configManager = ConfigManager::getInstance();
   if (!configManager) {
-    CCLOG("ConfigManager not found, using default values");
+    CCLOG("BasicSoldier::init: ConfigManager not found, using default values");
     createDefaultAppearance();
     return true;
   }
@@ -116,7 +117,7 @@ bool BasicSoldier::init(SoldierType soldierType, int level) {
       soldierTypeKey = "bomber";
       break;
     default:
-      CCLOG("Unknown soldier type: %d", static_cast<int>(soldierType));
+      CCLOG("BasicSoldier::init: Unknown soldier type: %d", static_cast<int>(soldierType));
       return false;
   }
 

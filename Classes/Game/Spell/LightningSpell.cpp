@@ -30,14 +30,6 @@ bool LightningSpell::init() {
 
 void LightningSpell::applyEffect(const std::vector<BasicSoldier*>& soldiers,
                                  const std::vector<Building*>& buildings) {
-  // 对范围内的士兵造成伤害
-  for (BasicSoldier* soldier : soldiers) {
-    if (soldier && soldier->isAlive()) {
-      soldier->takeDamage(_amount);
-      CCLOG("LightningSpell: Dealt %.1f damage to soldier", _amount);
-    }
-  }
-
   // 对范围内的建筑造成伤害
   for (Building* building : buildings) {
     if (building && building->isVisible() && building->isAlive()) {

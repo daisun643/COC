@@ -104,9 +104,6 @@ void AttackScene::createStatusBar() {
 }
 
 void AttackScene::createTroopIcons() {
-  CCLOG(
-      "AttackScene::createTroopIcons==========================================="
-      "======");
   if (_troopItems.empty()) {
     return;
   }
@@ -576,6 +573,7 @@ Vec2 AttackScene::screenToMapPosition(const Vec2& screenPos) const {
 }
 
 bool AttackScene::isValidPlacementPosition(const Vec2& mapPos) const {
+  // TODO
   // 检查位置是否在地图范围内
   // 这里可以添加更复杂的检查逻辑
   return true;
