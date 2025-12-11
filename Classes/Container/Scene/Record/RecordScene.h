@@ -5,9 +5,9 @@
 #include <vector>
 
 #include "Container/Scene/Basic/BasicScene.h"
+#include "Game/Building/DefenseBuilding.h"
 #include "Game/Soldier/BasicSoldier.h"
 #include "Game/Spell/BasicSpell.h"
-#include "Game/Building/DefenseBuilding.h"
 #include "Manager/Record/RecordManager.h"
 #include "ui/CocosGUI.h"
 
@@ -69,20 +69,20 @@ class RecordScene : public BasicScene {
    */
   void updateDefenseBuildings(float delta);
 
-  std::vector<PlacementRecord> _records;      // 记录列表
+  std::vector<PlacementRecord> _records;       // 记录列表
   std::vector<BasicSoldier*> _placedSoldiers;  // 已布置的士兵列表
   std::vector<BasicSpell*> _activeSpells;      // 活跃的法术列表
 
   // 回放控制相关
-  cocos2d::ui::Button* _playButton;    // 播放按钮
-  cocos2d::ui::Button* _pauseButton;    // 暂停按钮
-  cocos2d::ui::Button* _stopButton;    // 停止按钮
-  Label* _timeLabel;                   // 时间标签
-  bool _isPlaying;                     // 是否正在播放
-  bool _isPaused;                      // 是否暂停
-  float _currentTime;                  // 当前回放时间（秒）
+  cocos2d::ui::Button* _playButton;   // 播放按钮
+  cocos2d::ui::Button* _pauseButton;  // 暂停按钮
+  cocos2d::ui::Button* _stopButton;   // 停止按钮
+  Label* _timeLabel;                  // 时间标签
+  bool _isPlaying;                    // 是否正在播放
+  bool _isPaused;                     // 是否暂停
+  float _currentTime;                 // 当前回放时间（秒）
   size_t _currentRecordIndex;         // 当前记录索引
-  float _playbackSpeed;                // 回放速度倍数
+  float _playbackSpeed;               // 回放速度倍数
 };
 
 #endif  // __RECORD_SCENE_H__

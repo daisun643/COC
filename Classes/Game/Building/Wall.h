@@ -15,7 +15,7 @@ class Wall : public Building {
    * @param buildingName 建筑名称（用于从配置读取）
    */
   static Wall* create(int level, const std::string& buildingName);
-  
+
   /**
    * 初始化城墙
    * @param level 城墙等级

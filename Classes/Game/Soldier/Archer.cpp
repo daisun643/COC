@@ -46,4 +46,3 @@ void Archer::createDefaultAppearance() {
   // 设置内容大小
   this->setContentSize(Size(40, 40));
 }
-

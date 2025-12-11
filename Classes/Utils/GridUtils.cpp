@@ -49,11 +49,13 @@ bool GridUtils::screenToGrid(const Vec2& screenPos, const Vec2& p00, float& row,
   row = (dx / deltaX - dy / deltaY) / 2.0f;
 
   // 检查是否在有效范围内
-  return (row >= 0.0f && row <= static_cast<float>(gridSize) && col >= 0.0f && col <= static_cast<float>(gridSize));
+  return (row >= 0.0f && row <= static_cast<float>(gridSize) && col >= 0.0f &&
+          col <= static_cast<float>(gridSize));
 }
 
 bool GridUtils::findNearestGrassVertex(const Vec2& screenPos, const Vec2& p00,
-                                       float& row, float& col, Vec2& nearestPos) {
+                                       float& row, float& col,
+                                       Vec2& nearestPos) {
   // 从 ConfigManager 获取 gridCount
   auto configManager = ConfigManager::getInstance();
   if (!configManager) {
@@ -80,7 +82,8 @@ bool GridUtils::findNearestGrassVertex(const Vec2& screenPos, const Vec2& p00,
   for (int r = centerRow - 1; r <= centerRow + 1; ++r) {
     for (int c = centerCol - 1; c <= centerCol + 1; ++c) {
       if (r >= 0 && r <= gridSize && c >= 0 && c < gridSize) {
-        Vec2 gridPos = gridToScene(static_cast<float>(r), static_cast<float>(c), p00);
+        Vec2 gridPos =
+            gridToScene(static_cast<float>(r), static_cast<float>(c), p00);
         float dist = screenPos.distance(gridPos);
         if (dist < minDist) {
           minDist = dist;

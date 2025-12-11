@@ -2,13 +2,13 @@
 
 #include <string>
 
+#include "Game/Building/DefenseBuilding.h"
 #include "Game/Soldier/BasicSoldier.h"
 #include "Game/Spell/HealSpell.h"
 #include "Game/Spell/LightningSpell.h"
 #include "Game/Spell/RageSpell.h"
-#include "Game/Building/DefenseBuilding.h"
-#include "Manager/Troop/TroopManager.h"
 #include "Manager/Record/RecordManager.h"
+#include "Manager/Troop/TroopManager.h"
 #include "ui/CocosGUI.h"
 
 Scene* AttackScene::createScene() { return AttackScene::create(); }
@@ -793,11 +793,10 @@ void AttackScene::createAttackButtons() {
     _startAttackButton->setTitleText("开始进攻");
     _startAttackButton->setTitleFontSize(20);
     _startAttackButton->setContentSize(Size(120, 40));
-    _startAttackButton->setPosition(
-        Vec2(origin.x + visibleSize.width - 100, origin.y + visibleSize.height - 50));
-    _startAttackButton->addClickEventListener([this](Ref* sender) {
-      this->startAttack();
-    });
+    _startAttackButton->setPosition(Vec2(origin.x + visibleSize.width - 100,
+                                         origin.y + visibleSize.height - 50));
+    _startAttackButton->addClickEventListener(
+        [this](Ref* sender) { this->startAttack(); });
     this->addChild(_startAttackButton, 200);
   }
 
@@ -807,13 +806,12 @@ void AttackScene::createAttackButtons() {
     _endAttackButton->setTitleText("结束进攻");
     _endAttackButton->setTitleFontSize(20);
     _endAttackButton->setContentSize(Size(120, 40));
-    _endAttackButton->setPosition(
-        Vec2(origin.x + visibleSize.width - 100, origin.y + visibleSize.height - 100));
+    _endAttackButton->setPosition(Vec2(origin.x + visibleSize.width - 100,
+                                       origin.y + visibleSize.height - 100));
     _endAttackButton->setEnabled(false);
     _endAttackButton->setBright(false);
-    _endAttackButton->addClickEventListener([this](Ref* sender) {
-      this->endAttack();
-    });
+    _endAttackButton->addClickEventListener(
+        [this](Ref* sender) { this->endAttack(); });
     this->addChild(_endAttackButton, 200);
   }
 
@@ -821,8 +819,8 @@ void AttackScene::createAttackButtons() {
   if (!_countdownLabel) {
     _countdownLabel = Label::createWithSystemFont("", "Arial", 24);
     _countdownLabel->setColor(Color3B::YELLOW);
-    _countdownLabel->setPosition(
-        Vec2(origin.x + visibleSize.width - 100, origin.y + visibleSize.height - 150));
+    _countdownLabel->setPosition(Vec2(origin.x + visibleSize.width - 100,
+                                      origin.y + visibleSize.height - 150));
     _countdownLabel->setString(formatTime(ATTACK_DURATION));
     this->addChild(_countdownLabel, 200);
   }
@@ -852,10 +850,12 @@ void AttackScene::startAttack() {
   }
 
   // 启动倒计时更新
-  this->schedule([this](float dt) { this->updateCountdown(dt); }, 1.0f, "updateCountdown");
+  this->schedule([this](float dt) { this->updateCountdown(dt); }, 1.0f,
+                 "updateCountdown");
 
   // 启动防御建筑攻击更新（每帧更新，使用 0.0f 表示每帧调用）
-  this->schedule([this](float dt) { this->updateDefenseBuildings(dt); }, 0.0f, "updateDefenseBuildings");
+  this->schedule([this](float dt) { this->updateDefenseBuildings(dt); }, 0.0f,
+                 "updateDefenseBuildings");
 
   CCLOG("Attack started, countdown: %d seconds", _countdownSeconds);
 }
@@ -943,7 +943,7 @@ void AttackScene::updateDefenseBuildings(float delta) {
 
   // 获取所有建筑
   const auto& allBuildings = _buildingManager->getAllBuildings();
-  
+
   // 遍历所有建筑，找到防御建筑并更新攻击
   for (Building* building : allBuildings) {
     if (!building || !building->isVisible() || !building->isAlive()) {
@@ -963,13 +963,14 @@ void AttackScene::updateDefenseBuildings(float delta) {
 
     // 根据建筑名称决定攻击类别
     // 默认攻击所有类别，可以根据需要扩展
-    std::vector<SoldierCategory> targetCategories = {SoldierCategory::LAND, SoldierCategory::AIR};
-    
+    std::vector<SoldierCategory> targetCategories = {SoldierCategory::LAND,
+                                                     SoldierCategory::AIR};
+
     // 可以根据建筑名称设置不同的攻击类别
     // 例如：防空火箭只攻击空军，加农炮只攻击陆军等
     // 这里先实现攻击所有类别，后续可以根据配置扩展
     // 如果 targetCategories 为空，attackSoldiers 会攻击所有类别
-    
+
     // 调用防御建筑的攻击方法
     defenseBuilding->attackSoldiers(_placedSoldiers, targetCategories, delta);
   }

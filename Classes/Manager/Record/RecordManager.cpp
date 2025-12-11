@@ -13,8 +13,8 @@
 #endif
 
 #include "json/document.h"
-#include "json/writer.h"
 #include "json/stringbuffer.h"
+#include "json/writer.h"
 #include "platform/CCFileUtils.h"
 
 RecordManager::RecordManager() : _isRecording(false) {}
@@ -48,8 +48,9 @@ void RecordManager::recordTroopPlacement(const std::string& category, int level,
   record.timestamp = timestamp;
 
   _records.push_back(record);
-  CCLOG("RecordManager: Recorded troop placement - %s Lv%d at (%.1f, %.1f) @ %ds",
-        category.c_str(), level, x, y, timestamp);
+  CCLOG(
+      "RecordManager: Recorded troop placement - %s Lv%d at (%.1f, %.1f) @ %ds",
+      category.c_str(), level, x, y, timestamp);
 }
 
 void RecordManager::recordSpellPlacement(const std::string& category, float x,
@@ -77,8 +78,8 @@ int RecordManager::getCurrentTimestamp() const {
   }
 
   auto now = std::chrono::steady_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::seconds>(
-      now - _attackStartTime);
+  auto duration =
+      std::chrono::duration_cast<std::chrono::seconds>(now - _attackStartTime);
   return static_cast<int>(duration.count());
 }
 
@@ -131,8 +132,8 @@ bool RecordManager::endAttackAndSave(const std::string& filePath) {
   metadata.AddMember("totalRecords", static_cast<int>(_records.size()),
                      allocator);
   rapidjson::Value endTimeValue;
-  endTimeValue.SetString(
-      std::to_string(getCurrentTimestamp()).c_str(), allocator);
+  endTimeValue.SetString(std::to_string(getCurrentTimestamp()).c_str(),
+                         allocator);
   metadata.AddMember("duration", getCurrentTimestamp(), allocator);
   doc.AddMember("metadata", metadata, allocator);
 
@@ -146,27 +147,27 @@ bool RecordManager::endAttackAndSave(const std::string& filePath) {
   // 获取完整文件路径
   // 使用相对路径，直接写入到项目目录下的Resources/record/dev.json
   std::string fullPath = filePath;
-  
+
   // 将路径中的反斜杠转换为正斜杠（跨平台兼容）
   std::replace(fullPath.begin(), fullPath.end(), '\\', '/');
-  
+
   // 确保目录存在
   size_t pos = fullPath.find_last_of("/\\");
   if (pos != std::string::npos) {
     std::string dir = fullPath.substr(0, pos);
-    // 创建目录（如果不存在）
-    #ifdef _WIN32
-      // Windows下使用_mkdir，如果目录不存在则创建
-      if (_access(dir.c_str(), 0) != 0) {
-        _mkdir(dir.c_str());
-      }
-    #else
-      // Linux/Mac下使用mkdir
-      struct stat info;
-      if (stat(dir.c_str(), &info) != 0) {
-        mkdir(dir.c_str(), 0755);
-      }
-    #endif
+// 创建目录（如果不存在）
+#ifdef _WIN32
+    // Windows下使用_mkdir，如果目录不存在则创建
+    if (_access(dir.c_str(), 0) != 0) {
+      _mkdir(dir.c_str());
+    }
+#else
+    // Linux/Mac下使用mkdir
+    struct stat info;
+    if (stat(dir.c_str(), &info) != 0) {
+      mkdir(dir.c_str(), 0755);
+    }
+#endif
   }
 
   // 写入文件

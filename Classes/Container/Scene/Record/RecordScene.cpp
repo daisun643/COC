@@ -4,10 +4,10 @@
 #include <fstream>
 #include <sstream>
 
+#include "Game/Building/DefenseBuilding.h"
 #include "Game/Spell/HealSpell.h"
 #include "Game/Spell/LightningSpell.h"
 #include "Game/Spell/RageSpell.h"
-#include "Game/Building/DefenseBuilding.h"
 #include "json/document.h"
 #include "platform/CCFileUtils.h"
 
@@ -175,8 +175,8 @@ void RecordScene::createPlaybackButtons() {
       this->schedule([this](float dt) { this->updatePlayback(dt); }, 0.1f,
                      "updatePlayback");
       // 恢复时重新启动防御建筑攻击更新
-      this->schedule([this](float dt) { this->updateDefenseBuildings(dt); }, 0.0f,
-                     "updateDefenseBuildings");
+      this->schedule([this](float dt) { this->updateDefenseBuildings(dt); },
+                     0.0f, "updateDefenseBuildings");
     }
   });
   this->addChild(_pauseButton, 200);
@@ -190,9 +190,8 @@ void RecordScene::createPlaybackButtons() {
       Vec2(origin.x + 280, origin.y + visibleSize.height - 50));
   _stopButton->setEnabled(false);
   _stopButton->setBright(false);
-  _stopButton->addClickEventListener([this](Ref* sender) {
-    this->stopPlayback();
-  });
+  _stopButton->addClickEventListener(
+      [this](Ref* sender) { this->stopPlayback(); });
   this->addChild(_stopButton, 200);
 
   // 创建时间标签
@@ -255,7 +254,7 @@ void RecordScene::startPlayback() {
   // 启动回放更新
   this->schedule([this](float dt) { this->updatePlayback(dt); }, 0.1f,
                  "updatePlayback");
-  this->schedule([this](float dt) { this->updateDefenseBuildings(dt); }, 0.0f, 
+  this->schedule([this](float dt) { this->updateDefenseBuildings(dt); }, 0.0f,
                  "updateDefenseBuildings");
 
   CCLOG("RecordScene: Playback started");
@@ -268,7 +267,7 @@ void RecordScene::stopPlayback() {
 
   // 停止回放更新
   this->unschedule("updatePlayback");
-  
+
   // 停止防御建筑攻击更新
   this->unschedule("updateDefenseBuildings");
 
@@ -493,7 +492,7 @@ void RecordScene::updateDefenseBuildings(float delta) {
 
   // 获取所有建筑
   const auto& allBuildings = _buildingManager->getAllBuildings();
-  
+
   // 遍历所有建筑，找到防御建筑并更新攻击
   for (Building* building : allBuildings) {
     if (!building || !building->isVisible() || !building->isAlive()) {
@@ -513,13 +512,14 @@ void RecordScene::updateDefenseBuildings(float delta) {
 
     // 根据建筑名称决定攻击类别
     // 默认攻击所有类别，可以根据需要扩展
-    std::vector<SoldierCategory> targetCategories = {SoldierCategory::LAND, SoldierCategory::AIR};
-    
+    std::vector<SoldierCategory> targetCategories = {SoldierCategory::LAND,
+                                                     SoldierCategory::AIR};
+
     // 可以根据建筑名称设置不同的攻击类别
     // 例如：防空火箭只攻击空军，加农炮只攻击陆军等
     // 这里先实现攻击所有类别，后续可以根据配置扩展
     // 如果 targetCategories 为空，attackSoldiers 会攻击所有类别
-    
+
     // 调用防御建筑的攻击方法
     defenseBuilding->attackSoldiers(_placedSoldiers, targetCategories, delta);
   }

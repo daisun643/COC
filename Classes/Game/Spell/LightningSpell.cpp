@@ -34,8 +34,10 @@ void LightningSpell::applyEffect(const std::vector<BasicSoldier*>& soldiers,
   for (Building* building : buildings) {
     if (building && building->isVisible() && building->isAlive()) {
       building->takeDamage(_amount);
-      CCLOG("LightningSpell: Dealt %.1f damage to building, building HP: %.1f/%.1f",
-            _amount, building->getCurrentHP(), building->getMaxHP());
+      CCLOG(
+          "LightningSpell: Dealt %.1f damage to building, building HP: "
+          "%.1f/%.1f",
+          _amount, building->getCurrentHP(), building->getMaxHP());
     }
   }
 }
@@ -76,7 +78,7 @@ void LightningSpell::createVisualEffect() {
         nextPoint += Vec2(offsetX, offsetY);
       }
 
-      Color4F lightningColor(0.55f, 0.75f, 1.0f, 0.7f);   // 淡蓝色
+      Color4F lightningColor(0.55f, 0.75f, 1.0f, 0.7f);  // 淡蓝色
       drawNode->drawSegment(currentPoint, nextPoint, 2.0f, lightningColor);
 
       currentPoint = nextPoint;

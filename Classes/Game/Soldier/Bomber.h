@@ -43,4 +43,3 @@ class Bomber : public BasicSoldier {
 };
 
 #endif  // __BOMBER_H__
-

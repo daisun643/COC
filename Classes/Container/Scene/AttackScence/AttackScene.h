@@ -5,11 +5,11 @@
 #include <vector>
 
 #include "Container/Scene/Basic/BasicScene.h"
+#include "Game/Building/DefenseBuilding.h"
 #include "Game/Soldier/BasicSoldier.h"
 #include "Game/Spell/BasicSpell.h"
-#include "Game/Building/DefenseBuilding.h"
-#include "Manager/Troop/TroopManager.h"
 #include "Manager/Record/RecordManager.h"
+#include "Manager/Troop/TroopManager.h"
 #include "ui/CocosGUI.h"
 
 USING_NS_CC;
@@ -139,12 +139,12 @@ class AttackScene : public BasicScene {
   std::vector<BasicSpell*> _activeSpells;      // 活跃的法术列表
 
   // 进攻控制相关
-  cocos2d::ui::Button* _startAttackButton;    // 开始进攻按钮
-  cocos2d::ui::Button* _endAttackButton;      // 结束进攻按钮
-  Label* _countdownLabel;                      // 倒计时标签
-  bool _isAttackStarted;                      // 是否已开始进攻
-  int _countdownSeconds;                      // 倒计时剩余秒数（默认180秒，即3分钟）
-  static const int ATTACK_DURATION = 180;     // 进攻持续时间（秒）
+  cocos2d::ui::Button* _startAttackButton;  // 开始进攻按钮
+  cocos2d::ui::Button* _endAttackButton;    // 结束进攻按钮
+  Label* _countdownLabel;                   // 倒计时标签
+  bool _isAttackStarted;                    // 是否已开始进攻
+  int _countdownSeconds;  // 倒计时剩余秒数（默认180秒，即3分钟）
+  static const int ATTACK_DURATION = 180;  // 进攻持续时间（秒）
 };
 
 #endif  // __ATTACK_SCENE_H__

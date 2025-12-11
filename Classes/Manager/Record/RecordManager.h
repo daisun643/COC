@@ -1,9 +1,9 @@
 #ifndef __RECORD_MANAGER_H__
 #define __RECORD_MANAGER_H__
 
+#include <chrono>
 #include <string>
 #include <vector>
-#include <chrono>
 
 #include "cocos2d.h"
 
@@ -13,12 +13,12 @@ USING_NS_CC;
  * 记录项：记录何时何地布置了法术/兵种
  */
 struct PlacementRecord {
-  std::string type;        // 类型：troop（兵种）或 spell（法术）
-  std::string category;    // 类别：如 "barbarian", "Heal" 等
-  int level;               // 等级（仅兵种有）
-  float x;                 // 地图坐标X
-  float y;                 // 地图坐标Y
-  int timestamp;           // 时间戳（从开始进攻算起的秒数）
+  std::string type;      // 类型：troop（兵种）或 spell（法术）
+  std::string category;  // 类别：如 "barbarian", "Heal" 等
+  int level;             // 等级（仅兵种有）
+  float x;               // 地图坐标X
+  float y;               // 地图坐标Y
+  int timestamp;         // 时间戳（从开始进攻算起的秒数）
 };
 
 /**
@@ -70,9 +70,9 @@ class RecordManager {
   void clear();
 
  private:
-  std::vector<PlacementRecord> _records;  // 记录列表
+  std::vector<PlacementRecord> _records;                   // 记录列表
   std::chrono::steady_clock::time_point _attackStartTime;  // 进攻开始时间
-  bool _isRecording;  // 是否正在记录
+  bool _isRecording;                                       // 是否正在记录
 };
 
 #endif  // __RECORD_MANAGER_H__

@@ -36,4 +36,3 @@ class Archer : public BasicSoldier {
 };
 
 #endif  // __ARCHER_H__
-

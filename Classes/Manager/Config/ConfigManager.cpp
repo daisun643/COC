@@ -225,32 +225,40 @@ bool ConfigManager::loadBuildingConfig() {
 
     if (val.IsObject()) {
       BuildingConfig config;
-      
+
       // 1. 读取基础通用属性
       if (val.HasMember("type")) config.type = val["type"].GetString();
       if (val.HasMember("image")) config.image = val["image"].GetString();
-      
-      if (val.HasMember("GridSize")) config.gridCount = val["GridSize"].GetInt();
-      if (val.HasMember("imageScale")) config.imageScale = val["imageScale"].GetFloat();
+
+      if (val.HasMember("GridSize"))
+        config.gridCount = val["GridSize"].GetInt();
+      if (val.HasMember("imageScale"))
+        config.imageScale = val["imageScale"].GetFloat();
       if (val.HasMember("maxLevel")) config.maxLevel = val["maxLevel"].GetInt();
 
-      if (val.HasMember("AnchorRatio") && val["AnchorRatio"].IsArray() && val["AnchorRatio"].Size() >= 2) {
+      if (val.HasMember("AnchorRatio") && val["AnchorRatio"].IsArray() &&
+          val["AnchorRatio"].Size() >= 2) {
         config.anchorRatioX = val["AnchorRatio"][0].GetFloat();
         config.anchorRatioY = val["AnchorRatio"][1].GetFloat();
       }
 
       // 2. 读取防御属性
       if (val.HasMember("damage")) config.damage = val["damage"].GetInt();
-      if (val.HasMember("attackRange")) config.attackRange = val["attackRange"].GetFloat();
-      if (val.HasMember("attackSpeed")) config.attackSpeed = val["attackSpeed"].GetFloat();
+      if (val.HasMember("attackRange"))
+        config.attackRange = val["attackRange"].GetFloat();
+      if (val.HasMember("attackSpeed"))
+        config.attackSpeed = val["attackSpeed"].GetFloat();
 
       // 3. 读取资源/储存属性
-      if (val.HasMember("productionRate")) config.productionRate = val["productionRate"].GetInt();
+      if (val.HasMember("productionRate"))
+        config.productionRate = val["productionRate"].GetInt();
       if (val.HasMember("capacity")) config.capacity = val["capacity"].GetInt();
-      if (val.HasMember("resourceType")) config.resourceType = val["resourceType"].GetString();
+      if (val.HasMember("resourceType"))
+        config.resourceType = val["resourceType"].GetString();
 
       // 4. 读取兵营属性
-      if (val.HasMember("queueSize")) config.queueSize = val["queueSize"].GetInt();
+      if (val.HasMember("queueSize"))
+        config.queueSize = val["queueSize"].GetInt();
 
       // 5. 读取城墙属性
       if (val.HasMember("defense")) config.defense = val["defense"].GetFloat();
@@ -270,13 +278,15 @@ bool ConfigManager::loadBuildingConfig() {
 }
 
 // 实现获取接口
-ConfigManager::BuildingConfig ConfigManager::getBuildingConfig(const std::string& name) const {
+ConfigManager::BuildingConfig ConfigManager::getBuildingConfig(
+    const std::string& name) const {
   auto it = _buildingConfigs.find(name);
   if (it != _buildingConfigs.end()) {
     return it->second;
   }
-  CCLOG("Warning: Config for building '%s' not found, returning default.", name.c_str());
-  return BuildingConfig(); // 返回默认空配置
+  CCLOG("Warning: Config for building '%s' not found, returning default.",
+        name.c_str());
+  return BuildingConfig();  // 返回默认空配置
 }
 
 bool ConfigManager::loadSoldierConfig() {

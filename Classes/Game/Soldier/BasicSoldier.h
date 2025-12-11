@@ -39,11 +39,11 @@ enum class SoldierType {
  * 攻击类型枚举
  */
 enum class AttackType {
-  ANY,       // 任意目标
-  DEFENSE,   // 优先防御建筑
-  RESOURCE,  // 优先资源建筑
-  TOWN_HALL, // 优先大本营
-  WALL       // 优先墙
+  ANY,        // 任意目标
+  DEFENSE,    // 优先防御建筑
+  RESOURCE,   // 优先资源建筑
+  TOWN_HALL,  // 优先大本营
+  WALL        // 优先墙
 };
 
 /**

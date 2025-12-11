@@ -6,13 +6,12 @@
 #include <sstream>
 
 // 包含所有具体的建筑头文件
-#include "Game/Building/TownHall.h"
+#include "Game/Building/BarracksBuilding.h"
 #include "Game/Building/DefenseBuilding.h"
 #include "Game/Building/ResourceBuilding.h"
 #include "Game/Building/StorageBuilding.h"
-#include "Game/Building/BarracksBuilding.h"
+#include "Game/Building/TownHall.h"
 #include "Game/Building/Wall.h"
-
 #include "Manager/Config/ConfigManager.h"
 #include "Utils/GridUtils.h"
 #include "json/document.h"
@@ -76,7 +75,7 @@ bool BuildingManager::loadBuildingMap() {
   // 遍历 JSON 中的所有键 (TownHall, Cannon, etc.)
   for (auto& m : doc.GetObject()) {
     std::string buildingName = m.name.GetString();
-    
+
     // 跳过可能的非建筑字段 (如 tips)
     if (buildingName == "tips") continue;
 
@@ -89,10 +88,13 @@ bool BuildingManager::loadBuildingMap() {
           float row = item["row"].GetFloat();
           float col = item["col"].GetFloat();
           int level = item.HasMember("level") ? item["level"].GetInt() : 1;
-          float hp = item.HasMember("HP") ? item["HP"].GetFloat() : -1.0f;  // -1 表示使用默认值（MaxHP）
+          float hp = item.HasMember("HP")
+                         ? item["HP"].GetFloat()
+                         : -1.0f;  // -1 表示使用默认值（MaxHP）
 
           // 调用工厂方法创建建筑
-          Building* building = createBuilding(buildingName, row, col, level, hp);
+          Building* building =
+              createBuilding(buildingName, row, col, level, hp);
           if (building) {
             registerBuilding(building);
           }
@@ -105,7 +107,8 @@ bool BuildingManager::loadBuildingMap() {
 }
 
 Building* BuildingManager::createBuilding(const std::string& buildingName,
-                                          float row, float col, int level, float hp) {
+                                          float row, float col, int level,
+                                          float hp) {
   auto configManager = ConfigManager::getInstance();
   if (!configManager) {
     return nullptr;
@@ -113,34 +116,30 @@ Building* BuildingManager::createBuilding(const std::string& buildingName,
 
   // 1. 获取该建筑的配置
   auto config = configManager->getBuildingConfig(buildingName);
-  
+
   // 2. 获取类型 (TOWN_HALL, DEFENSE, RESOURCE...)
-  std::string type = config.type; 
+  std::string type = config.type;
 
   Building* building = nullptr;
 
   // 3. 根据类型分发创建
   if (type == "TOWN_HALL") {
     building = TownHall::create(level);
-  } 
-  else if (type == "DEFENSE") {
-    // 传入 buildingName (例如 "Cannon")，以便 DefenseBuilding 内部再次读取伤害、范围等参数
+  } else if (type == "DEFENSE") {
+    // 传入 buildingName (例如 "Cannon")，以便 DefenseBuilding
+    // 内部再次读取伤害、范围等参数
     building = DefenseBuilding::create(level, buildingName);
-  }
-  else if (type == "RESOURCE") {
+  } else if (type == "RESOURCE") {
     building = ResourceBuilding::create(level, buildingName);
-  }
-  else if (type == "STORAGE") {
+  } else if (type == "STORAGE") {
     building = StorageBuilding::create(level, buildingName);
-  }
-  else if (type == "BARRACKS") {
+  } else if (type == "BARRACKS") {
     building = BarracksBuilding::create(level, buildingName);
-  }
-  else if (type == "WALL") {
+  } else if (type == "WALL") {
     building = Wall::create(level, buildingName);
-  }
-  else {
-    CCLOG("Unknown building type '%s' for building '%s'", type.c_str(), buildingName.c_str());
+  } else {
+    CCLOG("Unknown building type '%s' for building '%s'", type.c_str(),
+          buildingName.c_str());
     return nullptr;
   }
 

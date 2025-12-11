@@ -1,8 +1,8 @@
 #include "AppDelegate.h"
 
 #include "Container/Scene/AttackScence/AttackScene.h"
-#include "Container/Scene/Record/RecordScene.h"
 #include "Container/Scene/GameScene.h"
+#include "Container/Scene/Record/RecordScene.h"
 #include "Manager/Config/ConfigManager.h"
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
