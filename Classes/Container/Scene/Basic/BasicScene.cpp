@@ -308,7 +308,7 @@ void BasicScene::onMouseMove(Event* event) {
     Vec2 targetAnchorPos = mapPos - _draggingBuilding->_dragOffset;
 
     // 找到最近的网格点（用于吸附预览）
-    int row, col;
+    float row, col;
     Vec2 nearestPos;
     if (GridUtils::findNearestGrassVertex(targetAnchorPos, _p00, row, col,
                                           nearestPos)) {
@@ -353,7 +353,7 @@ void BasicScene::onMouseUp(Event* event) {
       Vec2 targetAnchorPos = mapPos - _draggingBuilding->_dragOffset;
 
       // 找到最近的网格点
-      int row, col;
+      float row, col;
       Vec2 nearestPos;
       if (GridUtils::findNearestGrassVertex(targetAnchorPos, _p00, row, col,
                                             nearestPos)) {
@@ -361,6 +361,7 @@ void BasicScene::onMouseUp(Event* event) {
             nearestPos.x + _deltaX * _draggingBuilding->getGridCount());
         _draggingBuilding->setCenterY(nearestPos.y);
         _draggingBuilding->setRow(row);
+        _draggingBuilding->setCol(col);
         // 检查是否有效（边界 + 子类规则）
         if (!isPlacementValid(_draggingBuilding)) {
           // 如果无效，恢复到之前的位置
@@ -371,7 +372,7 @@ void BasicScene::onMouseUp(Event* event) {
           // 简单起见，我们假设 _buildingStartPos 是正确的。
           // 实际上，如果恢复位置，下次点击时会重新计算 row/col。
           // 但为了数据一致性，最好重新计算一下 startPos 的 row/col。
-          int startRow, startCol;
+          float startRow, startCol;
           GridUtils::screenToGrid(_buildingStartPos, _p00, startRow, startCol);
           _draggingBuilding->setRow(startRow);
           _draggingBuilding->setCol(startCol);

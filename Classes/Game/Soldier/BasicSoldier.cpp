@@ -3,6 +3,10 @@
 #include <cmath>
 #include <string>
 
+#include "Game/Soldier/Archer.h"
+#include "Game/Soldier/Barbarian.h"
+#include "Game/Soldier/Bomber.h"
+#include "Game/Soldier/Gaint.h"
 #include "Manager/Config/ConfigManager.h"
 
 BasicSoldier::BasicSoldier()
@@ -16,6 +20,7 @@ BasicSoldier::BasicSoldier()
       _attackRange(100.0f),
       _attackType(AttackType::ANY),
       _state(SoldierState::IDLE),
+      _soldierCategory(SoldierCategory::LAND),
       _centerX(0.0f),
       _centerY(0.0f),
       _target(nullptr),
@@ -49,13 +54,35 @@ BasicSoldier::~BasicSoldier() {
 }
 
 BasicSoldier* BasicSoldier::create(SoldierType soldierType, int level) {
-  BasicSoldier* soldier = new (std::nothrow) BasicSoldier();
-  if (soldier && soldier->init(soldierType, level)) {
-    soldier->autorelease();
-    return soldier;
+  BasicSoldier* soldier = nullptr;
+  
+  // 根据士兵类型创建对应的派生类对象
+  switch (soldierType) {
+    case SoldierType::BARBARIAN:
+      soldier = Barbarian::create(level);
+      break;
+    case SoldierType::ARCHER:
+      soldier = Archer::create(level);
+      break;
+    case SoldierType::GIANT:
+      soldier = Gaint::create(level);
+      break;
+    case SoldierType::BOMBER:
+      soldier = Bomber::create(level);
+      break;
+    default:
+      CCLOG("BasicSoldier::create: Unknown soldier type: %d", static_cast<int>(soldierType));
+      // 默认创建 BasicSoldier（不应该到达这里）
+      soldier = new (std::nothrow) BasicSoldier();
+      if (soldier && soldier->init(soldierType, level)) {
+        soldier->autorelease();
+        return soldier;
+      }
+      CC_SAFE_DELETE(soldier);
+      return nullptr;
   }
-  CC_SAFE_DELETE(soldier);
-  return nullptr;
+  
+  return soldier;
 }
 
 bool BasicSoldier::init(SoldierType soldierType, int level) {
@@ -69,7 +96,7 @@ bool BasicSoldier::init(SoldierType soldierType, int level) {
   // 从配置文件加载士兵数据
   auto configManager = ConfigManager::getInstance();
   if (!configManager) {
-    CCLOG("ConfigManager not found, using default values");
+    CCLOG("BasicSoldier::init: ConfigManager not found, using default values");
     createDefaultAppearance();
     return true;
   }
@@ -86,12 +113,12 @@ bool BasicSoldier::init(SoldierType soldierType, int level) {
     case SoldierType::GIANT:
       soldierTypeKey = "giant";
       break;
-    case SoldierType::GOBLIN:
-      soldierTypeKey = "goblin";
+    case SoldierType::BOMBER:
+      soldierTypeKey = "bomber";
       break;
     default:
-      soldierTypeKey = "barbarian";
-      break;
+      CCLOG("BasicSoldier::init: Unknown soldier type: %d", static_cast<int>(soldierType));
+      return false;
   }
 
   // 从 ConfigManager 获取配置
@@ -117,6 +144,7 @@ bool BasicSoldier::init(SoldierType soldierType, int level) {
   }
 
   _attackType = soldierConfig.attackType;
+  _soldierCategory = soldierConfig.soldierCategory;
 
   // 尝试加载图片（使用 MoveImage 作为实际游戏中的士兵图像）
   bool imageLoaded = false;
@@ -188,7 +216,7 @@ void BasicSoldier::createDefaultAppearance() {
     case SoldierType::GIANT:
       color = Color4B(128, 128, 128, 255);  // 灰色
       break;
-    case SoldierType::GOBLIN:
+    case SoldierType::BOMBER:
       color = Color4B(0, 255, 0, 255);  // 绿色
       break;
     default:
@@ -409,7 +437,9 @@ bool BasicSoldier::findTarget(const std::vector<Building*>& buildings) {
     bool isPreferred = false;
     switch (_attackType) {
       case AttackType::ANY:
-        isPreferred = true;  // 任意目标都是优先的
+        if(buildingType != BuildingType::WALL) {
+          isPreferred = true;  
+        }
         break;
       case AttackType::DEFENSE:
         isPreferred = (buildingType == BuildingType::DEFENSE);
@@ -419,6 +449,9 @@ bool BasicSoldier::findTarget(const std::vector<Building*>& buildings) {
         break;
       case AttackType::TOWN_HALL:
         isPreferred = (buildingType == BuildingType::TOWN_HALL);
+        break;
+      case AttackType::WALL:
+        isPreferred = (buildingType == BuildingType::WALL);
         break;
     }
 

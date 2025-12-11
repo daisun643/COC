@@ -252,6 +252,15 @@ bool ConfigManager::loadBuildingConfig() {
       // 4. 读取兵营属性
       if (val.HasMember("queueSize")) config.queueSize = val["queueSize"].GetInt();
 
+      // 5. 读取城墙属性
+      if (val.HasMember("defense")) config.defense = val["defense"].GetFloat();
+
+      // 6. 读取生命值属性
+      if (val.HasMember("MAXHP")) config.maxHP = val["MAXHP"].GetFloat();
+      if (!val.HasMember("MAXHP") && val.HasMember("HP")) {
+        config.maxHP = val["HP"].GetFloat();
+      }
+
       // 存入 Map
       _buildingConfigs[name] = config;
     }
@@ -310,6 +319,8 @@ ConfigManager::SoldierConfig ConfigManager::getSoldierConfig(
       config.attackType = AttackType::RESOURCE;
     } else if (attackTypeStr == "TownHall") {
       config.attackType = AttackType::TOWN_HALL;
+    } else if (attackTypeStr == "WALL") {
+      config.attackType = AttackType::WALL;
     } else {
       CCLOG("Invalid attack type: %s", attackTypeStr.c_str());
       return config;

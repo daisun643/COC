@@ -32,7 +32,7 @@ enum class SoldierType {
   BARBARIAN,  // 野蛮人
   ARCHER,     // 弓箭手
   GIANT,      // 巨人
-  GOBLIN      // 哥布林
+  BOMBER      // 炸弹人
 };
 // TODO 大本营删除
 /**
@@ -42,7 +42,8 @@ enum class AttackType {
   ANY,       // 任意目标
   DEFENSE,   // 优先防御建筑
   RESOURCE,  // 优先资源建筑
-  TOWN_HALL  // 优先大本营
+  TOWN_HALL, // 优先大本营
+  WALL       // 优先墙
 };
 
 /**
@@ -84,6 +85,7 @@ class BasicSoldier : public Sprite {
   CC_SYNTHESIZE(float, _attackRange, AttackRange);  // 攻击范围（像素）
   CC_SYNTHESIZE(AttackType, _attackType, AttackType);
   CC_SYNTHESIZE(SoldierState, _state, State);
+  CC_SYNTHESIZE(SoldierCategory, _soldierCategory, SoldierCategory);
   CC_SYNTHESIZE(float, _centerX, CenterX);
   CC_SYNTHESIZE(float, _centerY, CenterY);
   CC_SYNTHESIZE(Building*, _target, Target);
@@ -164,7 +166,7 @@ class BasicSoldier : public Sprite {
    * 攻击目标
    * @param delta 时间间隔
    */
-  void attackTarget(float delta);
+  virtual void attackTarget(float delta);
 
   /**
    * 死亡处理

@@ -2,7 +2,7 @@
 
 #include "Manager/Config/ConfigManager.h"
 
-Vec2 GridUtils::gridToScene(int row, int col, const Vec2& p00) {
+Vec2 GridUtils::gridToScene(float row, float col, const Vec2& p00) {
   // 从 ConfigManager 获取 deltaX 和 deltaY
   auto configManager = ConfigManager::getInstance();
   if (!configManager) {
@@ -19,8 +19,8 @@ Vec2 GridUtils::gridToScene(int row, int col, const Vec2& p00) {
   return pos;
 }
 
-bool GridUtils::screenToGrid(const Vec2& screenPos, const Vec2& p00, int& row,
-                             int& col) {
+bool GridUtils::screenToGrid(const Vec2& screenPos, const Vec2& p00, float& row,
+                             float& col) {
   // 从 ConfigManager 获取 deltaX, deltaY 和 gridSize
   auto configManager = ConfigManager::getInstance();
   if (!configManager) {
@@ -45,19 +45,15 @@ bool GridUtils::screenToGrid(const Vec2& screenPos, const Vec2& p00, int& row,
   // col = (dx/deltaX + dy/deltaY) / 2
   // row = (dx/deltaX - dy/deltaY) / 2
 
-  float col_f = (dx / deltaX + dy / deltaY) / 2.0f;
-  float row_f = (dx / deltaX - dy / deltaY) / 2.0f;
-
-  // 四舍五入到最近的整数
-  col = (int)(col_f + 0.5f);
-  row = (int)(row_f + 0.5f);
+  col = (dx / deltaX + dy / deltaY) / 2.0f;
+  row = (dx / deltaX - dy / deltaY) / 2.0f;
 
   // 检查是否在有效范围内
-  return (row >= 0 && row <= gridSize && col >= 0 && col <= gridSize);
+  return (row >= 0.0f && row <= static_cast<float>(gridSize) && col >= 0.0f && col <= static_cast<float>(gridSize));
 }
 
 bool GridUtils::findNearestGrassVertex(const Vec2& screenPos, const Vec2& p00,
-                                       int& row, int& col, Vec2& nearestPos) {
+                                       float& row, float& col, Vec2& nearestPos) {
   // 从 ConfigManager 获取 gridCount
   auto configManager = ConfigManager::getInstance();
   if (!configManager) {
@@ -68,24 +64,28 @@ bool GridUtils::findNearestGrassVertex(const Vec2& screenPos, const Vec2& p00,
   int gridSize = constantConfig.gridSize;
 
   // 先转换为网格坐标
-  int tempRow, tempCol;
+  float tempRow, tempCol;
   if (!screenToGrid(screenPos, p00, tempRow, tempCol)) {
     return false;
   }
 
   // 检查周围的几个点，找到最近的
   float minDist = FLT_MAX;
-  int bestRow = tempRow, bestCol = tempCol;
+  float bestRow = tempRow, bestCol = tempCol;
 
-  for (int r = tempRow - 1; r <= tempRow + 1; ++r) {
-    for (int c = tempCol - 1; c <= tempCol + 1; ++c) {
+  // 将浮点坐标四舍五入到最近的整数，然后检查周围的点
+  int centerRow = static_cast<int>(tempRow + 0.5f);
+  int centerCol = static_cast<int>(tempCol + 0.5f);
+
+  for (int r = centerRow - 1; r <= centerRow + 1; ++r) {
+    for (int c = centerCol - 1; c <= centerCol + 1; ++c) {
       if (r >= 0 && r <= gridSize && c >= 0 && c < gridSize) {
-        Vec2 gridPos = gridToScene(r, c, p00);
+        Vec2 gridPos = gridToScene(static_cast<float>(r), static_cast<float>(c), p00);
         float dist = screenPos.distance(gridPos);
         if (dist < minDist) {
           minDist = dist;
-          bestRow = r;
-          bestCol = c;
+          bestRow = static_cast<float>(r);
+          bestCol = static_cast<float>(c);
         }
       }
     }

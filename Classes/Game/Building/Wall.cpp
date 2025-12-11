@@ -1,15 +1,16 @@
-#include "BarracksBuilding.h"
+#include "Wall.h"
+
 #include "Manager/Config/ConfigManager.h"
 
-BarracksBuilding::BarracksBuilding() 
-: _queueSize(0) {
-  _buildingType = BuildingType::BARRACKS;
+Wall::Wall() 
+: _defense(0.0f) {
+  _buildingType = BuildingType::WALL;
 }
 
-BarracksBuilding::~BarracksBuilding() {}
+Wall::~Wall() {}
 
-BarracksBuilding* BarracksBuilding::create(int level, const std::string& buildingName) {
-  BarracksBuilding* p = new (std::nothrow) BarracksBuilding();
+Wall* Wall::create(int level, const std::string& buildingName) {
+  Wall* p = new (std::nothrow) Wall();
   if (p && p->init(level, buildingName)) {
     p->autorelease();
     return p;
@@ -18,16 +19,19 @@ BarracksBuilding* BarracksBuilding::create(int level, const std::string& buildin
   return nullptr;
 }
 
-bool BarracksBuilding::init(int level, const std::string& buildingName) {
+bool Wall::init(int level, const std::string& buildingName) {
+  // 获取配置
   auto config = ConfigManager::getInstance()->getBuildingConfig(buildingName);
   _buildingName = buildingName;
 
-  if (!Building::init(config.image, BuildingType::BARRACKS, level, 
+  // 调用基类初始化通用外观
+  if (!Building::init(config.image, BuildingType::WALL, level, 
                       config.gridCount, config.anchorRatioX, config.anchorRatioY, config.imageScale)) {
     return false;
   }
 
-  this->_queueSize = config.queueSize;
+  // 初始化城墙特有属性
+  this->_defense = config.defense;
 
   // 设置最大生命值（当前生命值将在 BuildingManager 中设置，默认为 MaxHP）
   this->_maxHP = config.maxHP;
