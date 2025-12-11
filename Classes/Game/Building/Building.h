@@ -46,14 +46,14 @@ class Building : public Sprite {
   CC_SYNTHESIZE(int, _maxLevel, MaxLevel);
   CC_SYNTHESIZE(float, _centerX, CenterX);
   CC_SYNTHESIZE(float, _centerY, CenterY);
-  CC_SYNTHESIZE(int, _gridCount, GridCount);          // 建筑占用的网格数量
+  CC_SYNTHESIZE(int, _gridCount, GridCount);  // 建筑占用的网格数量
   // 这里 _row 和 _col 的类型由 int -> float 进行适配
-  CC_SYNTHESIZE(float, _row, Row);                      // 坐标编码：行
-  CC_SYNTHESIZE(float, _col, Col);                      // 坐标编码：列
+  CC_SYNTHESIZE(float, _row, Row);                    // 坐标编码：行
+  CC_SYNTHESIZE(float, _col, Col);                    // 坐标编码：列
   CC_SYNTHESIZE(float, _anchorRatioX, AnchorRatioX);  // 建筑宽度比例
   CC_SYNTHESIZE(float, _anchorRatioY, AnchorRatioY);  // 建筑高度比例
   CC_SYNTHESIZE(float, _maxHP, MaxHP);                // 最大生命值
-  CC_SYNTHESIZE(float, _currentHP, CurrentHP);       // 当前生命值
+  CC_SYNTHESIZE(float, _currentHP, CurrentHP);        // 当前生命值
   /**
    * 检查建筑是否越界
    */

@@ -36,4 +36,3 @@ class Gaint : public BasicSoldier {
 };
 
 #endif  // __GIANT_H__
-

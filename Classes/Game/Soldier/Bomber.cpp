@@ -71,7 +71,6 @@ void Bomber::attackTarget(float delta) {
       continue;
     }
 
-
     // 计算距离
     Vec2 buildingPos = building->getPosition();
     float distance = getDistanceTo(buildingPos);
@@ -80,8 +79,11 @@ void Bomber::attackTarget(float delta) {
     if (distance <= explosionRadius) {
       building->takeDamage(_attackDamage);
       wallCount++;
-      CCLOG("Bomber explodes! Wall at distance %.1f takes damage: %.1f, wall HP: %.1f/%.1f",
-            distance, _attackDamage, building->getCurrentHP(), building->getMaxHP());
+      CCLOG(
+          "Bomber explodes! Wall at distance %.1f takes damage: %.1f, wall HP: "
+          "%.1f/%.1f",
+          distance, _attackDamage, building->getCurrentHP(),
+          building->getMaxHP());
     }
   }
 
@@ -92,4 +94,3 @@ void Bomber::attackTarget(float delta) {
   // 炸弹人攻击后立即死亡
   die();
 }
-

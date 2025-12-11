@@ -95,7 +95,7 @@ bool TroopManager::loadTroopConfig(const std::string& configPath) {
         }
 
         _spellItems.push_back(spellItem);
-      } 
+      }
     }
   }
 

@@ -1,9 +1,10 @@
 #ifndef __DEFENSE_BUILDING_H__
 #define __DEFENSE_BUILDING_H__
 
+#include <vector>
+
 #include "Building.h"
 #include "Game/Soldier/BasicSoldier.h"
-#include <vector>
 
 class DefenseBuilding : public Building {
  public:
@@ -13,9 +14,9 @@ class DefenseBuilding : public Building {
   CC_SYNTHESIZE(float, _attackRange, AttackRange);
   CC_SYNTHESIZE(int, _damage, Damage);
   CC_SYNTHESIZE(float, _attackSpeed, AttackSpeed);
-  
+
   BasicSoldier* _currentTarget;  // 当前攻击目标
-  float _attackCooldown;          // 攻击冷却时间
+  float _attackCooldown;         // 攻击冷却时间
 
   /**
    * 攻击范围内的士兵
@@ -36,8 +37,7 @@ class DefenseBuilding : public Building {
    * @return 是否成功攻击了目标
    */
   bool attackSoldiers(const std::vector<BasicSoldier*>& soldiers,
-                      SoldierCategory targetCategory,
-                      float delta);
+                      SoldierCategory targetCategory, float delta);
 
  protected:
   DefenseBuilding();

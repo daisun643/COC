@@ -1,14 +1,15 @@
 #include "ResourceBuilding.h"
+
 #include "Manager/Config/ConfigManager.h"
 
-ResourceBuilding::ResourceBuilding() 
-: _productionRate(0), _capacity(0) {
+ResourceBuilding::ResourceBuilding() : _productionRate(0), _capacity(0) {
   _buildingType = BuildingType::RESOURCE;
 }
 
 ResourceBuilding::~ResourceBuilding() {}
 
-ResourceBuilding* ResourceBuilding::create(int level, const std::string& buildingName) {
+ResourceBuilding* ResourceBuilding::create(int level,
+                                           const std::string& buildingName) {
   ResourceBuilding* p = new (std::nothrow) ResourceBuilding();
   if (p && p->init(level, buildingName)) {
     p->autorelease();
@@ -22,8 +23,9 @@ bool ResourceBuilding::init(int level, const std::string& buildingName) {
   auto config = ConfigManager::getInstance()->getBuildingConfig(buildingName);
   _buildingName = buildingName;
 
-  if (!Building::init(config.image, BuildingType::RESOURCE, level, 
-                      config.gridCount, config.anchorRatioX, config.anchorRatioY, config.imageScale)) {
+  if (!Building::init(config.image, BuildingType::RESOURCE, level,
+                      config.gridCount, config.anchorRatioX,
+                      config.anchorRatioY, config.imageScale)) {
     return false;
   }
 

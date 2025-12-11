@@ -303,14 +303,16 @@ void Building::updateHPBar() {
   }
 
   // 生命值条尺寸（根据建筑大小调整）
-  float barWidth = this->getContentSize().width * 0.8f;  // 血条宽度为建筑宽度的80%
+  float barWidth =
+      this->getContentSize().width * 0.8f;  // 血条宽度为建筑宽度的80%
   if (barWidth < 40.0f) {
     barWidth = 40.0f;  // 最小宽度
   }
   float barHeight = 5.0f;  // 血条高度
-  
+
   // 在Cocos2d-x中，设置锚点后，本地坐标系的原点(0,0)就是锚点位置
-  float barY = this->getContentSize().height;   // 血条的Y坐标（相对于锚点，即本地坐标系原点）
+  float barY = this->getContentSize()
+                   .height;  // 血条的Y坐标（相对于锚点，即本地坐标系原点）
   float anchorX = this->getContentSize().width * _anchorRatioX;
   float anchorY = this->getContentSize().height * _anchorRatioY;
   // 清除之前的绘制
@@ -375,6 +377,4 @@ void Building::takeDamage(float damage) {
   }
 }
 
-bool Building::isAlive() const {
-  return _currentHP > 0;
-}
+bool Building::isAlive() const { return _currentHP > 0; }

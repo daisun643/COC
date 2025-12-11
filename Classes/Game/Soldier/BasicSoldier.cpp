@@ -34,7 +34,7 @@ BasicSoldier::BasicSoldier()
 BasicSoldier::~BasicSoldier() {
   // 停止更新调度，避免析构后继续调用update
   this->unscheduleUpdate();
-  
+
   // 注意：在Cocos2d-x中，父节点销毁时会自动清理所有子节点
   // 这里只需要将指针置空，避免重复析构
   // 如果子节点已经被移除，removeFromParent()是安全的（会检查父节点）
@@ -55,7 +55,7 @@ BasicSoldier::~BasicSoldier() {
 
 BasicSoldier* BasicSoldier::create(SoldierType soldierType, int level) {
   BasicSoldier* soldier = nullptr;
-  
+
   // 根据士兵类型创建对应的派生类对象
   switch (soldierType) {
     case SoldierType::BARBARIAN:
@@ -71,7 +71,8 @@ BasicSoldier* BasicSoldier::create(SoldierType soldierType, int level) {
       soldier = Bomber::create(level);
       break;
     default:
-      CCLOG("BasicSoldier::create: Unknown soldier type: %d", static_cast<int>(soldierType));
+      CCLOG("BasicSoldier::create: Unknown soldier type: %d",
+            static_cast<int>(soldierType));
       // 默认创建 BasicSoldier（不应该到达这里）
       soldier = new (std::nothrow) BasicSoldier();
       if (soldier && soldier->init(soldierType, level)) {
@@ -81,7 +82,7 @@ BasicSoldier* BasicSoldier::create(SoldierType soldierType, int level) {
       CC_SAFE_DELETE(soldier);
       return nullptr;
   }
-  
+
   return soldier;
 }
 
@@ -117,7 +118,8 @@ bool BasicSoldier::init(SoldierType soldierType, int level) {
       soldierTypeKey = "bomber";
       break;
     default:
-      CCLOG("BasicSoldier::init: Unknown soldier type: %d", static_cast<int>(soldierType));
+      CCLOG("BasicSoldier::init: Unknown soldier type: %d",
+            static_cast<int>(soldierType));
       return false;
   }
 
@@ -437,8 +439,8 @@ bool BasicSoldier::findTarget(const std::vector<Building*>& buildings) {
     bool isPreferred = false;
     switch (_attackType) {
       case AttackType::ANY:
-        if(buildingType != BuildingType::WALL) {
-          isPreferred = true;  
+        if (buildingType != BuildingType::WALL) {
+          isPreferred = true;
         }
         break;
       case AttackType::DEFENSE:
@@ -517,12 +519,15 @@ void BasicSoldier::updateHPBar() {
   // 生命值条尺寸
   float barWidth = 40.0f;
   float barHeight = 4.0f;
-  
+
   // 在Cocos2d-x中，设置锚点后，本地坐标系的原点(0,0)就是锚点位置
   // 兵种锚点为中心(0.5, 0.5)
-  float barY = this->getContentSize().height;   // 血条的Y坐标（相对于锚点，即本地坐标系原点）
-  float anchorX = this->getContentSize().width * 0.5f;  // 锚点X坐标（兵种锚点是0.5）
-  float anchorY = this->getContentSize().height * 0.5f;  // 锚点Y坐标（兵种锚点是0.5）
+  float barY = this->getContentSize()
+                   .height;  // 血条的Y坐标（相对于锚点，即本地坐标系原点）
+  float anchorX =
+      this->getContentSize().width * 0.5f;  // 锚点X坐标（兵种锚点是0.5）
+  float anchorY =
+      this->getContentSize().height * 0.5f;  // 锚点Y坐标（兵种锚点是0.5）
 
   // 清除之前的绘制
   _hpBarBackground->clear();

@@ -44,4 +44,3 @@ void Gaint::createDefaultAppearance() {
   // 设置内容大小（巨人更大）
   this->setContentSize(Size(50, 50));
 }
-

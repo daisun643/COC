@@ -2,10 +2,7 @@
 
 #include "Manager/Config/ConfigManager.h"
 
-Wall::Wall() 
-: _defense(0.0f) {
-  _buildingType = BuildingType::WALL;
-}
+Wall::Wall() : _defense(0.0f) { _buildingType = BuildingType::WALL; }
 
 Wall::~Wall() {}
 
@@ -25,8 +22,9 @@ bool Wall::init(int level, const std::string& buildingName) {
   _buildingName = buildingName;
 
   // 调用基类初始化通用外观
-  if (!Building::init(config.image, BuildingType::WALL, level, 
-                      config.gridCount, config.anchorRatioX, config.anchorRatioY, config.imageScale)) {
+  if (!Building::init(config.image, BuildingType::WALL, level, config.gridCount,
+                      config.anchorRatioX, config.anchorRatioY,
+                      config.imageScale)) {
     return false;
   }
 
