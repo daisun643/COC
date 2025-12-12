@@ -59,7 +59,12 @@ bool GameScene::init() {
     }
   });
 
+  _uiLayer->setOnMapEditClickCallback([this]() { this->enterMapEditMode(); });
+
   // 初始化 GameScene 特有的放置模式相关变量
+  _isMapEditMode = false;
+  _isPlacementFromInventory = false;
+  _mapEditLayer = nullptr;
   _isPlacingBuilding = false;
   _placementBuilding = nullptr;
   _placementHintLabel = nullptr;
@@ -312,7 +317,11 @@ void GameScene::onMouseUp(Event* event) {
   if (_buildingMenuLayer) {
     // 如果刚才在拖动，或者没有选中建筑，则隐藏菜单
     if (_selectedBuilding && !wasDragging) {
-      _buildingMenuLayer->showBuildingOptions(_selectedBuilding);
+      if (_isMapEditMode) {
+        _buildingMenuLayer->showRemoveOption(_selectedBuilding);
+      } else {
+        _buildingMenuLayer->showBuildingOptions(_selectedBuilding);
+      }
     } else {
       _buildingMenuLayer->hideOptions();
     }
@@ -568,7 +577,14 @@ void GameScene::cancelPlacementMode(bool refundResources) {
     return;
   }
 
-  if (refundResources) {
+  if (_isPlacementFromInventory) {
+    // Return to inventory
+    _tempInventory[_placementItem.id]++;
+    if (_mapEditLayer) {
+      _mapEditLayer->updateInventory(_tempInventory);
+    }
+    _isPlacementFromInventory = false;
+  } else if (refundResources) {
     auto playerManager = PlayerManager::getInstance();
     if (playerManager) {
       playerManager->addGold(_placementItem.costGold);
@@ -729,4 +745,122 @@ GameScene::~GameScene() {
   // 取消放置模式（不退回资源，因为析构时资源已经不需要了）
   cancelPlacementMode(false);
   // 注意：父类 BasicScene 的析构函数会自动调用，不需要显式调用
+}
+
+void GameScene::enterMapEditMode() {
+  if (_isMapEditMode) return;
+  _isMapEditMode = true;
+  _isPlacementFromInventory = false;
+
+  // Hide main UI
+  if (_uiLayer) _uiLayer->setVisible(false);
+  if (_buildingMenuLayer) _buildingMenuLayer->hideOptions();
+
+  // Clear temp inventory
+  _tempInventory.clear();
+
+  // Build shop catalog for reference
+  _shopCatalog = buildShopCatalog();
+
+  // Create MapEditLayer
+  _mapEditLayer = MapEditLayer::createWithItems(_shopCatalog);
+  if (_mapEditLayer) {
+    _mapEditLayer->setOnRemoveAllCallback(
+        [this]() { this->onRemoveAllBuildings(); });
+    _mapEditLayer->setOnSaveCallback([this]() { this->exitMapEditMode(true); });
+    _mapEditLayer->setOnCancelCallback(
+        [this]() { this->exitMapEditMode(false); });
+    _mapEditLayer->setOnItemClickCallback([this](const std::string& id) {
+      this->onPlaceBuildingFromInventory(id);
+    });
+    this->addChild(_mapEditLayer, 200);
+  }
+
+  // Set remove callback for building menu
+  if (_buildingMenuLayer) {
+    _buildingMenuLayer->setOnRemoveCallback(
+        [this](Building* b) { this->onRemoveBuilding(b); });
+  }
+}
+
+void GameScene::exitMapEditMode(bool save) {
+  if (!_isMapEditMode) return;
+
+  if (!save) {
+    // Reload scene to revert changes
+    Director::getInstance()->replaceScene(GameScene::createScene());
+    return;
+  }
+
+  _isMapEditMode = false;
+  if (_mapEditLayer) {
+    _mapEditLayer->removeFromParent();
+    _mapEditLayer = nullptr;
+  }
+  if (_uiLayer) _uiLayer->setVisible(true);
+
+  // Clear inventory (items left are lost or should be handled)
+  _tempInventory.clear();
+}
+
+void GameScene::onRemoveAllBuildings() {
+  if (!_buildingManager) return;
+
+  // Copy list to avoid iterator invalidation
+  auto buildings = _buildingManager->getAllBuildings();
+  for (auto b : buildings) {
+    onRemoveBuilding(b);
+  }
+}
+
+void GameScene::onRemoveBuilding(Building* building) {
+  if (!building) return;
+
+  std::string id = building->getBuildingName();
+  // Check if this ID exists in catalog (to ensure it's a valid shop item)
+  bool isValid = false;
+  for (const auto& item : _shopCatalog) {
+    if (item.id == id) {
+      isValid = true;
+      break;
+    }
+  }
+
+  if (isValid) {
+    _tempInventory[id]++;
+    if (_mapEditLayer) {
+      _mapEditLayer->updateInventory(_tempInventory);
+    }
+  }
+
+  // Remove from manager and map
+  if (_buildingManager) {
+    _buildingManager->removeBuilding(building);
+  }
+  building->removeFromParent();
+
+  if (_buildingMenuLayer) _buildingMenuLayer->hideOptions();
+}
+
+void GameScene::onPlaceBuildingFromInventory(const std::string& id) {
+  if (_tempInventory[id] <= 0) return;
+
+  // Find item
+  ShopItem targetItem;
+  bool found = false;
+  for (const auto& item : _shopCatalog) {
+    if (item.id == id) {
+      targetItem = item;
+      found = true;
+      break;
+    }
+  }
+
+  if (!found) return;
+
+  _tempInventory[id]--;
+  if (_mapEditLayer) _mapEditLayer->updateInventory(_tempInventory);
+
+  _isPlacementFromInventory = true;
+  enterPlacementMode(targetItem);
 }

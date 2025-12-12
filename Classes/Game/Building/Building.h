@@ -50,6 +50,12 @@ class Building : public Sprite {
   CC_SYNTHESIZE(int, _col, Col);                      // 坐标编码：列
   CC_SYNTHESIZE(float, _anchorRatioX, AnchorRatioX);  // 建筑宽度比例
   CC_SYNTHESIZE(float, _anchorRatioY, AnchorRatioY);  // 建筑高度比例
+
+  /**
+   * 获取建筑名称
+   */
+  std::string getBuildingName() const { return _buildingName; }
+
   /**
    * 检查建筑是否越界
    */

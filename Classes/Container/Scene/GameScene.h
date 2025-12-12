@@ -1,10 +1,12 @@
 #ifndef __GAME_SCENE_H__
 #define __GAME_SCENE_H__
 
+#include <map>
 #include <vector>
 
 #include "Container/Layer/BuildingMenuLayer.h"
 #include "Container/Layer/MainUILayer.h"
+#include "Container/Layer/MapEditLayer.h"
 #include "Container/Layer/ShopLayer.h"
 #include "Container/Scene/Basic/BasicScene.h"
 #include "Manager/PlayerManager.h"
@@ -26,6 +28,19 @@ class GameScene : public BasicScene {
  private:
   MainUILayer* _uiLayer;                  // UI 层
   BuildingMenuLayer* _buildingMenuLayer;  // 建筑菜单层
+  MapEditLayer* _mapEditLayer;            // 地图编辑层
+
+  // 地图编辑模式相关
+  bool _isMapEditMode;
+  bool _isPlacementFromInventory;             // 是否是从库存放置
+  std::map<std::string, int> _tempInventory;  // 临时库存：ID -> 数量
+  std::vector<ShopItem> _shopCatalog;         // 缓存商店目录，用于查找物品信息
+
+  void enterMapEditMode();
+  void exitMapEditMode(bool save);
+  void onRemoveAllBuildings();
+  void onRemoveBuilding(Building* building);
+  void onPlaceBuildingFromInventory(const std::string& id);
 
   /**
    * 打开商店界面

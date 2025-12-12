@@ -4,7 +4,7 @@
 
 TownHall::TownHall() {
   _buildingType = BuildingType::TOWN_HALL;
-  _buildingName = "Town Hall";
+  _buildingName = "TownHall";
   _maxLevel = 10;
 }
 
@@ -13,7 +13,8 @@ TownHall::~TownHall() {}
 TownHall* TownHall::create(int level) {
   TownHall* townHall = new (std::nothrow) TownHall();
   auto constantConfig = ConfigManager::getInstance()->getConstantConfig();
-  auto townHallConfig = ConfigManager::getInstance()->getBuildingConfig("TownHall");
+  auto townHallConfig =
+      ConfigManager::getInstance()->getBuildingConfig("TownHall");
 
   if (townHall &&
       townHall->init(level, townHallConfig.image, townHallConfig.gridCount,
