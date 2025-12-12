@@ -6,7 +6,12 @@
 #include <sstream>
 
 // 包含所有具体的建筑头文件
-#include "Game/Building/AllBuildings.h"
+#include "Game/Building/BarracksBuilding.h"
+#include "Game/Building/DefenseBuilding.h"
+#include "Game/Building/ResourceBuilding.h"
+#include "Game/Building/StorageBuilding.h"
+#include "Game/Building/TownHall.h"
+#include "Game/Building/Wall.h"
 #include "Manager/Config/ConfigManager.h"
 #include "Manager/PlayerManager.h"
 #include "Utils/GridUtils.h"
@@ -84,12 +89,16 @@ bool BuildingManager::loadBuildingMap() {
       for (rapidjson::SizeType i = 0; i < array.Size(); ++i) {
         const rapidjson::Value& item = array[i];
         if (item.IsObject() && item.HasMember("row") && item.HasMember("col")) {
-          int row = item["row"].GetInt();
-          int col = item["col"].GetInt();
+          float row = item["row"].GetFloat();
+          float col = item["col"].GetFloat();
           int level = item.HasMember("level") ? item["level"].GetInt() : 1;
+          float hp = item.HasMember("HP")
+                         ? item["HP"].GetFloat()
+                         : -1.0f;  // -1 表示使用默认值（MaxHP）
 
           // 调用工厂方法创建建筑
-          Building* building = createBuilding(buildingName, row, col, level);
+          Building* building =
+              createBuilding(buildingName, row, col, level, hp);
           if (building) {
             registerBuilding(building);
           }
@@ -102,7 +111,8 @@ bool BuildingManager::loadBuildingMap() {
 }
 
 Building* BuildingManager::createBuilding(const std::string& buildingName,
-                                          int row, int col, int level) {
+                                          float row, float col, int level,
+                                          float hp) {
   auto configManager = ConfigManager::getInstance();
   if (!configManager) {
     return nullptr;
@@ -129,6 +139,8 @@ Building* BuildingManager::createBuilding(const std::string& buildingName,
     building = StorageBuilding::create(level, buildingName);
   } else if (type == "BARRACKS") {
     building = BarracksBuilding::create(level, buildingName);
+  } else if (type == "WALL") {
+    building = Wall::create(level, buildingName);
   } else {
     CCLOG("Unknown building type '%s' for building '%s'", type.c_str(),
           buildingName.c_str());
@@ -143,6 +155,14 @@ Building* BuildingManager::createBuilding(const std::string& buildingName,
     building->setCenterY(anchorPos.y);
     building->setRow(row);
     building->setCol(col);
+
+    // 5. 设置生命值（如果指定了 HP，使用指定值；否则使用 MaxHP）
+    if (hp >= 0.0f) {
+      building->setCurrentHPAndUpdate(hp);
+    } else {
+      // 如果没有指定 HP，默认使用 MaxHP
+      building->setCurrentHPAndUpdate(building->getMaxHP());
+    }
   }
 
   return building;

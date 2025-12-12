@@ -5,9 +5,12 @@
 #include <vector>
 
 #include "Container/Scene/Basic/BasicScene.h"
+#include "Game/Building/DefenseBuilding.h"
 #include "Game/Soldier/BasicSoldier.h"
 #include "Game/Spell/BasicSpell.h"
+#include "Manager/Record/RecordManager.h"
 #include "Manager/Troop/TroopManager.h"
+#include "ui/CocosGUI.h"
 
 USING_NS_CC;
 
@@ -83,7 +86,39 @@ class AttackScene : public BasicScene {
    */
   bool isValidPlacementPosition(const Vec2& mapPos) const;
 
+  /**
+   * 创建开始进攻和结束进攻按钮
+   */
+  void createAttackButtons();
+
+  /**
+   * 开始进攻（开始倒计时）
+   */
+  void startAttack();
+
+  /**
+   * 结束进攻（保存记录）
+   */
+  void endAttack();
+
+  /**
+   * 倒计时更新函数
+   */
+  void updateCountdown(float dt);
+
+  /**
+   * 格式化倒计时时间显示
+   */
+  std::string formatTime(int seconds) const;
+
+  /**
+   * 更新防御建筑攻击（每帧调用）
+   * @param delta 时间间隔
+   */
+  void updateDefenseBuildings(float delta);
+
   TroopManager* _troopManager;         // 军队管理器实例
+  RecordManager* _recordManager;       // 记录管理器实例
   std::vector<TroopItem> _troopItems;  // 军队配置列表
   std::vector<SpellItem> _spellItems;  // 法术配置列表
   Layer* _statusBarLayer;              // 状态栏层
@@ -102,6 +137,14 @@ class AttackScene : public BasicScene {
       _spellIconBgs;  // 法术图标背景列表（用于鼠标点击检测）
   std::vector<BasicSoldier*> _placedSoldiers;  // 已布置的士兵列表
   std::vector<BasicSpell*> _activeSpells;      // 活跃的法术列表
+
+  // 进攻控制相关
+  cocos2d::ui::Button* _startAttackButton;  // 开始进攻按钮
+  cocos2d::ui::Button* _endAttackButton;    // 结束进攻按钮
+  Label* _countdownLabel;                   // 倒计时标签
+  bool _isAttackStarted;                    // 是否已开始进攻
+  int _countdownSeconds;  // 倒计时剩余秒数（默认180秒，即3分钟）
+  static const int ATTACK_DURATION = 180;  // 进攻持续时间（秒）
 };
 
 #endif  // __ATTACK_SCENE_H__

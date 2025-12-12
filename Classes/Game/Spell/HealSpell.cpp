@@ -73,24 +73,18 @@ void HealSpell::updateEffect(float delta,
 }
 
 void HealSpell::createVisualEffect() {
-  // 创建黄色治疗圈效果（带透明度）
+  // 创建实心蛋黄色光圈效果（带透明度）
   auto drawNode = DrawNode::create();
 
-  // 绘制外圈（黄色，半透明）
-  Color4F healColor(1.0f, 1.0f, 0.0f, 0.4f);  // 黄色，40%透明度
-  drawNode->drawCircle(Vec2::ZERO, _radius, 0, 50, false, 2.0f, 2.0f,
+  // 绘制实心外圈（蛋黄色，半透明）
+  // drawCircle的最后一个参数drawLine为false时绘制实心圆
+  Color4F healColor(1.0f, 0.9f, 0.6f, 1.0f);  // 蛋黄色，50%透明度
+  drawNode->drawCircle(Vec2::ZERO, _radius, 0, 50, false, 1.0f, 1.0f,
                        healColor);
 
-  // 绘制内圈（更亮的黄色）
-  Color4F innerColor(1.0f, 1.0f, 0.3f, 0.6f);  // 亮黄色，60%透明度
-  drawNode->drawCircle(Vec2::ZERO, _radius * 0.7f, 0, 50, false, 1.5f, 1.5f,
-                       innerColor);
-
-  auto scaleUp = ScaleTo::create(1.0f, 1.2f);
-  auto scaleDown = ScaleTo::create(1.0f, 1.0f);
-  auto sequence = Sequence::create(scaleUp, scaleDown, nullptr);
-  auto repeat = RepeatForever::create(sequence);
-  drawNode->runAction(repeat);
+  // 绘制实心内圈（更亮的蛋黄色）
+  Color4F innerColor(1.0f, 0.95f, 0.7f, 0.5f);  // 亮蛋黄色，70%透明度
+  drawNode->drawDot(Vec2::ZERO, _radius, innerColor);
 
   this->addChild(drawNode);
   _visualEffectNode = drawNode;

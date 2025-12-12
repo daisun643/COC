@@ -99,8 +99,8 @@ class GameScene : public BasicScene {
   cocos2d::Vec2 _placementMouseDownPos;   // 放置模式按下位置
   cocos2d::Vec2 _placementLastMousePos;   // 放置模式最后一次鼠标位置
   bool _placementPreviewValid;            // 当前预览是否有效
-  int _placementPreviewRow;               // 预览所在行
-  int _placementPreviewCol;               // 预览所在列
+  float _placementPreviewRow;             // 预览所在行
+  float _placementPreviewCol;             // 预览所在列
   cocos2d::Vec2 _placementPreviewAnchor;  // 预览锚点位置
   cocos2d::Vec2 _currentMousePos;         // 当前鼠标位置
   bool _ignoreNextMouseUp;                // 是否忽略下一次鼠标抬起事件

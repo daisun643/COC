@@ -635,8 +635,8 @@ void GameScene::updatePlacementPreview(const Vec2& worldPos) {
 
   Vec2 mapPos = _mapLayer->convertToNodeSpace(worldPos);
 
-  int row = 0;
-  int col = 0;
+  float row = 0.0f;
+  float col = 0.0f;
   Vec2 nearestPos;
   if (GridUtils::findNearestGrassVertex(mapPos, _p00, row, col, nearestPos)) {
     float deltaX = 0.0f;
@@ -656,7 +656,7 @@ void GameScene::updatePlacementPreview(const Vec2& worldPos) {
     _placementBuilding->setRow(row);
     _placementBuilding->setCol(col);
 
-    showPlacementHint(StringUtils::format("放置坐标: (%d, %d)", row, col));
+    showPlacementHint(StringUtils::format("放置坐标: (%.1f, %.1f)", row, col));
     _placementPreviewValid = true;
     _placementPreviewRow = row;
     _placementPreviewCol = col;
@@ -690,8 +690,8 @@ bool GameScene::checkBuildingOverlap(const Building* building) const {
   }
 
   const auto& buildings = _buildingManager->getAllBuildings();
-  int r1 = building->getRow();
-  int c1 = building->getCol();
+  float r1 = building->getRow();
+  float c1 = building->getCol();
   int g1 = building->getGridCount();
 
   for (const auto& other : buildings) {
@@ -699,8 +699,8 @@ bool GameScene::checkBuildingOverlap(const Building* building) const {
       continue;
     }
 
-    int r2 = other->getRow();
-    int c2 = other->getCol();
+    float r2 = other->getRow();
+    float c2 = other->getCol();
     int g2 = other->getGridCount();
 
     // 检查两个正方形区域是否重叠

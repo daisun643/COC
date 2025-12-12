@@ -125,28 +125,13 @@ void RageSpell::createVisualEffect() {
   auto drawNode = DrawNode::create();
 
   // 绘制外圈（紫色，半透明）
-  Color4F rageColor(0.5f, 0.0f, 0.5f, 0.4f);  // 紫色，40%透明度
-  drawNode->drawCircle(Vec2::ZERO, _radius, 0, 50, false, 2.0f, 2.0f,
+  Color4F rageColor(0.5f, 0.0f, 0.5f, 1.0f);  // 紫色，40%透明度
+  drawNode->drawCircle(Vec2::ZERO, _radius, 0, 50, false, 1.0f, 1.0f,
                        rageColor);
 
-  // 绘制内圈（更亮的紫色）
+  // 绘制实心内圈（更亮的紫色）
   Color4F innerColor(0.7f, 0.2f, 0.7f, 0.6f);  // 亮紫色，60%透明度
-  drawNode->drawCircle(Vec2::ZERO, _radius * 0.7f, 0, 50, false, 1.5f, 1.5f,
-                       innerColor);
-
-  // 添加旋转动画（表示狂暴状态）
-  if (_category == SpellCategory::DURATION) {
-    auto rotate = RotateBy::create(2.0f, 360.0f);
-    auto repeat = RepeatForever::create(rotate);
-    drawNode->runAction(repeat);
-
-    // 添加脉冲动画
-    auto scaleUp = ScaleTo::create(0.5f, 1.1f);
-    auto scaleDown = ScaleTo::create(0.5f, 1.0f);
-    auto pulseSequence = Sequence::create(scaleUp, scaleDown, nullptr);
-    auto pulseRepeat = RepeatForever::create(pulseSequence);
-    drawNode->runAction(pulseRepeat);
-  }
+  drawNode->drawDot(Vec2::ZERO, _radius, innerColor);
 
   this->addChild(drawNode);
   _visualEffectNode = drawNode;

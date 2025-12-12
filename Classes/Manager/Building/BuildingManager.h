@@ -79,9 +79,13 @@ class BuildingManager {
    * 创建建筑实例
    * @param buildingName 建筑的具体名称（如 "Cannon",
    * "TownHall"），对应配置文件中的Key
+   * @param row 行坐标
+   * @param col 列坐标
+   * @param level 等级
+   * @param hp 当前生命值，如果 < 0 则使用 MaxHP 作为默认值
    */
-  Building* createBuilding(const std::string& buildingName, int row, int col,
-                           int level);
+  Building* createBuilding(const std::string& buildingName, float row,
+                           float col, int level, float hp = -1.0f);
 
   std::vector<Building*> _buildings;  // 所有建筑的列表
   Vec2 _p00;                          // 地图原点
