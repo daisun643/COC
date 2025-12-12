@@ -837,6 +837,11 @@ void GameScene::onRemoveBuilding(Building* building) {
   if (_buildingManager) {
     _buildingManager->removeBuilding(building);
   }
+
+  if (_selectedBuilding == building) {
+    _selectedBuilding = nullptr;
+  }
+
   building->removeFromParent();
 
   if (_buildingMenuLayer) _buildingMenuLayer->hideOptions();

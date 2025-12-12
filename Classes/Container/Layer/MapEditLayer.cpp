@@ -41,44 +41,22 @@ void MapEditLayer::buildUI() {
   float gapY = 80;
 
   // Remove All Button
-  _removeAllButton = Button::create(
-      "images/ui/Bar.png");  // Placeholder or use a specific image
-  _removeAllButton->setTitleText("移除全部");
-  _removeAllButton->setTitleFontSize(20);
-  _removeAllButton->setScaleX(0.6f);
-  _removeAllButton->setScaleY(0.8f);
-  _removeAllButton->getTitleRenderer()->setScaleX(
-      1.33f);  // Compensate for X scale (0.8/0.6)
-  _removeAllButton->setPosition(Vec2(btnX, startY));
-  _removeAllButton->addClickEventListener([this](Ref*) {
+  _removeAllButton = createSideButton("移除全部", Vec2(btnX, startY), [this]() {
     if (_onRemoveAll) _onRemoveAll();
   });
   this->addChild(_removeAllButton);
 
   // Save Button
-  _saveButton = Button::create("images/ui/Bar.png");
-  _saveButton->setTitleText("保存");
-  _saveButton->setTitleFontSize(20);
-  _saveButton->setScaleX(0.6f);
-  _saveButton->setScaleY(0.8f);
-  _saveButton->getTitleRenderer()->setScaleX(1.33f);
-  _saveButton->setPosition(Vec2(btnX, startY - gapY));
-  _saveButton->addClickEventListener([this](Ref*) {
+  _saveButton = createSideButton("保存", Vec2(btnX, startY - gapY), [this]() {
     if (_onSave) _onSave();
   });
   this->addChild(_saveButton);
 
   // Cancel Button
-  _cancelButton = Button::create("images/ui/Bar.png");
-  _cancelButton->setTitleText("取消");
-  _cancelButton->setTitleFontSize(20);
-  _cancelButton->setScaleX(0.6f);
-  _cancelButton->setScaleY(0.8f);
-  _cancelButton->getTitleRenderer()->setScaleX(1.33f);
-  _cancelButton->setPosition(Vec2(btnX, startY - gapY * 2));
-  _cancelButton->addClickEventListener([this](Ref*) {
-    if (_onCancel) _onCancel();
-  });
+  _cancelButton =
+      createSideButton("取消", Vec2(btnX, startY - gapY * 2), [this]() {
+        if (_onCancel) _onCancel();
+      });
   this->addChild(_cancelButton);
 
   // Bottom ScrollView
@@ -96,6 +74,22 @@ void MapEditLayer::buildUI() {
   _scrollView->setInnerContainerSize(Size(visibleSize.width, 150));
   _scrollView->setPosition(Vec2(origin.x, origin.y + 5));
   this->addChild(_scrollView);
+}
+
+cocos2d::ui::Button* MapEditLayer::createSideButton(
+    const std::string& title, const cocos2d::Vec2& position,
+    const std::function<void()>& callback) {
+  auto button = Button::create("images/ui/Bar.png");
+  button->setTitleText(title);
+  button->setTitleFontSize(20);
+  button->setScaleX(0.6f);
+  button->setScaleY(0.8f);
+  button->getTitleRenderer()->setScaleX(1.33f);  // Compensate for X scale
+  button->setPosition(position);
+  button->addClickEventListener([callback](Ref*) {
+    if (callback) callback();
+  });
+  return button;
 }
 
 void MapEditLayer::updateInventory(

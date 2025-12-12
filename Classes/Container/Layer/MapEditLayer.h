@@ -28,6 +28,9 @@ class MapEditLayer : public cocos2d::Layer {
   void buildUI();
   void populateInventory();
   cocos2d::ui::Layout* createInventoryCard(const ShopItem& item, int count);
+  cocos2d::ui::Button* createSideButton(const std::string& title,
+                                        const cocos2d::Vec2& position,
+                                        const std::function<void()>& callback);
 
   std::vector<ShopItem> _allItems;
   std::map<std::string, int> _currentInventory;
