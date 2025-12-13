@@ -64,6 +64,45 @@ void ResourceBuilding::update(float dt) {
     _storedResource = _capacity;
   }
 }
+
+// 实现离线产出计算
+void ResourceBuilding::updateOfflineProduction(long long lastTimestamp, float savedStoredAmount) {
+  // 1. 恢复上次保存的库存
+  _storedResource = savedStoredAmount;
+
+  if (lastTimestamp <= 0) {
+      return; // 如果没有有效的时间戳，直接返回
+  }
+
+  // 2. 获取当前时间
+  long long now = getCurrentTimestamp();
+
+  // 3. 计算时间差（秒）
+  long long diff = now - lastTimestamp;
+
+  if (diff > 0) {
+      // 4. 计算离线期间的产出
+      // 注意：这里的产率计算需与 update 中的逻辑保持一致 (_productionRate / 60.0f)
+      float productionPerSecond = _productionRate / 60.0f;
+      float offlineProduction = diff * productionPerSecond;
+
+      _storedResource += offlineProduction;
+      
+      CCLOG("ResourceBuilding: Offline for %llds, produced %.2f resources.", diff, offlineProduction);
+  }
+
+  // 5. 确保不超过容量上限
+  if (_storedResource > _capacity) {
+      _storedResource = _capacity;
+  }
+}
+
+// 获取当前时间戳的辅助函数
+long long ResourceBuilding::getCurrentTimestamp() {
+    auto now = std::chrono::system_clock::now();
+    return std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
+}
+
 int ResourceBuilding::collect() {
   int amount = static_cast<int>(_storedResource);
   if (amount > 0) {

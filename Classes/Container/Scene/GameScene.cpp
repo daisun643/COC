@@ -6,6 +6,12 @@
 #include "Container/Layer/ReplayLayer.h"
 #include "Container/Scene/SenceHelper.h"
 #include "Game/Building/AllBuildings.h"
+#include "Game/Building/TownHall.h"
+#include "Game/Building/ResourceBuilding.h"
+#include "Game/Building/DefenseBuilding.h"
+#include "Game/Building/StorageBuilding.h"
+#include "Game/Building/BarracksBuilding.h"
+#include "Game/Building/PlaceholderBuilding.h"
 #include "Manager/Config/ConfigManager.h"
 
 Scene* GameScene::createScene(const std::string& jsonFilePath) {
@@ -127,9 +133,27 @@ bool GameScene::init(const std::string& jsonFilePath) {
     CCLOG("Info clicked for building type: %d", (int)b->getBuildingType());
     // TODO: Show info dialog
   });
-  _buildingMenuLayer->setOnUpgradeCallback([](Building* b) {
-    CCLOG("Upgrade clicked for building level: %d", b->getLevel());
-    // TODO: Implement upgrade logic
+  _buildingMenuLayer->setOnUpgradeCallback([this](Building* b) {
+    if (!b) return;
+
+    CCLOG("Upgrade clicked for building: %s, level: %d", b->getBuildingName().c_str(), b->getLevel());
+    
+    // 调用建筑的升级方法，这将触发 Building::upgrade()
+    // 从而加载新配置并切换图片
+    b->upgrade();
+
+    // 升级成功后，隐藏操作菜单
+    _buildingMenuLayer->hideOptions();
+
+    // 显示提示信息
+    showPlacementHint("升级成功！");
+    if (_placementHintLabel) {
+        _placementHintLabel->stopAllActions();
+        _placementHintLabel->setVisible(true);
+        auto delay = DelayTime::create(1.5f);
+        auto clear = CallFunc::create([this]() { showPlacementHint(""); });
+        _placementHintLabel->runAction(Sequence::create(delay, clear, nullptr));
+    }
   });
   _buildingMenuLayer->setOnCollectCallback([this](Building* b) {
     CCLOG("Collect clicked");
