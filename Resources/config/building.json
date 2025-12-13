@@ -10,63 +10,99 @@
         "GridSize": 4,
         "defaultLevel": 1,
         "maxLevel": 10,
+        "MAXHP": 100,
         "tips": "GridPosition表示建筑中心所在的网格坐标，GridSize表示建筑占用的菱形边长"
     },
     "Cannon": {
         "type": "DEFENSE",
         "image": "images/buildings/cannon.png",
         "GridSize": 3,
-        "AnchorRatio": [0.5, 0.5],
+        "AnchorRatio": [
+            0.5,
+            0.5
+        ],
         "imageScale": 1.0,
         "attackRange": 7.0,
         "damage": 50,
-        "attackSpeed": 1.2
+        "attackSpeed": 1.2,
+        "MAXHP": 100
     },
     "ArcherTower": {
         "type": "DEFENSE",
         "image": "images/buildings/archer_tower.png",
         "GridSize": 3,
-        "AnchorRatio": [0.5, 0.5],
+        "AnchorRatio": [
+            0.5,
+            0.5
+        ],
         "imageScale": 1.0,
         "attackRange": 10.0,
         "damage": 35,
-        "attackSpeed": 0.8
+        "attackSpeed": 0.8,
+        "MAXHP": 100
     },
     "GoldMine": {
         "type": "RESOURCE",
         "image": "images/buildings/gold_mine.png",
         "GridSize": 3,
-        "AnchorRatio": [0.5, 0.5],
+        "AnchorRatio": [
+            0.5,
+            0.5
+        ],
         "imageScale": 1.0,
         "productionRate": 200,
         "capacity": 500,
-        "resourceType": "Gold"
+        "resourceType": "Gold",
+        "MAXHP": 100
     },
     "ElixirPump": {
         "type": "RESOURCE",
         "image": "images/buildings/elixir_pump.png",
         "GridSize": 3,
-        "AnchorRatio": [0.5, 0.5],
+        "AnchorRatio": [
+            0.5,
+            0.5
+        ],
         "imageScale": 1.0,
         "productionRate": 200,
         "capacity": 500,
-        "resourceType": "Elixir"
+        "resourceType": "Elixir",
+        "MAXHP": 100
     },
     "GoldStorage": {
         "type": "STORAGE",
         "image": "images/buildings/gold_storage.png",
         "GridSize": 3,
-        "AnchorRatio": [0.5, 0.5],
+        "AnchorRatio": [
+            0.5,
+            0.5
+        ],
         "imageScale": 1.0,
         "capacity": 10000,
-        "resourceType": "Gold"
+        "resourceType": "Gold",
+        "MAXHP": 100
     },
     "Barracks": {
         "type": "BARRACKS",
         "image": "images/buildings/barracks.png",
         "GridSize": 3,
-        "AnchorRatio": [0.5, 0.5],
+        "AnchorRatio": [
+            0.5,
+            0.5
+        ],
         "imageScale": 1.0,
-        "queueSize": 20
+        "queueSize": 20,
+        "MAXHP": 100
+    },
+    "Wall": {
+        "type": "WALL",
+        "image": "images/buildings/wall/1.png",
+        "GridSize": 1,
+        "AnchorRatio": [
+            0.5,
+            0.45
+        ],
+        "imageScale": 0.6,
+        "MAXHP": 100
     }
 }

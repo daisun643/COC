@@ -1,8 +1,8 @@
 #ifndef __CONFIG_MANAGER_H__
 #define __CONFIG_MANAGER_H__
 
+#include <map>
 #include <string>
-#include <map> 
 
 #include "Game/Soldier/BasicSoldier.h"
 #include "Game/Spell/BasicSpell.h"
@@ -56,7 +56,8 @@ class ConfigManager {
    */
   struct BuildingConfig {
     // 基础属性
-    std::string type;         // 关键字段：TOWN_HALL, DEFENSE, RESOURCE, STORAGE, BARRACKS
+    std::string type;  // 关键字段：TOWN_HALL, DEFENSE, RESOURCE, STORAGE,
+                       // BARRACKS, WALL
     std::string image;
     float anchorRatioX = 0.5f;
     float anchorRatioY = 0.5f;
@@ -73,10 +74,18 @@ class ConfigManager {
     // 资源与储存属性 (Resource & Storage)
     int productionRate = 0;
     int capacity = 0;
-    std::string resourceType; // "Gold" or "Elixir"
+    std::string resourceType;  // "Gold" or "Elixir"
 
     // 兵营属性 (Barracks)
     int queueSize = 0;
+    // TODO 删除
+    // 城墙属性 (Wall)
+    float defense = 0.0f;
+
+    // 生命值属性 (所有建筑通用)
+    float maxHP = 1000.0f;  // 最大生命值（从 building.json 读取）
+    // 注意：当前生命值(HP)已移动到 building_map.json
+    // 中，每个建筑实例可以有不同的 HP
   };
 
   /**
@@ -85,11 +94,11 @@ class ConfigManager {
   struct SoldierConfig {
     std::string panelImage;
     std::string moveImage;
-    float attack;       // 攻击力
-    float health;       // 生命值
-    float moveSpeed;    // 移动速度
-    float attackSpeed;  // 攻击速度
-    float attackRange;  // 攻击范围
+    float attack;           // 攻击力
+    float health;           // 生命值
+    float moveSpeed;        // 移动速度
+    float attackSpeed;      // 攻击速度
+    float attackRange;      // 攻击范围
     AttackType attackType;  // 攻击类型（字符串："Any", "Defense", "Resource",
                             // "TownHall"）
     SoldierCategory soldierCategory;  // 士兵类型（字符串："LAND", "AIR"）
@@ -125,7 +134,7 @@ class ConfigManager {
   /**
    * 获取士兵配置
    * @param soldierType 士兵类型（字符串："barbarian", "archer", "giant",
-   * "goblin"）
+   * "bomber"）
    * @param level 士兵等级
    * @return 士兵配置，如果不存在则返回默认配置
    */

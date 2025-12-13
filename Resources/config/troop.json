@@ -7,13 +7,18 @@
             "Count": 10
         },
         {
-            "Category": "barbarian",
-            "Level": 2,
+            "Category": "archer",
+            "Level": 1,
             "Count": 10
         },
         {
-            "Category": "barbarian",
-            "Level": 3,
+            "Category": "giant",
+            "Level": 1,
+            "Count": 10
+        },
+        {
+            "Category": "bomber",
+            "Level": 1,
             "Count": 10
         }
     ],

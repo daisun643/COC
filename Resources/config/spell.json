@@ -10,7 +10,7 @@
     "Lightning": {
         "Category": "INSTANT",
         "PanelImage": "images/spell/Lighting.png",
-        "Radius": 10,
+        "Radius": 100,
         "Amount": 100
     },
     "Rage": {
