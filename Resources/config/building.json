@@ -2,7 +2,10 @@
     "TownHall": {
         "type": "TOWN_HALL",
         "GridSize": 3,
-        "AnchorRatio": [0.55, 0.30],
+        "AnchorRatio": [
+            0.55,
+            0.30
+        ],
         "imageScale": 0.8,
         "maxLevel": 3,
         "1": {
@@ -22,7 +25,10 @@
     "Cannon": {
         "type": "DEFENSE",
         "GridSize": 3,
-        "AnchorRatio": [0.5, 0.5],
+        "AnchorRatio": [
+            0.5,
+            0.5
+        ],
         "imageScale": 1.5,
         "maxLevel": 3,
         "1": {
@@ -50,7 +56,10 @@
     "ArcherTower": {
         "type": "DEFENSE",
         "GridSize": 3,
-        "AnchorRatio": [0.5, 0.5],
+        "AnchorRatio": [
+            0.5,
+            0.5
+        ],
         "imageScale": 1.5,
         "maxLevel": 3,
         "1": {
@@ -78,7 +87,10 @@
     "GoldMine": {
         "type": "RESOURCE",
         "GridSize": 3,
-        "AnchorRatio": [0.5, 0.5],
+        "AnchorRatio": [
+            0.5,
+            0.5
+        ],
         "imageScale": 1.5,
         "resourceType": "Gold",
         "maxLevel": 3,
@@ -104,7 +116,10 @@
     "ElixirPump": {
         "type": "RESOURCE",
         "GridSize": 4,
-        "AnchorRatio": [0.5, 0.5],
+        "AnchorRatio": [
+            0.5,
+            0.5
+        ],
         "imageScale": 1.0,
         "resourceType": "Elixir",
         "maxLevel": 3,
@@ -130,7 +145,10 @@
     "GoldStorage": {
         "type": "STORAGE",
         "GridSize": 4,
-        "AnchorRatio": [0.5, 0.5],
+        "AnchorRatio": [
+            0.5,
+            0.5
+        ],
         "imageScale": 0.8,
         "resourceType": "Gold",
         "maxLevel": 3,
@@ -153,7 +171,10 @@
     "ElixirBottle": {
         "type": "STORAGE",
         "GridSize": 3,
-        "AnchorRatio": [0.5, 0.5],
+        "AnchorRatio": [
+            0.5,
+            0.5
+        ],
         "imageScale": 1.0,
         "resourceType": "Elixir",
         "maxLevel": 3,
@@ -176,7 +197,10 @@
     "Barracks": {
         "type": "BARRACKS",
         "GridSize": 4,
-        "AnchorRatio": [0.5, 0.5],
+        "AnchorRatio": [
+            0.5,
+            0.5
+        ],
         "imageScale": 1.0,
         "maxLevel": 3,
         "1": {

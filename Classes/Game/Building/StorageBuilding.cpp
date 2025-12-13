@@ -1,14 +1,15 @@
 #include "StorageBuilding.h"
+
 #include "Manager/Config/ConfigManager.h"
 
-StorageBuilding::StorageBuilding() 
-: _capacity(0) {
+StorageBuilding::StorageBuilding() : _capacity(0) {
   _buildingType = BuildingType::STORAGE;
 }
 
 StorageBuilding::~StorageBuilding() {}
 
-StorageBuilding* StorageBuilding::create(int level, const std::string& buildingName) {
+StorageBuilding* StorageBuilding::create(int level,
+                                         const std::string& buildingName) {
   StorageBuilding* p = new (std::nothrow) StorageBuilding();
   if (p && p->init(level, buildingName)) {
     p->autorelease();
@@ -19,11 +20,13 @@ StorageBuilding* StorageBuilding::create(int level, const std::string& buildingN
 }
 
 bool StorageBuilding::init(int level, const std::string& buildingName) {
-  auto config = ConfigManager::getInstance()->getBuildingConfig(buildingName, level);
+  auto config =
+      ConfigManager::getInstance()->getBuildingConfig(buildingName, level);
   _buildingName = buildingName;
 
-  if (!Building::init(config.image, BuildingType::STORAGE, level, 
-                      config.gridCount, config.anchorRatioX, config.anchorRatioY, config.imageScale)) {
+  if (!Building::init(config.image, BuildingType::STORAGE, level,
+                      config.gridCount, config.anchorRatioX,
+                      config.anchorRatioY, config.imageScale)) {
     return false;
   }
 
@@ -34,8 +37,9 @@ bool StorageBuilding::init(int level, const std::string& buildingName) {
 }
 
 void StorageBuilding::upgrade() {
-    Building::upgrade();
-    auto config = ConfigManager::getInstance()->getBuildingConfig(_buildingName, _level);
-    this->_capacity = config.capacity;
-    CCLOG("StorageBuilding upgraded: Capacity -> %d", _capacity);
+  Building::upgrade();
+  auto config =
+      ConfigManager::getInstance()->getBuildingConfig(_buildingName, _level);
+  this->_capacity = config.capacity;
+  CCLOG("StorageBuilding upgraded: Capacity -> %d", _capacity);
 }

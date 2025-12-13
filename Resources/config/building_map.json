@@ -8,25 +8,57 @@
         }
     ],
     "Cannon": [
-        { "row": 12, "col": 12, "level": 1 },
-        { "row": 18, "col": 12, "level": 1 }
+        {
+            "row": 12,
+            "col": 12,
+            "level": 1
+        },
+        {
+            "row": 18,
+            "col": 12,
+            "level": 1
+        }
     ],
     "GoldMine": [
-        { "row": 10, "col": 15, "level": 1 }
+        {
+            "row": 10,
+            "col": 15,
+            "level": 1
+        }
     ],
     "GoldStorage": [
-        { "row": 20, "col": 15, "level": 1 }
+        {
+            "row": 20,
+            "col": 15,
+            "level": 1
+        }
     ],
     "Barracks": [
-        { "row": 15, "col": 20, "level": 1 }
+        {
+            "row": 15,
+            "col": 20,
+            "level": 1
+        }
     ],
-    "ElixirPump":[
-        {"row": 35, "col": 20, "level": 1}
+    "ElixirPump": [
+        {
+            "row": 35,
+            "col": 20,
+            "level": 1
+        }
     ],
-    "ArcherTower":[
-         {"row": 20, "col": 35, "level": 1}
+    "ArcherTower": [
+        {
+            "row": 20,
+            "col": 35,
+            "level": 1
+        }
     ],
-    "ElixirBottle":[
-         {"row": 25, "col": 25, "level": 1}
+    "ElixirBottle": [
+        {
+            "row": 25,
+            "col": 25,
+            "level": 1
+        }
     ]
 }

@@ -1,8 +1,8 @@
 #ifndef __CONFIG_MANAGER_H__
 #define __CONFIG_MANAGER_H__
 
+#include <map>
 #include <string>
-#include <map> 
 
 #include "Game/Soldier/BasicSoldier.h"
 #include "Game/Spell/BasicSpell.h"
@@ -56,20 +56,20 @@ class ConfigManager {
    */
   struct BuildingConfig {
     // 基础属性
-    std::string type;         
+    std::string type;
     std::string image;
     float anchorRatioX = 0.5f;
     float anchorRatioY = 0.5f;
     int gridCount = 1;
     int maxLevel = 10;
-    
+
     // --- 修改点：添加 defaultLevel ---
-    int defaultLevel = 1; 
-    
+    int defaultLevel = 1;
+
     float imageScale = 1.0f;
-    
+
     // --- 修改点：确保有 health ---
-    int health = 0; 
+    int health = 0;
 
     // 防御属性
     float attackRange = 0.0f;
@@ -79,7 +79,7 @@ class ConfigManager {
     // 资源与储存属性
     int productionRate = 0;
     int capacity = 0;
-    std::string resourceType; 
+    std::string resourceType;
 
     // 兵营属性
     int queueSize = 0;
@@ -91,11 +91,11 @@ class ConfigManager {
   struct SoldierConfig {
     std::string panelImage;
     std::string moveImage;
-    float attack;       // 攻击力
-    float health;       // 生命值
-    float moveSpeed;    // 移动速度
-    float attackSpeed;  // 攻击速度
-    float attackRange;  // 攻击范围
+    float attack;           // 攻击力
+    float health;           // 生命值
+    float moveSpeed;        // 移动速度
+    float attackSpeed;      // 攻击速度
+    float attackRange;      // 攻击范围
     AttackType attackType;  // 攻击类型（字符串："Any", "Defense", "Resource",
                             // "TownHall"）
     SoldierCategory soldierCategory;  // 士兵类型（字符串："LAND", "AIR"）
@@ -126,7 +126,8 @@ class ConfigManager {
   /**
    * 获取指定名称建筑的配置
    */
-  BuildingConfig getBuildingConfig(const std::string& name, int level = 1) const;
+  BuildingConfig getBuildingConfig(const std::string& name,
+                                   int level = 1) const;
 
   /**
    * 获取士兵配置

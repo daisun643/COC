@@ -10,7 +10,7 @@ class BarracksBuilding : public Building {
 
   // 重写升级方法
   virtual void upgrade() override;
-  
+
   CC_SYNTHESIZE(int, _queueSize, QueueSize);
 
  protected:

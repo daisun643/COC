@@ -19,7 +19,7 @@ class TownHall : public Building {
    * 内部会从ConfigManager读取 "TownHall" 的配置
    */
   bool init(int level);
-  
+
   // 重写升级方法
   virtual void upgrade() override;
 

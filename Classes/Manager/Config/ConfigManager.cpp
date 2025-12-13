@@ -226,10 +226,14 @@ bool ConfigManager::loadBuildingConfig() {
       BuildingConfig baseConfig;
       // 读取通用属性
       if (val.HasMember("type")) baseConfig.type = val["type"].GetString();
-      if (val.HasMember("GridSize")) baseConfig.gridCount = val["GridSize"].GetInt();
-      if (val.HasMember("imageScale")) baseConfig.imageScale = val["imageScale"].GetFloat();
-      if (val.HasMember("maxLevel")) baseConfig.maxLevel = val["maxLevel"].GetInt();
-      if (val.HasMember("resourceType")) baseConfig.resourceType = val["resourceType"].GetString();
+      if (val.HasMember("GridSize"))
+        baseConfig.gridCount = val["GridSize"].GetInt();
+      if (val.HasMember("imageScale"))
+        baseConfig.imageScale = val["imageScale"].GetFloat();
+      if (val.HasMember("maxLevel"))
+        baseConfig.maxLevel = val["maxLevel"].GetInt();
+      if (val.HasMember("resourceType"))
+        baseConfig.resourceType = val["resourceType"].GetString();
 
       if (val.HasMember("AnchorRatio") && val["AnchorRatio"].IsArray()) {
         baseConfig.anchorRatioX = val["AnchorRatio"][0].GetFloat();
@@ -239,25 +243,33 @@ bool ConfigManager::loadBuildingConfig() {
       // 遍历解析 1 到 maxLevel
       for (int lvl = 1; lvl <= baseConfig.maxLevel; lvl++) {
         std::string lvlKey = std::to_string(lvl);
-        BuildingConfig levelConfig = baseConfig; // 复制基础配置
+        BuildingConfig levelConfig = baseConfig;  // 复制基础配置
 
         if (val.HasMember(lvlKey.c_str())) {
           const rapidjson::Value& lvlVal = val[lvlKey.c_str()];
-          
-          if (lvlVal.HasMember("image")) levelConfig.image = lvlVal["image"].GetString();
-          if (lvlVal.HasMember("health")) levelConfig.health = lvlVal["health"].GetInt();
-          
+
+          if (lvlVal.HasMember("image"))
+            levelConfig.image = lvlVal["image"].GetString();
+          if (lvlVal.HasMember("health"))
+            levelConfig.health = lvlVal["health"].GetInt();
+
           // Defense
-          if (lvlVal.HasMember("damage")) levelConfig.damage = lvlVal["damage"].GetInt();
-          if (lvlVal.HasMember("attackRange")) levelConfig.attackRange = lvlVal["attackRange"].GetFloat();
-          if (lvlVal.HasMember("attackSpeed")) levelConfig.attackSpeed = lvlVal["attackSpeed"].GetFloat();
-          
+          if (lvlVal.HasMember("damage"))
+            levelConfig.damage = lvlVal["damage"].GetInt();
+          if (lvlVal.HasMember("attackRange"))
+            levelConfig.attackRange = lvlVal["attackRange"].GetFloat();
+          if (lvlVal.HasMember("attackSpeed"))
+            levelConfig.attackSpeed = lvlVal["attackSpeed"].GetFloat();
+
           // Resource & Storage
-          if (lvlVal.HasMember("productionRate")) levelConfig.productionRate = lvlVal["productionRate"].GetInt();
-          if (lvlVal.HasMember("capacity")) levelConfig.capacity = lvlVal["capacity"].GetInt();
-          
+          if (lvlVal.HasMember("productionRate"))
+            levelConfig.productionRate = lvlVal["productionRate"].GetInt();
+          if (lvlVal.HasMember("capacity"))
+            levelConfig.capacity = lvlVal["capacity"].GetInt();
+
           // Barracks
-          if (lvlVal.HasMember("queueSize")) levelConfig.queueSize = lvlVal["queueSize"].GetInt();
+          if (lvlVal.HasMember("queueSize"))
+            levelConfig.queueSize = lvlVal["queueSize"].GetInt();
         }
         _buildingConfigs[name][lvl] = levelConfig;
       }
@@ -267,7 +279,8 @@ bool ConfigManager::loadBuildingConfig() {
 }
 
 // 实现获取接口
-ConfigManager::BuildingConfig ConfigManager::getBuildingConfig(const std::string& name, int level) const {
+ConfigManager::BuildingConfig ConfigManager::getBuildingConfig(
+    const std::string& name, int level) const {
   auto nameIt = _buildingConfigs.find(name);
   if (nameIt != _buildingConfigs.end()) {
     auto levelIt = nameIt->second.find(level);
@@ -276,7 +289,7 @@ ConfigManager::BuildingConfig ConfigManager::getBuildingConfig(const std::string
     }
     // 降级处理：如果没有该等级配置，尝试返回等级1
     if (!nameIt->second.empty()) {
-       return nameIt->second.begin()->second;
+      return nameIt->second.begin()->second;
     }
   }
   CCLOG("Warning: Config for building '%s' not found.", name.c_str());

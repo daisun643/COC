@@ -6,12 +6,11 @@
 #include <sstream>
 
 // 包含所有具体的建筑头文件
-#include "Game/Building/TownHall.h"
+#include "Game/Building/BarracksBuilding.h"
 #include "Game/Building/DefenseBuilding.h"
 #include "Game/Building/ResourceBuilding.h"
 #include "Game/Building/StorageBuilding.h"
-#include "Game/Building/BarracksBuilding.h"
-
+#include "Game/Building/TownHall.h"
 #include "Manager/Config/ConfigManager.h"
 #include "Utils/GridUtils.h"
 #include "json/document.h"
@@ -75,7 +74,7 @@ bool BuildingManager::loadBuildingMap() {
   // 遍历 JSON 中的所有键 (TownHall, Cannon, etc.)
   for (auto& m : doc.GetObject()) {
     std::string buildingName = m.name.GetString();
-    
+
     // 跳过可能的非建筑字段 (如 tips)
     if (buildingName == "tips") continue;
 
@@ -109,28 +108,24 @@ Building* BuildingManager::createBuilding(const std::string& buildingName,
 
   // 1. 获取该建筑的配置 (默认拿 Level 1 来判断 Type)
   auto config = configManager->getBuildingConfig(buildingName, level);
-  std::string type = config.type; 
+  std::string type = config.type;
 
   Building* building = nullptr;
 
   // 3. 根据类型分发创建
   if (type == "TOWN_HALL") {
     building = TownHall::create(level);
-  } 
-  else if (type == "DEFENSE") {
+  } else if (type == "DEFENSE") {
     building = DefenseBuilding::create(level, buildingName);
-  }
-  else if (type == "RESOURCE") {
+  } else if (type == "RESOURCE") {
     building = ResourceBuilding::create(level, buildingName);
-  }
-  else if (type == "STORAGE") {
+  } else if (type == "STORAGE") {
     building = StorageBuilding::create(level, buildingName);
-  }
-  else if (type == "BARRACKS") {
+  } else if (type == "BARRACKS") {
     building = BarracksBuilding::create(level, buildingName);
-  }
-  else {
-    CCLOG("Unknown building type '%s' for building '%s'", type.c_str(), buildingName.c_str());
+  } else {
+    CCLOG("Unknown building type '%s' for building '%s'", type.c_str(),
+          buildingName.c_str());
     return nullptr;
   }
 

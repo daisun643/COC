@@ -25,7 +25,7 @@ class Building : public Sprite {
   // 拖动相关属性
   bool _isDragging;  // 是否正在拖动
   Vec2 _dragOffset;  // 拖动时的偏移量
-  
+
   /**
    * 初始化建筑
    * 注意：参数略有简化，因为更多属性将从ConfigManager动态获取
@@ -42,7 +42,8 @@ class Building : public Sprite {
 
   // 建筑属性
   CC_SYNTHESIZE(BuildingType, _buildingType, BuildingType);
-  CC_SYNTHESIZE(std::string, _buildingName, BuildingName); // 需要getter/setter用于升级时查询配置
+  CC_SYNTHESIZE(std::string, _buildingName,
+                BuildingName);  // 需要getter/setter用于升级时查询配置
   CC_SYNTHESIZE(int, _level, Level);
   CC_SYNTHESIZE(int, _maxLevel, MaxLevel);
   CC_SYNTHESIZE(float, _centerX, CenterX);
@@ -52,7 +53,7 @@ class Building : public Sprite {
   CC_SYNTHESIZE(int, _col, Col);
   CC_SYNTHESIZE(float, _anchorRatioX, AnchorRatioX);
   CC_SYNTHESIZE(float, _anchorRatioY, AnchorRatioY);
-  
+
   // 生命值相关
   CC_SYNTHESIZE(float, _maxHealth, MaxHealth);
   CC_SYNTHESIZE(float, _currentHealth, CurrentHealth);
@@ -62,7 +63,7 @@ class Building : public Sprite {
   void hideGlow();
   bool inDiamond(const Vec2& pos) const;
   void setPlacementValid(bool isValid);
-  
+
   // 受到伤害
   void takeDamage(float damage);
 
@@ -76,11 +77,11 @@ class Building : public Sprite {
   Action* _glowAction;
   Color4F _glowColor;
   LayerColor* _errorLayer;
-  DrawNode* _hpBarNode; // 血条节点
+  DrawNode* _hpBarNode;  // 血条节点
 
   virtual void createDefaultAppearance();
   void updateGlowDrawing();
-  void updateHPBar(); // 更新血条显示
+  void updateHPBar();  // 更新血条显示
 };
 
 #endif  // __BUILDING_H__
