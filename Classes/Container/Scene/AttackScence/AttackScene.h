@@ -20,7 +20,8 @@ USING_NS_CC;
  */
 class AttackScene : public BasicScene {
  public:
-  static Scene* createScene(const std::string& levelFilePath = "", const std::string& levelName = "");
+  static Scene* createScene(const std::string& levelFilePath = "",
+                            const std::string& levelName = "");
 
   bool init(const std::string& jsonFilePath);
 
@@ -121,7 +122,9 @@ class AttackScene : public BasicScene {
    * @param recordPath 记录文件路径
    * @param timeStr 时间字符串
    */
-  void updateRecordSummary(const std::string& recordName, const std::string& recordPath, const std::string& timeStr);
+  void updateRecordSummary(const std::string& recordName,
+                           const std::string& recordPath,
+                           const std::string& timeStr);
 
   TroopManager* _troopManager;         // 军队管理器实例
   RecordManager* _recordManager;       // 记录管理器实例
@@ -152,14 +155,14 @@ class AttackScene : public BasicScene {
   bool _isAttackStarted;                    // 是否已开始进攻
   int _countdownSeconds;  // 倒计时剩余秒数（默认180秒，即3分钟）
   static const int ATTACK_DURATION = 180;  // 进攻持续时间（秒）
-  
+
   /**
    * 退出场景，返回到主场景
    */
   void exitScene();
-  
+
   std::string _levelFilePath;  // 关卡文件路径
-  std::string _levelName;       // 关卡名称，用于保存记录文件
+  std::string _levelName;      // 关卡名称，用于保存记录文件
 };
 
 #endif  // __ATTACK_SCENE_H__

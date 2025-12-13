@@ -17,9 +17,7 @@ void SceneHelper::setGameScene(Scene* scene) {
   _gameScene = scene;
 }
 
-Scene* SceneHelper::getGameScene() const {
-  return _gameScene;
-}
+Scene* SceneHelper::getGameScene() const { return _gameScene; }
 
 void SceneHelper::clearGameScene() {
   if (_gameScene) {
@@ -27,4 +25,3 @@ void SceneHelper::clearGameScene() {
     _gameScene = nullptr;
   }
 }
-

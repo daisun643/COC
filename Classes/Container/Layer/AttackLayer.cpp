@@ -1,9 +1,11 @@
 #include "AttackLayer.h"
-#include "platform/CCFileUtils.h"
-#include "json/document.h"
-#include "Container/Scene/AttackScence/AttackScene.h"
-#include <vector>
+
 #include <utility>
+#include <vector>
+
+#include "Container/Scene/AttackScence/AttackScene.h"
+#include "json/document.h"
+#include "platform/CCFileUtils.h"
 
 USING_NS_CC;
 using namespace cocos2d::ui;
@@ -165,26 +167,30 @@ void AttackLayer::showSinglePlayerTab() {
   _scrollView->setDirection(ScrollView::Direction::VERTICAL);
   _scrollView->setBounceEnabled(true);
   _contentArea->addChild(_scrollView);
-  
+
   // 读Resources\level\summary.json中的关卡信息
   FileUtils* fileUtils = FileUtils::getInstance();
   std::vector<std::pair<std::string, std::string>> levels;  // <name, path>
-  
+
   rapidjson::Document doc;
   std::string summaryPath = "level/summary.json";
   std::string fullPath = fileUtils->fullPathForFilename(summaryPath);
-  
+
   if (!fullPath.empty() && fileUtils->isFileExist(fullPath)) {
     std::string content = fileUtils->getStringFromFile(fullPath);
     if (!content.empty()) {
       doc.Parse(content.c_str());
-      if (!doc.HasParseError() && doc.HasMember("levels") && doc["levels"].IsArray()) {
+      if (!doc.HasParseError() && doc.HasMember("levels") &&
+          doc["levels"].IsArray()) {
         const rapidjson::Value& levelsArray = doc["levels"];
         for (rapidjson::SizeType i = 0; i < levelsArray.Size(); i++) {
           const rapidjson::Value& levelObj = levelsArray[i];
-          if (levelObj.IsObject() && levelObj.HasMember("name") && levelObj.HasMember("path")) {
-            std::string name = levelObj["name"].IsString() ? levelObj["name"].GetString() : "";
-            std::string path = levelObj["path"].IsString() ? levelObj["path"].GetString() : "";
+          if (levelObj.IsObject() && levelObj.HasMember("name") &&
+              levelObj.HasMember("path")) {
+            std::string name =
+                levelObj["name"].IsString() ? levelObj["name"].GetString() : "";
+            std::string path =
+                levelObj["path"].IsString() ? levelObj["path"].GetString() : "";
             if (!name.empty() && !path.empty()) {
               levels.push_back(std::make_pair(name, path));
             }
@@ -213,7 +219,8 @@ void AttackLayer::showSinglePlayerTab() {
   for (size_t i = 0; i < levels.size(); ++i) {
     int levelId = i + 1;  // 关卡ID从1开始
     const auto& levelInfo = levels[i];
-    auto item = createLevelItem(levelId, levelInfo.first, levelInfo.second, 0);  // Mock stars
+    auto item = createLevelItem(levelId, levelInfo.first, levelInfo.second,
+                                0);  // Mock stars
     item->setPosition(Vec2(_contentArea->getContentSize().width / 2.0f,
                            innerHeight - (i + 0.5f) * (itemHeight + spacing)));
     _scrollView->addChild(item);

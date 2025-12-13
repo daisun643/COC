@@ -19,7 +19,8 @@ USING_NS_CC;
  */
 class RecordScene : public BasicScene {
  public:
-  static Scene* createScene(const std::string& mapFilePath="", const std::string& recordFilePath="");
+  static Scene* createScene(const std::string& mapFilePath = "",
+                            const std::string& recordFilePath = "");
 
   bool init(const std::string& mapFilePath, const std::string& recordFilePath);
 
@@ -95,7 +96,7 @@ class RecordScene : public BasicScene {
   cocos2d::ui::Button* _playButton;   // 播放按钮
   cocos2d::ui::Button* _pauseButton;  // 暂停按钮
   cocos2d::ui::Button* _stopButton;   // 停止按钮
-  cocos2d::ui::Button* _exitButton;  // 退出按钮
+  cocos2d::ui::Button* _exitButton;   // 退出按钮
   Label* _timeLabel;                  // 时间标签
   bool _isPlaying;                    // 是否正在播放
   bool _isPaused;                     // 是否暂停

@@ -12,7 +12,8 @@ class ReplayLayer : public cocos2d::LayerColor {
   virtual bool init();
 
   // Callback when a replay is selected
-  void setOnReplaySelectedCallback(std::function<void(const std::string& recordPath)> callback);
+  void setOnReplaySelectedCallback(
+      std::function<void(const std::string& recordPath)> callback);
 
  private:
   void buildUI();

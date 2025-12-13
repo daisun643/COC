@@ -41,5 +41,5 @@ cocos2d/
 # 配置文件
 .clangd
 
-
+.vscode/settings.json
 # Resources/record/

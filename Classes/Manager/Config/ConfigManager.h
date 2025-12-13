@@ -3,7 +3,6 @@
 
 #include <map>
 #include <string>
-#include <map> 
 
 #include "Game/Soldier/BasicSoldier.h"
 #include "Game/Spell/BasicSpell.h"

@@ -1,1 +1,40 @@
-{"records":[{"type":"troop","category":"giant","level":1,"x":980.0,"y":562.0,"timestamp":2},{"type":"troop","category":"giant","level":1,"x":1070.0,"y":333.0,"timestamp":3},{"type":"troop","category":"giant","level":1,"x":1018.0,"y":409.0,"timestamp":4},{"type":"troop","category":"giant","level":1,"x":835.0,"y":533.0,"timestamp":5}],"metadata":{"totalRecords":4,"duration":6}}
+{
+    "records": [
+        {
+            "type": "troop",
+            "category": "giant",
+            "level": 1,
+            "x": 980.0,
+            "y": 562.0,
+            "timestamp": 2
+        },
+        {
+            "type": "troop",
+            "category": "giant",
+            "level": 1,
+            "x": 1070.0,
+            "y": 333.0,
+            "timestamp": 3
+        },
+        {
+            "type": "troop",
+            "category": "giant",
+            "level": 1,
+            "x": 1018.0,
+            "y": 409.0,
+            "timestamp": 4
+        },
+        {
+            "type": "troop",
+            "category": "giant",
+            "level": 1,
+            "x": 835.0,
+            "y": 533.0,
+            "timestamp": 5
+        }
+    ],
+    "metadata": {
+        "totalRecords": 4,
+        "duration": 6
+    }
+}

@@ -1,9 +1,11 @@
 #include "ReplayLayer.h"
-#include "platform/CCFileUtils.h"
-#include "json/document.h"
-#include "Container/Scene/Record/RecordScene.h"
-#include <vector>
+
 #include <tuple>
+#include <vector>
+
+#include "Container/Scene/Record/RecordScene.h"
+#include "json/document.h"
+#include "platform/CCFileUtils.h"
 
 USING_NS_CC;
 using namespace cocos2d::ui;
@@ -102,41 +104,54 @@ void ReplayLayer::buildUI() {
   float itemHeight = 100.0f;
   float spacing = 10.0f;
   FileUtils* fileUtils = FileUtils::getInstance();
-  std::vector<std::tuple<std::string, std::string, std::string, std::string>> records;  // <name, mapPath, recordPath, time>
-  
+  std::vector<std::tuple<std::string, std::string, std::string, std::string>>
+      records;  // <name, mapPath, recordPath, time>
+
   rapidjson::Document doc;
   std::string summaryPath = "record/summary.json";
   std::string fullPath = fileUtils->fullPathForFilename(summaryPath);
-  
+
   if (!fullPath.empty() && fileUtils->isFileExist(fullPath)) {
     std::string content = fileUtils->getStringFromFile(fullPath);
     if (!content.empty()) {
       doc.Parse(content.c_str());
-      if (!doc.HasParseError() && doc.HasMember("records") && doc["records"].IsArray()) {
+      if (!doc.HasParseError() && doc.HasMember("records") &&
+          doc["records"].IsArray()) {
         const rapidjson::Value& recordsArray = doc["records"];
         for (rapidjson::SizeType i = 0; i < recordsArray.Size(); i++) {
           const rapidjson::Value& recordObj = recordsArray[i];
-          if (recordObj.IsObject() && recordObj.HasMember("name") && 
-              recordObj.HasMember("mapPath") && recordObj.HasMember("recordPath") && 
+          if (recordObj.IsObject() && recordObj.HasMember("name") &&
+              recordObj.HasMember("mapPath") &&
+              recordObj.HasMember("recordPath") &&
               recordObj.HasMember("time")) {
-            std::string name = recordObj["name"].IsString() ? recordObj["name"].GetString() : "";
-            std::string mapPath = recordObj["mapPath"].IsString() ? recordObj["mapPath"].GetString() : "";
-            std::string recordPath = recordObj["recordPath"].IsString() ? recordObj["recordPath"].GetString() : "";
-            std::string time = recordObj["time"].IsString() ? recordObj["time"].GetString() : "";
-            if (!name.empty() && !mapPath.empty() && !recordPath.empty() && !time.empty()) {
-              records.push_back(std::make_tuple(name, mapPath, recordPath, time));
+            std::string name = recordObj["name"].IsString()
+                                   ? recordObj["name"].GetString()
+                                   : "";
+            std::string mapPath = recordObj["mapPath"].IsString()
+                                      ? recordObj["mapPath"].GetString()
+                                      : "";
+            std::string recordPath = recordObj["recordPath"].IsString()
+                                         ? recordObj["recordPath"].GetString()
+                                         : "";
+            std::string time = recordObj["time"].IsString()
+                                   ? recordObj["time"].GetString()
+                                   : "";
+            if (!name.empty() && !mapPath.empty() && !recordPath.empty() &&
+                !time.empty()) {
+              records.push_back(
+                  std::make_tuple(name, mapPath, recordPath, time));
             }
           }
         }
       }
     }
   }
-  
+
   // 如果没有读取到记录，使用空列表
   if (records.empty()) {
     CCLOG("ReplayLayer: No records found in summary.json, using empty list");
   }
-  
+
   // 根据实际记录数量调整滚动视图大小
   int itemCount = records.size();
   float innerHeight = (itemHeight + spacing) * itemCount;
@@ -145,25 +160,27 @@ void ReplayLayer::buildUI() {
   }
   _scrollView->setInnerContainerSize(
       Size(_scrollView->getContentSize().width, innerHeight));
-  
+
   // 创建回放项（按时间倒序，最新的在前）
   for (size_t i = 0; i < records.size(); ++i) {
-    const auto& record = records[records.size() - 1 - i];  // 倒序显示，最新的在前
+    const auto& record =
+        records[records.size() - 1 - i];  // 倒序显示，最新的在前
     std::string name = std::get<0>(record);
     std::string mapPath = std::get<1>(record);
     std::string recordPath = std::get<2>(record);
     std::string timeStr = std::get<3>(record);
-    
+
     // 格式化时间显示（从 YYYYMMDD_HHMMSS 转换为 YYYY-MM-DD HH:MM:SS）
     std::string formattedTime = timeStr;
     if (timeStr.length() == 15) {  // YYYYMMDD_HHMMSS
-      formattedTime = timeStr.substr(0, 4) + "-" + timeStr.substr(4, 2) + "-" + 
-                      timeStr.substr(6, 2) + " " + timeStr.substr(9, 2) + ":" + 
+      formattedTime = timeStr.substr(0, 4) + "-" + timeStr.substr(4, 2) + "-" +
+                      timeStr.substr(6, 2) + " " + timeStr.substr(9, 2) + ":" +
                       timeStr.substr(11, 2) + ":" + timeStr.substr(13, 2);
     }
-    
+
     // 传递 mapPath 和 recordPath（使用 recordPath 作为主要标识）
-    auto item = createReplayItem(recordPath, mapPath, name, true, formattedTime);
+    auto item =
+        createReplayItem(recordPath, mapPath, name, true, formattedTime);
     item->setPosition(Vec2(_scrollView->getContentSize().width / 2.0f,
                            innerHeight - (i + 0.5f) * (itemHeight + spacing)));
     _scrollView->addChild(item);

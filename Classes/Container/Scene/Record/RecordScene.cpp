@@ -12,7 +12,8 @@
 #include "json/document.h"
 #include "platform/CCFileUtils.h"
 #include "ui/CocosGUI.h"
-Scene* RecordScene::createScene(const std::string& mapFilePath, const std::string& recordFilePath) {
+Scene* RecordScene::createScene(const std::string& mapFilePath,
+                                const std::string& recordFilePath) {
   if (mapFilePath.empty()) {
     CCLOG("RecordScene: mapFilePath is empty");
   }
@@ -30,9 +31,11 @@ Scene* RecordScene::createScene(const std::string& mapFilePath, const std::strin
   return nullptr;
 }
 // 建筑也不能被选中
-bool RecordScene::init(const std::string& mapFilePath, const std::string& recordFilePath) {
+bool RecordScene::init(const std::string& mapFilePath,
+                       const std::string& recordFilePath) {
   // 先调用父类的初始化，使用地图文件路径
-  std::string defaultMapPath = mapFilePath.empty() ? "Resources/develop/map.json" : mapFilePath;
+  std::string defaultMapPath =
+      mapFilePath.empty() ? "Resources/develop/map.json" : mapFilePath;
   if (!BasicScene::init(defaultMapPath)) {
     return false;
   }
@@ -58,7 +61,8 @@ bool RecordScene::init(const std::string& mapFilePath, const std::string& record
     return false;
   }
   if (!loadRecordFile(recordFilePath)) {
-    CCLOG("RecordScene: Failed to load record file: %s", recordFilePath.c_str());
+    CCLOG("RecordScene: Failed to load record file: %s",
+          recordFilePath.c_str());
     return false;
   }
 
@@ -624,7 +628,8 @@ void RecordScene::createExitButton() {
     _exitButton->setTitleText("退出");
     _exitButton->setTitleFontSize(20);
     _exitButton->setContentSize(Size(120, 40));
-    _exitButton->setPosition(Vec2(origin.x + 100, origin.y + visibleSize.height - 50));
+    _exitButton->setPosition(
+        Vec2(origin.x + 100, origin.y + visibleSize.height - 50));
     _exitButton->addClickEventListener(
         [this](Ref* sender) { this->exitScene(); });
     this->addChild(_exitButton, 200);

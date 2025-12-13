@@ -58,7 +58,8 @@ bool BasicScene::init(const std::string& jsonFilePath) {
   } else {
     CC_SAFE_DELETE(_buildingManager);
     _buildingManager = nullptr;
-    CCLOG("Failed to initialize BuildingManager with file: %s", jsonFilePath.c_str());
+    CCLOG("Failed to initialize BuildingManager with file: %s",
+          jsonFilePath.c_str());
   }
 
   // 添加标题（标题不随地图移动）

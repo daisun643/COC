@@ -17,7 +17,8 @@ USING_NS_CC;
  */
 class GameScene : public BasicScene {
  public:
-  static Scene* createScene(const std::string& jsonFilePath="develop/map.json");
+  static Scene* createScene(
+      const std::string& jsonFilePath = "develop/map.json");
 
   bool init(const std::string& jsonFilePath);
 

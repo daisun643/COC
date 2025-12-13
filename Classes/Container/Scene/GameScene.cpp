@@ -78,10 +78,11 @@ bool GameScene::init(const std::string& jsonFilePath) {
     auto replayLayer = ReplayLayer::create();
     if (replayLayer) {
       replayLayer->setName("ReplayLayerUI");
-      replayLayer->setOnReplaySelectedCallback([](const std::string& recordPath) {
-        CCLOG("Replay selected: %s", recordPath.c_str());
-        // TODO: Implement replay playback
-      });
+      replayLayer->setOnReplaySelectedCallback(
+          [](const std::string& recordPath) {
+            CCLOG("Replay selected: %s", recordPath.c_str());
+            // TODO: Implement replay playback
+          });
       this->addChild(replayLayer, 200);
     }
   });

@@ -42,4 +42,3 @@ class SceneHelper {
 };
 
 #endif  // __SCENE_HELPER_H__
-
