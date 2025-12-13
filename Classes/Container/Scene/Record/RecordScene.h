@@ -19,11 +19,9 @@ USING_NS_CC;
  */
 class RecordScene : public BasicScene {
  public:
-  static Scene* createScene();
+  static Scene* createScene(const std::string& mapFilePath="", const std::string& recordFilePath="");
 
-  virtual bool init() override;
-
-  CREATE_FUNC(RecordScene);
+  bool init(const std::string& mapFilePath, const std::string& recordFilePath);
 
   virtual ~RecordScene();
 
@@ -69,6 +67,26 @@ class RecordScene : public BasicScene {
    */
   void updateDefenseBuildings(float delta);
 
+  /**
+   * 重写鼠标按下事件，禁用建筑拖动（只允许地图拖动）
+   */
+  virtual void onMouseDown(Event* event) override;
+
+  /**
+   * 重写鼠标移动事件，禁用建筑拖动（只允许地图拖动）
+   */
+  virtual void onMouseMove(Event* event) override;
+
+  /**
+   * 创建退出按钮
+   */
+  void createExitButton();
+
+  /**
+   * 退出场景，返回到主场景
+   */
+  void exitScene();
+
   std::vector<PlacementRecord> _records;       // 记录列表
   std::vector<BasicSoldier*> _placedSoldiers;  // 已布置的士兵列表
   std::vector<BasicSpell*> _activeSpells;      // 活跃的法术列表
@@ -77,6 +95,7 @@ class RecordScene : public BasicScene {
   cocos2d::ui::Button* _playButton;   // 播放按钮
   cocos2d::ui::Button* _pauseButton;  // 暂停按钮
   cocos2d::ui::Button* _stopButton;   // 停止按钮
+  cocos2d::ui::Button* _exitButton;  // 退出按钮
   Label* _timeLabel;                  // 时间标签
   bool _isPlaying;                    // 是否正在播放
   bool _isPaused;                     // 是否暂停

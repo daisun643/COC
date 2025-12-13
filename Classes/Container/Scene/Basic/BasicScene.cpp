@@ -4,9 +4,19 @@
 
 #include "Manager/Config/ConfigManager.h"
 
-Scene* BasicScene::createScene() { return BasicScene::create(); }
+Scene* BasicScene::createScene(const std::string& jsonFilePath) {
+  BasicScene* scene = new (std::nothrow) BasicScene();
+  if (scene) {
+    if (scene->init(jsonFilePath)) {
+      scene->autorelease();
+      return scene;
+    }
+  }
+  CC_SAFE_DELETE(scene);
+  return nullptr;
+}
 
-bool BasicScene::init() {
+bool BasicScene::init(const std::string& jsonFilePath) {
   if (!Scene::init()) {
     return false;
   }
@@ -41,15 +51,14 @@ bool BasicScene::init() {
   // 创建44x44网格地图背景，使用grass.png进行菱形密铺
   initGrassBackground();
 
-  // 创建BuildingManager
-  std::string jsonFilePath = "config/building_map.json";
+  // 创建BuildingManager（使用传入的文件路径）
   _buildingManager = new (std::nothrow) BuildingManager(jsonFilePath, _p00);
   if (_buildingManager && _buildingManager->init()) {
     _buildingManager->addBuildingsToLayer(_mapLayer);
   } else {
     CC_SAFE_DELETE(_buildingManager);
     _buildingManager = nullptr;
-    CCLOG("Failed to initialize BuildingManager!");
+    CCLOG("Failed to initialize BuildingManager with file: %s", jsonFilePath.c_str());
   }
 
   // 添加标题（标题不随地图移动）

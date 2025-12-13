@@ -86,9 +86,9 @@ bool AppDelegate::applicationDidFinishLaunching() {
   }
 
   // 创建游戏场景
-  // auto scene = GameScene::createScene();
+  auto scene = GameScene::createScene();
   // auto scene = AttackScene::createScene();
-  auto scene = RecordScene::createScene();
+  // auto scene = RecordScene::createScene();
   director->runWithScene(scene);
 
   return true;

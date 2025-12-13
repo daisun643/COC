@@ -4,15 +4,42 @@
 
 #include "Container/Layer/AttackLayer.h"
 #include "Container/Layer/ReplayLayer.h"
+#include "Container/Scene/SenceHelper.h"
 #include "Game/Building/AllBuildings.h"
 #include "Manager/Config/ConfigManager.h"
 
-Scene* GameScene::createScene() { return GameScene::create(); }
+Scene* GameScene::createScene(const std::string& jsonFilePath) {
+  GameScene* scene = new (std::nothrow) GameScene();
+  if (scene) {
+    if (scene->init(jsonFilePath)) {
+      scene->autorelease();
+      // 保存到场景管理器（retain 一次以避免被释放）
+      auto sceneHelper = SceneHelper::getInstance();
+      if (sceneHelper) {
+        scene->retain();  // 增加引用计数，防止场景被过早释放
+        sceneHelper->setGameScene(scene);
+      }
+      return scene;
+    }
+  }
+  CC_SAFE_DELETE(scene);
+  return nullptr;
+}
 
-bool GameScene::init() {
-  // 先调用父类的初始化
-  if (!BasicScene::init()) {
+bool GameScene::init(const std::string& jsonFilePath) {
+  // 先调用父类的初始化，使用默认路径
+  if (!BasicScene::init(jsonFilePath)) {
     return false;
+  }
+
+  // 在 GameScene 中隐藏所有建筑的血条
+  if (_buildingManager) {
+    const auto& buildings = _buildingManager->getAllBuildings();
+    for (auto building : buildings) {
+      if (building) {
+        building->setHealthBarVisible(false);
+      }
+    }
   }
 
   auto visibleSize = Director::getInstance()->getVisibleSize();
@@ -51,8 +78,8 @@ bool GameScene::init() {
     auto replayLayer = ReplayLayer::create();
     if (replayLayer) {
       replayLayer->setName("ReplayLayerUI");
-      replayLayer->setOnReplaySelectedCallback([](int replayId) {
-        CCLOG("Replay %d Selected!", replayId);
+      replayLayer->setOnReplaySelectedCallback([](const std::string& recordPath) {
+        CCLOG("Replay selected: %s", recordPath.c_str());
         // TODO: Implement replay playback
       });
       this->addChild(replayLayer, 200);
@@ -266,6 +293,8 @@ void GameScene::onMouseUp(Event* event) {
 
       if (_buildingManager) {
         _buildingManager->registerBuilding(_placementBuilding);
+        // 隐藏新建筑的血条（GameScene 中不显示血条）
+        _placementBuilding->setHealthBarVisible(false);
       }
 
       _selectedBuilding = _placementBuilding;

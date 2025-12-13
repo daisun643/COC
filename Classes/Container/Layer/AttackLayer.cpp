@@ -1,4 +1,9 @@
 #include "AttackLayer.h"
+#include "platform/CCFileUtils.h"
+#include "json/document.h"
+#include "Container/Scene/AttackScence/AttackScene.h"
+#include <vector>
+#include <utility>
 
 USING_NS_CC;
 using namespace cocos2d::ui;
@@ -56,7 +61,7 @@ bool AttackLayer::init() {
 void AttackLayer::setOnSearchOpponentCallback(std::function<void()> callback) {
   _onSearchOpponent = callback;
 }
-
+// TODO移除
 void AttackLayer::setOnLevelSelectedCallback(
     std::function<void(int)> callback) {
   _onLevelSelected = callback;
@@ -160,11 +165,43 @@ void AttackLayer::showSinglePlayerTab() {
   _scrollView->setDirection(ScrollView::Direction::VERTICAL);
   _scrollView->setBounceEnabled(true);
   _contentArea->addChild(_scrollView);
+  
+  // 读Resources\level\summary.json中的关卡信息
+  FileUtils* fileUtils = FileUtils::getInstance();
+  std::vector<std::pair<std::string, std::string>> levels;  // <name, path>
+  
+  rapidjson::Document doc;
+  std::string summaryPath = "level/summary.json";
+  std::string fullPath = fileUtils->fullPathForFilename(summaryPath);
+  
+  if (!fullPath.empty() && fileUtils->isFileExist(fullPath)) {
+    std::string content = fileUtils->getStringFromFile(fullPath);
+    if (!content.empty()) {
+      doc.Parse(content.c_str());
+      if (!doc.HasParseError() && doc.HasMember("levels") && doc["levels"].IsArray()) {
+        const rapidjson::Value& levelsArray = doc["levels"];
+        for (rapidjson::SizeType i = 0; i < levelsArray.Size(); i++) {
+          const rapidjson::Value& levelObj = levelsArray[i];
+          if (levelObj.IsObject() && levelObj.HasMember("name") && levelObj.HasMember("path")) {
+            std::string name = levelObj["name"].IsString() ? levelObj["name"].GetString() : "";
+            std::string path = levelObj["path"].IsString() ? levelObj["path"].GetString() : "";
+            if (!name.empty() && !path.empty()) {
+              levels.push_back(std::make_pair(name, path));
+            }
+          }
+        }
+      } else {
+        CCLOG("Failed to parse summary.json or levels array not found");
+      }
+    }
+  } else {
+    CCLOG("summary.json not found");
+  }
 
-  // Populate Levels (Mock Data)
+  // Populate Levels
   float itemHeight = 100.0f;
   float spacing = 10.0f;
-  int levelCount = 10;
+  int levelCount = levels.size();
   float innerHeight = (itemHeight + spacing) * levelCount;
   if (innerHeight < _contentArea->getContentSize().height) {
     innerHeight = _contentArea->getContentSize().height;
@@ -173,10 +210,10 @@ void AttackLayer::showSinglePlayerTab() {
   _scrollView->setInnerContainerSize(
       Size(_contentArea->getContentSize().width, innerHeight));
 
-  for (int i = 0; i < levelCount; ++i) {
-    auto item =
-        createLevelItem(i + 1, StringUtils::format("哥布林前哨 %d", i + 1),
-                        i % 4);  // Mock stars
+  for (size_t i = 0; i < levels.size(); ++i) {
+    int levelId = i + 1;  // 关卡ID从1开始
+    const auto& levelInfo = levels[i];
+    auto item = createLevelItem(levelId, levelInfo.first, levelInfo.second, 0);  // Mock stars
     item->setPosition(Vec2(_contentArea->getContentSize().width / 2.0f,
                            innerHeight - (i + 0.5f) * (itemHeight + spacing)));
     _scrollView->addChild(item);
@@ -218,7 +255,7 @@ void AttackLayer::showMultiplayerTab() {
 }
 
 Widget* AttackLayer::createLevelItem(int levelId, const std::string& name,
-                                     int stars) {
+                                     const std::string& path, int stars) {
   float width = 700.0f;
   float height = 100.0f;
 
@@ -250,9 +287,13 @@ Widget* AttackLayer::createLevelItem(int levelId, const std::string& name,
   btn->setTitleText("进攻");
   btn->setTitleFontSize(24);
   btn->setPosition(Vec2(width - 80.0f, height / 2.0f));
-  btn->addClickEventListener([this, levelId](Ref*) {
-    if (_onLevelSelected) {
-      _onLevelSelected(levelId);
+  btn->addClickEventListener([this, path, name](Ref*) {
+    // 使用从 JSON 读取的路径和名称
+    // 创建并切换到 AttackScene，传入关卡名称
+    auto attackScene = AttackScene::createScene(path, name);
+    if (attackScene) {
+      auto director = Director::getInstance();
+      director->replaceScene(attackScene);
     }
   });
   widget->addChild(btn);

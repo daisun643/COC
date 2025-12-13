@@ -4,18 +4,36 @@
 #include <fstream>
 #include <sstream>
 
+#include "Container/Scene/SenceHelper.h"
 #include "Game/Building/DefenseBuilding.h"
 #include "Game/Spell/HealSpell.h"
 #include "Game/Spell/LightningSpell.h"
 #include "Game/Spell/RageSpell.h"
 #include "json/document.h"
 #include "platform/CCFileUtils.h"
-
-Scene* RecordScene::createScene() { return RecordScene::create(); }
-
-bool RecordScene::init() {
-  // 先调用父类的初始化
-  if (!BasicScene::init()) {
+#include "ui/CocosGUI.h"
+Scene* RecordScene::createScene(const std::string& mapFilePath, const std::string& recordFilePath) {
+  if (mapFilePath.empty()) {
+    CCLOG("RecordScene: mapFilePath is empty");
+  }
+  if (recordFilePath.empty()) {
+    CCLOG("RecordScene: recordFilePath is empty");
+  }
+  RecordScene* scene = new (std::nothrow) RecordScene();
+  if (scene) {
+    if (scene->init(mapFilePath, recordFilePath)) {
+      scene->autorelease();
+      return scene;
+    }
+  }
+  CC_SAFE_DELETE(scene);
+  return nullptr;
+}
+// 建筑也不能被选中
+bool RecordScene::init(const std::string& mapFilePath, const std::string& recordFilePath) {
+  // 先调用父类的初始化，使用地图文件路径
+  std::string defaultMapPath = mapFilePath.empty() ? "Resources/develop/map.json" : mapFilePath;
+  if (!BasicScene::init(defaultMapPath)) {
     return false;
   }
 
@@ -31,16 +49,24 @@ bool RecordScene::init() {
   _playButton = nullptr;
   _pauseButton = nullptr;
   _stopButton = nullptr;
+  _exitButton = nullptr;
   _timeLabel = nullptr;
 
   // 加载记录文件
-  if (!loadRecordFile("Resources/record/dev.json")) {
-    showPopupDialog("错误", "无法加载回放记录文件");
+  if (recordFilePath.empty()) {
+    CCLOG("RecordScene: recordFilePath is empty, cannot load record");
+    return false;
+  }
+  if (!loadRecordFile(recordFilePath)) {
+    CCLOG("RecordScene: Failed to load record file: %s", recordFilePath.c_str());
     return false;
   }
 
   // 创建回放控制按钮
   createPlaybackButtons();
+
+  // 创建退出按钮
+  createExitButton();
 
   return true;
 }
@@ -546,4 +572,84 @@ RecordScene::~RecordScene() {
     }
   }
   _activeSpells.clear();
+}
+
+void RecordScene::onMouseDown(Event* event) {
+  EventMouse* mouseEvent = static_cast<EventMouse*>(event);
+  Vec2 mousePos = mouseEvent->getLocationInView();
+  _mouseDownPos = mousePos;  // 记录按下位置
+
+  // 转换为地图层坐标系
+  Vec2 mapPos = _mapLayer->convertToNodeSpace(mousePos);
+
+  // 检查是否点击了建筑（使用BuildingManager）
+  Building* clickedBuilding = nullptr;
+
+  if (_buildingManager) {
+    // mapPos是地图层坐标系，直接传递给BuildingManager
+    clickedBuilding = _buildingManager->getBuildingAtPosition(mapPos);
+  }
+
+  // 取消之前选中的建筑（如果有）
+  if (_selectedBuilding) {
+    _selectedBuilding->hideGlow();
+    _selectedBuilding = nullptr;
+  }
+
+  // 无论是否点击了建筑，都只允许地图拖动，不允许选中建筑
+  _isDragging = true;
+  _lastMousePos = mousePos;
+  _isMouseDown = true;  // 标记鼠标已按下（用于地图拖动）
+}
+
+void RecordScene::onMouseMove(Event* event) {
+  EventMouse* mouseEvent = static_cast<EventMouse*>(event);
+  Vec2 currentPos = mouseEvent->getLocationInView();
+
+  // 只允许地图拖动，不允许建筑拖动或选中
+  if (_isMouseDown && _isDragging) {
+    Vec2 delta = currentPos - _lastMousePos;
+    _mapLayer->setPosition(_mapLayer->getPosition() + delta);
+    _lastMousePos = currentPos;
+  }
+}
+
+void RecordScene::createExitButton() {
+  auto visibleSize = Director::getInstance()->getVisibleSize();
+  Vec2 origin = Director::getInstance()->getVisibleOrigin();
+
+  // 创建退出按钮（左上角）
+  if (!_exitButton) {
+    _exitButton = ui::Button::create();
+    _exitButton->setTitleText("退出");
+    _exitButton->setTitleFontSize(20);
+    _exitButton->setContentSize(Size(120, 40));
+    _exitButton->setPosition(Vec2(origin.x + 100, origin.y + visibleSize.height - 50));
+    _exitButton->addClickEventListener(
+        [this](Ref* sender) { this->exitScene(); });
+    this->addChild(_exitButton, 200);
+  }
+}
+
+void RecordScene::exitScene() {
+  // 停止回放
+  if (_isPlaying) {
+    stopPlayback();
+  }
+
+  // 从场景管理器获取原来的 GameScene
+  auto sceneHelper = SceneHelper::getInstance();
+  if (sceneHelper) {
+    auto gameScene = sceneHelper->getGameScene();
+    if (gameScene) {
+      // 返回到原来的 GameScene
+      auto director = Director::getInstance();
+      director->replaceScene(gameScene);
+      return;
+    }
+  }
+  CCLOG("RecordScene: exitScene failed, no game scene found");
+  // 如果获取失败，则直接退出
+  auto director = Director::getInstance();
+  director->end();
 }

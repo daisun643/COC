@@ -89,6 +89,12 @@ class Building : public Sprite {
   void setCurrentHPAndUpdate(float hp);
 
   /**
+   * 设置血条是否可见
+   * @param visible 是否可见
+   */
+  void setHealthBarVisible(bool visible);
+
+  /**
    * 受到伤害
    * @param damage 伤害值
    */

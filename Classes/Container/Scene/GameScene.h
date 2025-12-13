@@ -17,11 +17,9 @@ USING_NS_CC;
  */
 class GameScene : public BasicScene {
  public:
-  static Scene* createScene();
+  static Scene* createScene(const std::string& jsonFilePath="develop/map.json");
 
-  virtual bool init() override;
-
-  CREATE_FUNC(GameScene);
+  bool init(const std::string& jsonFilePath);
 
  private:
   MainUILayer* _uiLayer;                  // UI 层

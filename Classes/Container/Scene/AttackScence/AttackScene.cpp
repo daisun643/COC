@@ -1,7 +1,21 @@
 #include "AttackScene.h"
 
 #include <string>
+#include <fstream>
+#include <algorithm>
+#include <ctime>
+#include <sstream>
+#include <iomanip>
 
+#ifdef _WIN32
+#include <direct.h>
+#include <io.h>
+#else
+#include <sys/stat.h>
+#include <sys/types.h>
+#endif
+
+#include "Container/Scene/SenceHelper.h"
 #include "Game/Building/DefenseBuilding.h"
 #include "Game/Soldier/BasicSoldier.h"
 #include "Game/Spell/HealSpell.h"
@@ -9,13 +23,34 @@
 #include "Game/Spell/RageSpell.h"
 #include "Manager/Record/RecordManager.h"
 #include "Manager/Troop/TroopManager.h"
+#include "platform/CCFileUtils.h"
+#include "json/document.h"
+#include "json/stringbuffer.h"
+#include "json/writer.h"
 #include "ui/CocosGUI.h"
 
-Scene* AttackScene::createScene() { return AttackScene::create(); }
+Scene* AttackScene::createScene(const std::string& levelFilePath, const std::string& levelName) {
+  if (levelFilePath.empty()) {
+    CCLOG("AttackScene: levelFilePath is empty");
+  }
+  AttackScene* scene = new (std::nothrow) AttackScene();
+  if (scene) {
+    // 如果指定了关卡文件路径，使用它；否则使用默认路径
+    std::string jsonFilePath = levelFilePath.empty() ? "Resources/develop/map.json" : levelFilePath;
+    scene->_levelName = levelName;  // 保存关卡名称
+    scene->_levelFilePath = jsonFilePath;  // 保存关卡文件路径
+    if (scene->init(jsonFilePath)) {
+      scene->autorelease();
+      return scene;
+    }
+  }
+  CC_SAFE_DELETE(scene);
+  return nullptr;
+}
 
-bool AttackScene::init() {
-  // 先调用父类的初始化
-  if (!BasicScene::init()) {
+bool AttackScene::init(const std::string& jsonFilePath) {
+  // 先调用父类的初始化，传入文件路径
+  if (!BasicScene::init(jsonFilePath)) {
     return false;
   }
 
@@ -38,7 +73,9 @@ bool AttackScene::init() {
   _countdownSeconds = ATTACK_DURATION;
   _startAttackButton = nullptr;
   _endAttackButton = nullptr;
+  _exitButton = nullptr;
   _countdownLabel = nullptr;
+  // _levelName 在 createScene() 中设置，这里不要重置
 
   // 创建并初始化 TroopManager
   _troopManager = new (std::nothrow) TroopManager();
@@ -815,6 +852,18 @@ void AttackScene::createAttackButtons() {
     this->addChild(_endAttackButton, 200);
   }
 
+  // 创建退出按钮（左上角）
+  if (!_exitButton) {
+    _exitButton = ui::Button::create();
+    _exitButton->setTitleText("退出");
+    _exitButton->setTitleFontSize(20);
+    _exitButton->setContentSize(Size(120, 40));
+    _exitButton->setPosition(Vec2(origin.x + 100, origin.y + visibleSize.height - 50));
+    _exitButton->addClickEventListener(
+        [this](Ref* sender) { this->exitScene(); });
+    this->addChild(_exitButton, 200);
+  }
+
   // 创建倒计时标签（右上角，在结束按钮下方）
   if (!_countdownLabel) {
     _countdownLabel = Label::createWithSystemFont("", "Arial", 24);
@@ -873,7 +922,40 @@ void AttackScene::endAttack() {
 
   // 保存记录
   if (_recordManager) {
-    _recordManager->endAttackAndSave("Resources/record/dev.json");
+    // 使用关卡名称构建记录文件路径
+    std::string recordFileName = _levelName.empty() ? "default" : _levelName;
+    // 清理文件名，移除不允许的字符
+    std::string cleanName = recordFileName;
+    for (char& c : cleanName) {
+      if (c == ' ' || c == '/' || c == '\\') {
+        c = '_';
+      }
+    }
+    // 获取当前时间戳（格式：YYYYMMDD_HHMMSS）
+    std::time_t now = std::time(nullptr);
+    std::tm* localTime = std::localtime(&now);
+    std::ostringstream timeStream;
+    timeStream << std::setfill('0') 
+               << std::setw(4) << (1900 + localTime->tm_year)
+               << std::setw(2) << (localTime->tm_mon + 1)
+               << std::setw(2) << localTime->tm_mday
+               << "_"
+               << std::setw(2) << localTime->tm_hour
+               << std::setw(2) << localTime->tm_min
+               << std::setw(2) << localTime->tm_sec;
+    std::string timeStr = timeStream.str();
+    
+    // recordPath需要加上时间
+    std::string recordPath = "Resources/record/" + cleanName + "_" + timeStr + ".json";
+    // 保存记录文件
+    if (_recordManager->endAttackAndSave(recordPath)) {
+      CCLOG("AttackScene: Record saved to %s", recordPath.c_str());
+      
+      // 更新 record/summary.json
+      updateRecordSummary(cleanName, recordPath, timeStr);
+    } else {
+      CCLOG("AttackScene: Failed to save record to %s", recordPath.c_str());
+    }
   }
 
   // 重置状态
@@ -1003,4 +1085,134 @@ AttackScene::~AttackScene() {
   // 清理管理器
   CC_SAFE_DELETE(_troopManager);
   CC_SAFE_DELETE(_recordManager);
+}
+
+void AttackScene::updateRecordSummary(const std::string& recordName, const std::string& recordPath, const std::string& timeStr) {
+  FileUtils* fileUtils = FileUtils::getInstance();
+  std::string summaryPath = "record/summary.json";
+  rapidjson::Document doc;
+  bool fileExists = false;
+  
+  // 尝试读取现有文件（如果存在）
+  // 先尝试通过 fullPathForFilename 读取
+  std::string fullPath = fileUtils->fullPathForFilename(summaryPath);
+  if (!fullPath.empty() && fileUtils->isFileExist(fullPath)) {
+    std::string content = fileUtils->getStringFromFile(fullPath);
+    if (!content.empty()) {
+      doc.Parse(content.c_str());
+      if (!doc.HasParseError() && doc.IsObject()) {
+        fileExists = true;
+      }
+    }
+  } else {
+    CCLOG("AttackScene: Failed to read record summary from %s", summaryPath.c_str());
+    return;
+  }
+  
+  // 如果文件不存在或解析失败，创建新文档
+  if (!fileExists) {
+    doc.SetObject();
+  }
+  
+  rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+  
+  // 获取或创建 records 数组
+  rapidjson::Value recordsArray;
+  if (doc.HasMember("records") && doc["records"].IsArray()) {
+    recordsArray = doc["records"];
+  } else {
+    recordsArray.SetArray();
+  }
+  
+  // 添加新记录（每次进攻都创建新记录，不更新旧记录）
+  rapidjson::Value recordObj(rapidjson::kObjectType);
+  
+  // name: 对手名称（关卡名称）
+  rapidjson::Value nameValue;
+  nameValue.SetString(recordName.c_str(), allocator);
+  recordObj.AddMember("name", nameValue, allocator);
+  
+  // mapPath: 地图 json 路径
+  rapidjson::Value mapPathValue;
+  mapPathValue.SetString(_levelFilePath.c_str(), allocator);
+  recordObj.AddMember("mapPath", mapPathValue, allocator);
+  
+  // recordPath: 布兵 json 路径
+  rapidjson::Value recordPathValue;
+  recordPathValue.SetString(recordPath.c_str(), allocator);
+  recordObj.AddMember("recordPath", recordPathValue, allocator);
+  
+  // time: 时间
+  rapidjson::Value timeValue;
+  timeValue.SetString(timeStr.c_str(), allocator);
+  recordObj.AddMember("time", timeValue, allocator);
+  
+  recordsArray.PushBack(recordObj, allocator);
+  
+  // 更新文档中的 records 数组
+  doc["records"] = recordsArray;
+  
+  // 将 JSON 转换为字符串
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  doc.Accept(writer);
+  std::string jsonString = buffer.GetString();
+  
+  // 写入文件，使用与 RecordManager 相同的方式
+  std::string writePath = fullPath;
+  
+  // 将路径中的反斜杠转换为正斜杠（跨平台兼容）
+  std::replace(writePath.begin(), writePath.end(), '\\', '/');
+  
+  // 确保目录存在
+  size_t pos = writePath.find_last_of("/\\");
+  if (pos != std::string::npos) {
+    std::string dir = writePath.substr(0, pos);
+    // 创建目录（如果不存在）
+#ifdef _WIN32
+    // Windows下使用_mkdir，如果目录不存在则创建
+    if (_access(dir.c_str(), 0) != 0) {
+      _mkdir(dir.c_str());
+    }
+#else
+    // Linux/Mac下使用mkdir
+    struct stat info;
+    if (stat(dir.c_str(), &info) != 0) {
+      mkdir(dir.c_str(), 0755);
+    }
+#endif
+  }
+  
+  // 写入文件
+  std::ofstream outFile(writePath, std::ios::out | std::ios::trunc);
+  if (outFile.is_open()) {
+    outFile << jsonString;
+    outFile.close();
+    CCLOG("AttackScene: Updated record summary at %s", writePath.c_str());
+  } else {
+    CCLOG("AttackScene: Failed to write record summary to %s", writePath.c_str());
+  }
+}
+
+void AttackScene::exitScene() {
+  // 如果正在进攻，先结束进攻
+  if (_isAttackStarted) {
+    endAttack();
+  }
+  
+  // 从场景管理器获取原来的 GameScene
+  auto sceneHelper = SceneHelper::getInstance();
+  if (sceneHelper) {
+    auto gameScene = sceneHelper->getGameScene();
+    if (gameScene) {
+      // 返回到原来的 GameScene
+      auto director = Director::getInstance();
+      director->replaceScene(gameScene);
+      return;
+    }
+  }
+  CCLOG("AttackScene: exitScene failed, no game scene found");
+  // 如果获取失败，则直接退出
+  auto director = Director::getInstance();
+  director->end();
 }

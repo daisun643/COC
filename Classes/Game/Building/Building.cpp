@@ -360,6 +360,15 @@ void Building::setCurrentHPAndUpdate(float hp) {
   updateHPBar();
 }
 
+void Building::setHealthBarVisible(bool visible) {
+  if (_hpBarBackground) {
+    _hpBarBackground->setVisible(visible);
+  }
+  if (_hpBarForeground) {
+    _hpBarForeground->setVisible(visible);
+  }
+}
+
 void Building::takeDamage(float damage) {
   if (!isAlive()) {
     return;

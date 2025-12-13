@@ -1,0 +1,16 @@
+{
+    "levels": [
+        {
+            "name": "Level-1",
+            "path": "level/1.json"
+        },
+        {
+            "name": "Level-2",
+            "path": "level/2.json"
+        },
+        {
+            "name": "Level-3",
+            "path": "level/3.json"
+        }
+    ]
+}
