@@ -14,14 +14,11 @@ class TownHall : public Building {
    */
   static TownHall* create(int level);
 
-  /**
-   * 初始化TownHall
-   * 内部会从ConfigManager读取 "TownHall" 的配置
-   */
-  bool init(int level);
-
   // 重写升级方法
   virtual void upgrade() override;
+
+  bool init(int level, std::string imagePath, int gridCount, float anchorRatioX,
+            float anchorRatioY, float imageScale);
 
  protected:
   TownHall();

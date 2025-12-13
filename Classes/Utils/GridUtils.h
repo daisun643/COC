@@ -21,7 +21,7 @@ class GridUtils {
    * @param p00 地图原点p[0][0]的位置
    * @return 屏幕坐标
    */
-  static Vec2 gridToScene(int row, int col, const Vec2& p00);
+  static Vec2 gridToScene(float row, float col, const Vec2& p00);
 
   /**
    * 将屏幕坐标转换为网格坐标(row, col)
@@ -31,8 +31,8 @@ class GridUtils {
    * @param col 输出的网格列坐标
    * @return 是否转换成功（坐标在有效范围内）
    */
-  static bool screenToGrid(const Vec2& screenPos, const Vec2& p00, int& row,
-                           int& col);
+  static bool screenToGrid(const Vec2& screenPos, const Vec2& p00, float& row,
+                           float& col);
 
   /**
    * 找到最近的grass顶点
@@ -44,7 +44,7 @@ class GridUtils {
    * @return 是否找到有效顶点
    */
   static bool findNearestGrassVertex(const Vec2& screenPos, const Vec2& p00,
-                                     int& row, int& col, Vec2& nearestPos);
+                                     float& row, float& col, Vec2& nearestPos);
 };
 
 #endif  // __GRID_UTILS_H__

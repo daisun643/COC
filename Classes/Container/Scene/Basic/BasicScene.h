@@ -14,11 +14,10 @@ USING_NS_CC;
  */
 class BasicScene : public Scene {
  public:
-  static Scene* createScene();
+  static Scene* createScene(
+      const std::string& jsonFilePath = "develop/map.json");
 
-  virtual bool init() override;
-
-  CREATE_FUNC(BasicScene);
+  bool init(const std::string& jsonFilePath);
 
  protected:
   Layer* _mapLayer;             // 地图容器层，用于整体移动和缩放

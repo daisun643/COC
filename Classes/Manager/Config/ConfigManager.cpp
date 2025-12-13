@@ -251,7 +251,9 @@ bool ConfigManager::loadBuildingConfig() {
           if (lvlVal.HasMember("image"))
             levelConfig.image = lvlVal["image"].GetString();
           if (lvlVal.HasMember("health"))
-            levelConfig.health = lvlVal["health"].GetInt();
+            levelConfig.maxHP = lvlVal["health"].GetFloat();
+          if (lvlVal.HasMember("maxHP"))
+            levelConfig.maxHP = lvlVal["maxHP"].GetFloat();
 
           // Defense
           if (lvlVal.HasMember("damage"))
@@ -336,6 +338,8 @@ ConfigManager::SoldierConfig ConfigManager::getSoldierConfig(
       config.attackType = AttackType::RESOURCE;
     } else if (attackTypeStr == "TownHall") {
       config.attackType = AttackType::TOWN_HALL;
+    } else if (attackTypeStr == "WALL") {
+      config.attackType = AttackType::WALL;
     } else {
       CCLOG("Invalid attack type: %s", attackTypeStr.c_str());
       return config;

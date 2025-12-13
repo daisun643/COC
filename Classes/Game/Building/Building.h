@@ -13,7 +13,8 @@ enum class BuildingType {
   DEFENSE,    // 防御建筑
   RESOURCE,   // 资源建筑
   STORAGE,    // 储存建筑
-  BARRACKS    // 兵营
+  BARRACKS,   // 兵营
+  WALL        // 城墙
 };
 
 /**
@@ -48,24 +49,47 @@ class Building : public Sprite {
   CC_SYNTHESIZE(int, _maxLevel, MaxLevel);
   CC_SYNTHESIZE(float, _centerX, CenterX);
   CC_SYNTHESIZE(float, _centerY, CenterY);
-  CC_SYNTHESIZE(int, _gridCount, GridCount);
-  CC_SYNTHESIZE(int, _row, Row);
-  CC_SYNTHESIZE(int, _col, Col);
-  CC_SYNTHESIZE(float, _anchorRatioX, AnchorRatioX);
-  CC_SYNTHESIZE(float, _anchorRatioY, AnchorRatioY);
+  CC_SYNTHESIZE(int, _gridCount, GridCount);  // 建筑占用的网格数量
+  // 这里 _row 和 _col 的类型由 int -> float 进行适配
+  CC_SYNTHESIZE(float, _row, Row);                    // 坐标编码：行
+  CC_SYNTHESIZE(float, _col, Col);                    // 坐标编码：列
+  CC_SYNTHESIZE(float, _anchorRatioX, AnchorRatioX);  // 建筑宽度比例
+  CC_SYNTHESIZE(float, _anchorRatioY, AnchorRatioY);  // 建筑高度比例
 
-  // 生命值相关
-  CC_SYNTHESIZE(float, _maxHealth, MaxHealth);
-  CC_SYNTHESIZE(float, _currentHealth, CurrentHealth);
-
+  CC_SYNTHESIZE(float, _maxHP, MaxHP);          // 最大生命值
+  CC_SYNTHESIZE(float, _currentHP, CurrentHP);  // 当前生命值
+  /**
+   * 检查建筑是否越界
+   */
   bool isOutOfBounds(int gridCount) const;
   void showGlow();
   void hideGlow();
   bool inDiamond(const Vec2& pos) const;
   void setPlacementValid(bool isValid);
 
-  // 受到伤害
+  /**
+   * 设置当前生命值并更新血条显示
+   * @param hp 新的生命值
+   */
+  void setCurrentHPAndUpdate(float hp);
+
+  /**
+   * 设置血条是否可见
+   * @param visible 是否可见
+   */
+  void setHealthBarVisible(bool visible);
+
+  /**
+   * 受到伤害
+   * @param damage 伤害值
+   */
   void takeDamage(float damage);
+
+  /**
+   * 是否存活（HP > 0）
+   * @return 是否存活
+   */
+  bool isAlive() const;
 
  protected:
   Building();
@@ -77,11 +101,17 @@ class Building : public Sprite {
   Action* _glowAction;
   Color4F _glowColor;
   LayerColor* _errorLayer;
-  DrawNode* _hpBarNode;  // 血条节点
 
   virtual void createDefaultAppearance();
   void updateGlowDrawing();
-  void updateHPBar();  // 更新血条显示
+
+  /**
+   * 更新生命值条显示（内部方法）
+   */
+  void updateHPBar();
+
+  DrawNode* _hpBarBackground;  // 生命值条背景
+  DrawNode* _hpBarForeground;  // 生命值条前景
 };
 
 #endif  // __BUILDING_H__

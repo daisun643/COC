@@ -185,17 +185,42 @@ Layout* ShopLayer::createItemCard(const ShopItem& item, int globalIndex) {
   card->setBackGroundColor(COLOR_CARD_BG);
   card->setBackGroundColorOpacity(220);
 
-  // 1. 占位预览 (顶部)
+  // 1. 建筑图片 (顶部)
   float previewHeight = 140.0f;
   auto preview = Layout::create();
   preview->setContentSize(Size(cardWidth - 2 * padding, previewHeight));
-  preview->setBackGroundColorType(Layout::BackGroundColorType::SOLID);
-  preview->setBackGroundColor(Color3B(item.placeholderColor.r,
-                                      item.placeholderColor.g,
-                                      item.placeholderColor.b));
-  preview->setBackGroundColorOpacity(230);
+  preview->setBackGroundColorType(
+      Layout::BackGroundColorType::NONE);  // 透明背景
   preview->setPosition(Vec2(padding, cardHeight - padding - previewHeight));
   card->addChild(preview);
+
+  if (!item.imagePath.empty()) {
+    auto sprite = Sprite::create(item.imagePath);
+    if (sprite) {
+      // 缩放图片以适应预览区域
+      float scaleX = (cardWidth - 2 * padding) / sprite->getContentSize().width;
+      float scaleY = previewHeight / sprite->getContentSize().height;
+      float scale = std::min(scaleX, scaleY) * 0.9f;  // 留一点边距
+      sprite->setScale(scale);
+      sprite->setPosition(Vec2(preview->getContentSize().width / 2.0f,
+                               preview->getContentSize().height / 2.0f));
+      preview->addChild(sprite);
+    } else {
+      // 图片加载失败，回退到色块
+      preview->setBackGroundColorType(Layout::BackGroundColorType::SOLID);
+      preview->setBackGroundColor(Color3B(item.placeholderColor.r,
+                                          item.placeholderColor.g,
+                                          item.placeholderColor.b));
+      preview->setBackGroundColorOpacity(230);
+    }
+  } else {
+    // 没有图片路径，回退到色块
+    preview->setBackGroundColorType(Layout::BackGroundColorType::SOLID);
+    preview->setBackGroundColor(Color3B(item.placeholderColor.r,
+                                        item.placeholderColor.g,
+                                        item.placeholderColor.b));
+    preview->setBackGroundColorOpacity(230);
+  }
 
   // 序号
   auto indexLabel = createLabel(StringUtils::format("#%d", globalIndex + 1), 16,

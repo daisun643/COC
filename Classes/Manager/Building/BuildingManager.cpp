@@ -11,7 +11,9 @@
 #include "Game/Building/ResourceBuilding.h"
 #include "Game/Building/StorageBuilding.h"
 #include "Game/Building/TownHall.h"
+#include "Game/Building/Wall.h"
 #include "Manager/Config/ConfigManager.h"
+#include "Manager/PlayerManager.h"
 #include "Utils/GridUtils.h"
 #include "json/document.h"
 
@@ -39,6 +41,9 @@ bool BuildingManager::init() {
     CCLOG("Failed to load building map!");
     return false;
   }
+
+  // 初始计算一次资源统计
+  updatePlayerResourcesStats();
 
   return true;
 }
@@ -84,12 +89,16 @@ bool BuildingManager::loadBuildingMap() {
       for (rapidjson::SizeType i = 0; i < array.Size(); ++i) {
         const rapidjson::Value& item = array[i];
         if (item.IsObject() && item.HasMember("row") && item.HasMember("col")) {
-          int row = item["row"].GetInt();
-          int col = item["col"].GetInt();
+          float row = item["row"].GetFloat();
+          float col = item["col"].GetFloat();
           int level = item.HasMember("level") ? item["level"].GetInt() : 1;
+          float hp = item.HasMember("HP")
+                         ? item["HP"].GetFloat()
+                         : -1.0f;  // -1 表示使用默认值（MaxHP）
 
           // 调用工厂方法创建建筑
-          Building* building = createBuilding(buildingName, row, col, level);
+          Building* building =
+              createBuilding(buildingName, row, col, level, hp);
           if (building) {
             registerBuilding(building);
           }
@@ -102,12 +111,17 @@ bool BuildingManager::loadBuildingMap() {
 }
 
 Building* BuildingManager::createBuilding(const std::string& buildingName,
-                                          int row, int col, int level) {
+                                          float row, float col, int level,
+                                          float hp) {
   auto configManager = ConfigManager::getInstance();
-  if (!configManager) return nullptr;
+  if (!configManager) {
+    return nullptr;
+  }
 
-  // 1. 获取该建筑的配置 (默认拿 Level 1 来判断 Type)
-  auto config = configManager->getBuildingConfig(buildingName, level);
+  // 1. 获取该建筑的配置
+  auto config = configManager->getBuildingConfig(buildingName);
+
+  // 2. 获取类型 (TOWN_HALL, DEFENSE, RESOURCE...)
   std::string type = config.type;
 
   Building* building = nullptr;
@@ -116,6 +130,8 @@ Building* BuildingManager::createBuilding(const std::string& buildingName,
   if (type == "TOWN_HALL") {
     building = TownHall::create(level);
   } else if (type == "DEFENSE") {
+    // 传入 buildingName (例如 "Cannon")，以便 DefenseBuilding
+    // 内部再次读取伤害、范围等参数
     building = DefenseBuilding::create(level, buildingName);
   } else if (type == "RESOURCE") {
     building = ResourceBuilding::create(level, buildingName);
@@ -123,13 +139,15 @@ Building* BuildingManager::createBuilding(const std::string& buildingName,
     building = StorageBuilding::create(level, buildingName);
   } else if (type == "BARRACKS") {
     building = BarracksBuilding::create(level, buildingName);
+  } else if (type == "WALL") {
+    building = Wall::create(level, buildingName);
   } else {
     CCLOG("Unknown building type '%s' for building '%s'", type.c_str(),
           buildingName.c_str());
     return nullptr;
   }
 
-  // 4. 设置位置
+  // 4. 设置位置 (通用逻辑)
   if (building) {
     Vec2 anchorPos = GridUtils::gridToScene(row, col, _p00);
     building->setPosition(anchorPos);
@@ -137,6 +155,14 @@ Building* BuildingManager::createBuilding(const std::string& buildingName,
     building->setCenterY(anchorPos.y);
     building->setRow(row);
     building->setCol(col);
+
+    // 5. 设置生命值（如果指定了 HP，使用指定值；否则使用 MaxHP）
+    if (hp >= 0.0f) {
+      building->setCurrentHPAndUpdate(hp);
+    } else {
+      // 如果没有指定 HP，默认使用 MaxHP
+      building->setCurrentHPAndUpdate(building->getMaxHP());
+    }
   }
 
   return building;
@@ -203,4 +229,74 @@ void BuildingManager::registerBuilding(Building* building) {
 
   building->retain();
   _buildings.push_back(building);
+
+  // 更新资源统计
+  updatePlayerResourcesStats();
+}
+
+void BuildingManager::updatePlayerResourcesStats() {
+  auto playerManager = PlayerManager::getInstance();
+  if (!playerManager) {
+    return;
+  }
+
+  int maxGold = 0;
+  int maxElixir = 0;
+  int goldProd = 0;
+  int elixirProd = 0;
+
+  // 基础容量（例如大本营自带的，或者系统默认的）
+  // 这里假设默认有1000容量，避免初始为0
+  maxGold = 1000;
+  maxElixir = 1000;
+
+  for (auto building : _buildings) {
+    if (!building) continue;
+
+    if (building->getBuildingType() == BuildingType::STORAGE) {
+      auto storage = dynamic_cast<StorageBuilding*>(building);
+      if (storage) {
+        if (storage->getResourceType() == "Gold") {
+          maxGold += storage->getCapacity();
+        } else if (storage->getResourceType() == "Elixir") {
+          maxElixir += storage->getCapacity();
+        }
+      }
+    } else if (building->getBuildingType() == BuildingType::RESOURCE) {
+      auto resource = dynamic_cast<ResourceBuilding*>(building);
+      if (resource) {
+        if (resource->getResourceType() == "Gold") {
+          // Resource buildings store their own resources, do not add to global
+          // capacity
+          goldProd += resource->getProductionRate();
+        } else if (resource->getResourceType() == "Elixir") {
+          // Resource buildings store their own resources, do not add to global
+          // capacity
+          elixirProd += resource->getProductionRate();
+        }
+      }
+    }
+  }
+
+  playerManager->setMaxGold(maxGold);
+  playerManager->setMaxElixir(maxElixir);
+  playerManager->setGoldProduction(goldProd);
+  playerManager->setElixirProduction(elixirProd);
+
+  // 确保当前资源不超过新上限
+  if (playerManager->getGold() > maxGold) {
+    playerManager->setGold(maxGold);
+  }
+  if (playerManager->getElixir() > maxElixir) {
+    playerManager->setElixir(maxElixir);
+  }
+}
+
+void BuildingManager::removeBuilding(Building* building) {
+  if (!building) return;
+  auto it = std::find(_buildings.begin(), _buildings.end(), building);
+  if (it != _buildings.end()) {
+    _buildings.erase(it);
+    updatePlayerResourcesStats();
+  }
 }

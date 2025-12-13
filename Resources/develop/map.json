@@ -40,24 +40,30 @@
             "level": 1
         }
     ],
-    "ElixirPump": [
+    "Wall": [
         {
-            "row": 35,
-            "col": 20,
+            "row": 10,
+            "col": 10,
             "level": 1
-        }
-    ],
-    "ArcherTower": [
+        },
         {
-            "row": 20,
-            "col": 35,
+            "row": 10,
+            "col": 11,
             "level": 1
-        }
-    ],
-    "ElixirBottle": [
+        },
         {
-            "row": 25,
-            "col": 25,
+            "row": 10,
+            "col": 12,
+            "level": 1
+        },
+        {
+            "row": 10,
+            "col": 13,
+            "level": 1
+        },
+        {
+            "row": 10,
+            "col": 14,
             "level": 1
         }
     ]

@@ -196,6 +196,7 @@
     },
     "Barracks": {
         "type": "BARRACKS",
+        "MAXHP": 100,
         "GridSize": 4,
         "AnchorRatio": [
             0.5,

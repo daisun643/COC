@@ -30,21 +30,14 @@ bool LightningSpell::init() {
 
 void LightningSpell::applyEffect(const std::vector<BasicSoldier*>& soldiers,
                                  const std::vector<Building*>& buildings) {
-  // 对范围内的士兵造成伤害
-  for (BasicSoldier* soldier : soldiers) {
-    if (soldier && soldier->isAlive()) {
-      soldier->takeDamage(_amount);
-      CCLOG("LightningSpell: Dealt %.1f damage to soldier", _amount);
-    }
-  }
-
   // 对范围内的建筑造成伤害
-  // 注意：Building 类可能还没有 takeDamage 方法，这里先记录日志
   for (Building* building : buildings) {
-    if (building && building->isVisible()) {
-      CCLOG("LightningSpell: Dealt %.1f damage to building", _amount);
-      // TODO: 如果 Building 有 takeDamage 方法，取消注释
-      // building->takeDamage(_amount);
+    if (building && building->isVisible() && building->isAlive()) {
+      building->takeDamage(_amount);
+      CCLOG(
+          "LightningSpell: Dealt %.1f damage to building, building HP: "
+          "%.1f/%.1f",
+          _amount, building->getCurrentHP(), building->getMaxHP());
     }
   }
 }
@@ -85,7 +78,7 @@ void LightningSpell::createVisualEffect() {
         nextPoint += Vec2(offsetX, offsetY);
       }
 
-      Color4F lightningColor(1.0f, 1.0f, 1.0f, 0.7f);  // 白色，70%透明度
+      Color4F lightningColor(0.55f, 0.75f, 1.0f, 0.7f);  // 淡蓝色
       drawNode->drawSegment(currentPoint, nextPoint, 2.0f, lightningColor);
 
       currentPoint = nextPoint;
@@ -96,7 +89,7 @@ void LightningSpell::createVisualEffect() {
   auto fadeOut = FadeOut::create(0.1f);
   auto fadeIn = FadeIn::create(0.1f);
   auto sequence = Sequence::create(fadeOut, fadeIn, nullptr);
-  auto repeat = Repeat::create(sequence, 3);  // 闪烁3次
+  auto repeat = Repeat::create(sequence, 10);  // 闪烁3次
   auto remove =
       CallFunc::create([drawNode]() { drawNode->removeFromParent(); });
   auto finalSequence = Sequence::create(repeat, remove, nullptr);

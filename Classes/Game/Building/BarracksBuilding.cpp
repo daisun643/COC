@@ -45,4 +45,6 @@ void BarracksBuilding::upgrade() {
   this->_queueSize = config.queueSize;
 
   CCLOG("BarracksBuilding upgraded: QueueSize -> %d", _queueSize);
+  // 设置最大生命值（当前生命值将在 BuildingManager 中设置，默认为 MaxHP）
+  this->_maxHP = config.maxHP;
 }

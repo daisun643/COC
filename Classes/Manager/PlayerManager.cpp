@@ -45,9 +45,19 @@ void PlayerManager::setGold(int amount) {
 
 void PlayerManager::setElixir(int amount) { _elixir = amount; }
 
-void PlayerManager::addGold(int amount) { _gold += amount; }
+void PlayerManager::addGold(int amount) {
+  _gold += amount;
+  if (_gold > _maxGold) {
+    _gold = _maxGold;
+  }
+}
 
-void PlayerManager::addElixir(int amount) { _elixir += amount; }
+void PlayerManager::addElixir(int amount) {
+  _elixir += amount;
+  if (_elixir > _maxElixir) {
+    _elixir = _maxElixir;
+  }
+}
 
 bool PlayerManager::consumeGold(int amount) {
   if (_gold >= amount) {

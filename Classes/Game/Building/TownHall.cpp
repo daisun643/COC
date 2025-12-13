@@ -4,15 +4,22 @@
 
 TownHall::TownHall() {
   _buildingType = BuildingType::TOWN_HALL;
-  _buildingName = "TownHall";  // 这里硬编码对应配置文件中的 Key
+  _buildingName = "TownHall";
+  _maxLevel = 10;
 }
 
 TownHall::~TownHall() {}
 
 TownHall* TownHall::create(int level) {
   TownHall* townHall = new (std::nothrow) TownHall();
-  // 简化了 create，直接调用 init(level)
-  if (townHall && townHall->init(level)) {
+  auto constantConfig = ConfigManager::getInstance()->getConstantConfig();
+  auto townHallConfig =
+      ConfigManager::getInstance()->getBuildingConfig("TownHall");
+
+  if (townHall &&
+      townHall->init(level, townHallConfig.image, townHallConfig.gridCount,
+                     townHallConfig.anchorRatioX, townHallConfig.anchorRatioY,
+                     townHallConfig.imageScale)) {
     townHall->autorelease();
     return townHall;
   }
@@ -20,22 +27,16 @@ TownHall* TownHall::create(int level) {
   return nullptr;
 }
 
-bool TownHall::init(int level) {
-  // 根据 _buildingName ("TownHall") 和 level 获取配置
-  auto config =
-      ConfigManager::getInstance()->getBuildingConfig(_buildingName, level);
-
-  // 调用基类初始化
-  if (!Building::init(config.image, BuildingType::TOWN_HALL, level,
-                      config.gridCount, config.anchorRatioX,
-                      config.anchorRatioY, config.imageScale)) {
+bool TownHall::init(int level, std::string imagePath, int gridCount,
+                    float anchorRatioX, float anchorRatioY, float imageScale) {
+  if (!Building::init(imagePath, BuildingType::TOWN_HALL, level, gridCount,
+                      anchorRatioX, anchorRatioY, imageScale)) {
     return false;
   }
 
-  // 设置属性
-  this->_maxLevel = config.maxLevel;
-  this->_maxHealth = config.health;
-  this->_currentHealth = _maxHealth;
+  // 设置最大生命值（当前生命值将在 BuildingManager 中设置，默认为 MaxHP）
+  auto config = ConfigManager::getInstance()->getBuildingConfig("TownHall");
+  this->_maxHP = config.maxHP;
 
   return true;
 }

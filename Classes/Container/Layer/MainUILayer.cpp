@@ -77,6 +77,38 @@ bool MainUILayer::init() {
   attackLabel->setPosition(Vec2(origin.x + 80, origin.y + 30));
   this->addChild(attackLabel);
 
+  // 回放按钮 (进攻按钮上方)
+  _replayButton = Button::create("images/ui/record.png");
+  _replayButton->setScale(0.8f);
+  _replayButton->setPosition(Vec2(origin.x + 80, origin.y + 210));
+  _replayButton->addClickEventListener([this](Ref* sender) {
+    if (_onReplayClick) {
+      _onReplayClick();
+    }
+  });
+  this->addChild(_replayButton);
+
+  auto replayLabel = createLabel("回放");
+  replayLabel->setPosition(Vec2(origin.x + 80, origin.y + 180));
+  this->addChild(replayLabel);
+
+  // 地图编辑按钮 (商店按钮上方)
+  _mapEditButton = Button::create("images/ui/map.png");
+  _mapEditButton->setScale(0.8f);
+  _mapEditButton->setPosition(
+      Vec2(origin.x + visibleSize.width - 80, origin.y + 210));
+  _mapEditButton->addClickEventListener([this](Ref* sender) {
+    if (_onMapEditClick) {
+      _onMapEditClick();
+    }
+  });
+  this->addChild(_mapEditButton);
+
+  auto mapEditLabel = createLabel("地图编辑");
+  mapEditLabel->setPosition(
+      Vec2(origin.x + visibleSize.width - 80, origin.y + 180));
+  this->addChild(mapEditLabel);
+
   // 开启 update 用于实时刷新资源
   this->scheduleUpdate();
 
@@ -106,4 +138,12 @@ void MainUILayer::setOnShopClickCallback(std::function<void()> callback) {
 
 void MainUILayer::setOnAttackClickCallback(std::function<void()> callback) {
   _onAttackClick = callback;
+}
+
+void MainUILayer::setOnReplayClickCallback(std::function<void()> callback) {
+  _onReplayClick = callback;
+}
+
+void MainUILayer::setOnMapEditClickCallback(std::function<void()> callback) {
+  _onMapEditClick = callback;
 }

@@ -1,9 +1,12 @@
 #ifndef __GAME_SCENE_H__
 #define __GAME_SCENE_H__
 
+#include <map>
 #include <vector>
 
+#include "Container/Layer/BuildingMenuLayer.h"
 #include "Container/Layer/MainUILayer.h"
+#include "Container/Layer/MapEditLayer.h"
 #include "Container/Layer/ShopLayer.h"
 #include "Container/Scene/Basic/BasicScene.h"
 #include "Manager/PlayerManager.h"
@@ -16,21 +19,34 @@ USING_NS_CC;
  */
 class GameScene : public BasicScene {
  public:
-  static Scene* createScene();
+  static Scene* createScene(
+      const std::string& jsonFilePath = "develop/map.json");
 
-  virtual bool init() override;
-
-  CREATE_FUNC(GameScene);
+  bool init(const std::string& jsonFilePath);
 
  private:
-  MainUILayer* _uiLayer;  // UI 层
+  MainUILayer* _uiLayer;                  // UI 层
+  BuildingMenuLayer* _buildingMenuLayer;  // 建筑菜单层
+  MapEditLayer* _mapEditLayer;            // 地图编辑层
+
+  // 地图编辑模式相关
+  bool _isMapEditMode;
+  bool _isPlacementFromInventory;             // 是否是从库存放置
+  std::map<std::string, int> _tempInventory;  // 临时库存：ID -> 数量
+  std::vector<ShopItem> _shopCatalog;         // 缓存商店目录，用于查找物品信息
+
+  void enterMapEditMode();
+  void exitMapEditMode(bool save);
+  void onRemoveAllBuildings();
+  void onRemoveBuilding(Building* building);
+  void onPlaceBuildingFromInventory(const std::string& id);
 
   /**
    * 打开商店界面
    */
   void openShop();
 
-  bool isShopOpen() const;
+  bool isPopupOpen() const;
 
   /**
    * 构建商店商品列表
@@ -97,8 +113,8 @@ class GameScene : public BasicScene {
   cocos2d::Vec2 _placementMouseDownPos;   // 放置模式按下位置
   cocos2d::Vec2 _placementLastMousePos;   // 放置模式最后一次鼠标位置
   bool _placementPreviewValid;            // 当前预览是否有效
-  int _placementPreviewRow;               // 预览所在行
-  int _placementPreviewCol;               // 预览所在列
+  float _placementPreviewRow;             // 预览所在行
+  float _placementPreviewCol;             // 预览所在列
   cocos2d::Vec2 _placementPreviewAnchor;  // 预览锚点位置
   cocos2d::Vec2 _currentMousePos;         // 当前鼠标位置
   bool _ignoreNextMouseUp;                // 是否忽略下一次鼠标抬起事件
