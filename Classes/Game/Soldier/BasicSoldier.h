@@ -1,6 +1,9 @@
 #ifndef __BASIC_SOILDER_H__
 #define __BASIC_SOILDER_H__
 
+#include <functional>
+#include <vector>
+
 #include "Game/Building/Building.h"
 #include "cocos2d.h"
 
@@ -29,17 +32,18 @@ enum class SoldierType {
   BARBARIAN,  // 野蛮人
   ARCHER,     // 弓箭手
   GIANT,      // 巨人
-  GOBLIN      // 哥布林
+  BOMBER      // 炸弹人
 };
 // TODO 大本营删除
 /**
  * 攻击类型枚举
  */
 enum class AttackType {
-  ANY,       // 任意目标
-  DEFENSE,   // 优先防御建筑
-  RESOURCE,  // 优先资源建筑
-  TOWN_HALL  // 优先大本营
+  ANY,        // 任意目标
+  DEFENSE,    // 优先防御建筑
+  RESOURCE,   // 优先资源建筑
+  TOWN_HALL,  // 优先大本营
+  WALL        // 优先墙
 };
 
 /**
@@ -81,6 +85,7 @@ class BasicSoldier : public Sprite {
   CC_SYNTHESIZE(float, _attackRange, AttackRange);  // 攻击范围（像素）
   CC_SYNTHESIZE(AttackType, _attackType, AttackType);
   CC_SYNTHESIZE(SoldierState, _state, State);
+  CC_SYNTHESIZE(SoldierCategory, _soldierCategory, SoldierCategory);
   CC_SYNTHESIZE(float, _centerX, CenterX);
   CC_SYNTHESIZE(float, _centerY, CenterY);
   CC_SYNTHESIZE(Building*, _target, Target);
@@ -109,6 +114,13 @@ class BasicSoldier : public Sprite {
    * @return 是否找到目标
    */
   bool findTarget(const std::vector<Building*>& buildings);
+
+  /**
+   * 设置建筑查找回调函数
+   * @param callback 返回建筑列表的回调函数
+   */
+  void setBuildingFinderCallback(
+      std::function<std::vector<Building*>()> callback);
 
   /**
    * 检查目标是否在攻击范围内
@@ -154,7 +166,7 @@ class BasicSoldier : public Sprite {
    * 攻击目标
    * @param delta 时间间隔
    */
-  void attackTarget(float delta);
+  virtual void attackTarget(float delta);
 
   /**
    * 死亡处理
@@ -166,6 +178,8 @@ class BasicSoldier : public Sprite {
   DrawNode* _hpBarBackground;  // 生命值条背景
   DrawNode* _hpBarForeground;  // 生命值条前景
   Label* _infoLabel;           // 信息显示标签
+  std::function<std::vector<Building*>()>
+      _buildingFinderCallback;  // 建筑查找回调函数
 };
 
 #endif  // __BASIC_SOILDER_H__

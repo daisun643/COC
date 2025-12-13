@@ -13,7 +13,8 @@ TownHall::~TownHall() {}
 TownHall* TownHall::create(int level) {
   TownHall* townHall = new (std::nothrow) TownHall();
   auto constantConfig = ConfigManager::getInstance()->getConstantConfig();
-  auto townHallConfig = ConfigManager::getInstance()->getBuildingConfig("TownHall");
+  auto townHallConfig =
+      ConfigManager::getInstance()->getBuildingConfig("TownHall");
 
   if (townHall &&
       townHall->init(level, townHallConfig.image, townHallConfig.gridCount,
@@ -32,5 +33,10 @@ bool TownHall::init(int level, std::string imagePath, int gridCount,
                       anchorRatioX, anchorRatioY, imageScale)) {
     return false;
   }
+
+  // 设置最大生命值（当前生命值将在 BuildingManager 中设置，默认为 MaxHP）
+  auto config = ConfigManager::getInstance()->getBuildingConfig("TownHall");
+  this->_maxHP = config.maxHP;
+
   return true;
 }

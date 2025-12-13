@@ -20,9 +20,26 @@ Building::Building()
       _anchorNode(nullptr),
       _glowAction(nullptr),
       _glowColor(1.0f, 1.0f, 0.0f, 0.6f),
-      _errorLayer(nullptr) {}
+      _errorLayer(nullptr),
+      _maxHP(1000.0f),
+      _currentHP(1000.0f),
+      _hpBarBackground(nullptr),
+      _hpBarForeground(nullptr) {}
 
-Building::~Building() {}
+Building::~Building() {
+  // 注意：在Cocos2d-x中，父节点销毁时会自动清理所有子节点
+  // 这里只需要将指针置空，避免重复析构
+  // 如果子节点已经被移除，removeFromParent()是安全的（会检查父节点）
+  if (_hpBarBackground && _hpBarBackground->getParent()) {
+    _hpBarBackground->removeFromParent();
+  }
+  if (_hpBarForeground && _hpBarForeground->getParent()) {
+    _hpBarForeground->removeFromParent();
+  }
+  // 将指针置空，避免悬空指针
+  _hpBarBackground = nullptr;
+  _hpBarForeground = nullptr;
+}
 
 bool Building::init(const std::string& imagePath, BuildingType type,
                     const int& level, const int& gridCount,
@@ -77,6 +94,13 @@ bool Building::init(const std::string& imagePath, BuildingType type,
                        Color4F(1.0f, 0.0f, 0.0f, 1.0f));  // 红色，半径5像素
   this->addChild(_anchorNode, 10);  // 放在最前面，确保可见
 
+  // 创建生命值条
+  _hpBarBackground = DrawNode::create();
+  _hpBarForeground = DrawNode::create();
+  this->addChild(_hpBarBackground, 10);
+  this->addChild(_hpBarForeground, 11);
+  updateHPBar();
+
   return true;
 }
 
@@ -99,6 +123,9 @@ void Building::createDefaultAppearance() {
     case BuildingType::BARRACKS:
       color = Color4B(0, 255, 0, 255);  // 绿色
       break;
+    case BuildingType::WALL:
+      color = Color4B(128, 128, 128, 255);  // 灰色
+      break;
   }
 
   // 创建彩色矩形作为默认外观
@@ -111,10 +138,10 @@ void Building::createDefaultAppearance() {
 }
 
 bool Building::isOutOfBounds(int gridSize) const {
-  int topRow, topCol, rightRow, rightCol, bottomRow, bottomCol, leftRow,
+  float topRow, topCol, rightRow, rightCol, bottomRow, bottomCol, leftRow,
       leftCol;
 
-  int halfGridCount = _gridCount / 2;
+  float halfGridCount = _gridCount / 2.0f;
   topRow = _row + halfGridCount;
   topCol = _col - halfGridCount;
   rightRow = _row + halfGridCount;
@@ -269,3 +296,94 @@ bool Building::inDiamond(const Vec2& pos) const {
 
   return manhattanDist <= _gridCount;
 }
+
+void Building::updateHPBar() {
+  if (!_hpBarBackground || !_hpBarForeground) {
+    return;
+  }
+
+  // 生命值条尺寸（根据建筑大小调整）
+  float barWidth =
+      this->getContentSize().width * 0.8f;  // 血条宽度为建筑宽度的80%
+  if (barWidth < 40.0f) {
+    barWidth = 40.0f;  // 最小宽度
+  }
+  float barHeight = 5.0f;  // 血条高度
+
+  // 在Cocos2d-x中，设置锚点后，本地坐标系的原点(0,0)就是锚点位置
+  float barY = this->getContentSize()
+                   .height;  // 血条的Y坐标（相对于锚点，即本地坐标系原点）
+  float anchorX = this->getContentSize().width * _anchorRatioX;
+  float anchorY = this->getContentSize().height * _anchorRatioY;
+  // 清除之前的绘制
+  _hpBarBackground->clear();
+  _hpBarForeground->clear();
+
+  // 绘制背景（深红色/暗红色）
+  // 血条中心在(barX, barY)，所以起点和终点相对于中心
+  Vec2 bgStart(anchorX - barWidth / 2, barY);
+  Vec2 bgEnd(anchorX + barWidth / 2, barY);
+  _hpBarBackground->drawSegment(bgStart, bgEnd, barHeight,
+                                Color4F(0.3f, 0.0f, 0.0f, 1.0f));
+
+  // 绘制前景（红色，根据生命值比例）
+  if (_maxHP > 0) {
+    float hpRatio = _currentHP / _maxHP;
+    if (hpRatio < 0) {
+      hpRatio = 0;
+    }
+    if (hpRatio > 1) {
+      hpRatio = 1;
+    }
+
+    float foregroundWidth = barWidth * hpRatio;
+    if (foregroundWidth > 0) {
+      Vec2 fgStart(anchorX - barWidth / 2, barY);
+      Vec2 fgEnd(anchorX - barWidth / 2 + foregroundWidth, barY);
+
+      // 使用红色血条
+      Color4F barColor = Color4F(1.0f, 0.0f, 0.0f, 1.0f);  // 红色
+
+      _hpBarForeground->drawSegment(fgStart, fgEnd, barHeight, barColor);
+    }
+  }
+}
+
+void Building::setCurrentHPAndUpdate(float hp) {
+  _currentHP = hp;
+  if (_currentHP < 0) {
+    _currentHP = 0;
+  }
+  if (_currentHP > _maxHP) {
+    _currentHP = _maxHP;
+  }
+  updateHPBar();
+}
+
+void Building::setHealthBarVisible(bool visible) {
+  if (_hpBarBackground) {
+    _hpBarBackground->setVisible(visible);
+  }
+  if (_hpBarForeground) {
+    _hpBarForeground->setVisible(visible);
+  }
+}
+
+void Building::takeDamage(float damage) {
+  if (!isAlive()) {
+    return;
+  }
+
+  _currentHP -= damage;
+  if (_currentHP < 0) {
+    _currentHP = 0;
+  }
+  updateHPBar();
+
+  // 如果HP为0，隐藏建筑
+  if (_currentHP <= 0) {
+    this->setVisible(false);
+  }
+}
+
+bool Building::isAlive() const { return _currentHP > 0; }

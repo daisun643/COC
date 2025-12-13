@@ -35,7 +35,7 @@ class AttackLayer : public cocos2d::LayerColor {
 
   // Helper to create a level item
   cocos2d::ui::Widget* createLevelItem(int levelId, const std::string& name,
-                                       int stars);
+                                       const std::string& path, int stars);
 };
 
 #endif  // __ATTACK_LAYER_H__

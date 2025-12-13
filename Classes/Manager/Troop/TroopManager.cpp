@@ -95,10 +95,6 @@ bool TroopManager::loadTroopConfig(const std::string& configPath) {
         }
 
         _spellItems.push_back(spellItem);
-      } else if (item.IsString()) {
-        // 兼容旧格式（字符串数组）
-        // 跳过非对象类型的项
-        continue;
       }
     }
   }
