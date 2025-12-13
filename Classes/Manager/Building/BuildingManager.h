@@ -55,6 +55,11 @@ class BuildingManager {
   void clearAllBuildings();
 
   /**
+   * 移除建筑
+   */
+  void removeBuilding(Building* building);
+
+  /**
    * 注册新建筑到管理器
    */
   void registerBuilding(Building* building);

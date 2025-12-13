@@ -74,6 +74,26 @@ void BuildingMenuLayer::showBuildingOptions(Building* building) {
   }
 }
 
+void BuildingMenuLayer::showRemoveOption(Building* building) {
+  _currentBuilding = building;
+  _menuContainer->removeAllChildren();
+
+  if (!building) {
+    return;
+  }
+
+  // 仅显示移除按钮
+  createButton(
+      "images/ui/Remove.png", "移除",
+      [this]() {
+        if (_onRemoveCallback && _currentBuilding) {
+          _onRemoveCallback(_currentBuilding);
+        }
+        hideOptions();
+      },
+      0, 1, 140.0f);
+}
+
 void BuildingMenuLayer::hideOptions() {
   _menuContainer->removeAllChildren();
   _currentBuilding = nullptr;
@@ -82,7 +102,7 @@ void BuildingMenuLayer::hideOptions() {
 void BuildingMenuLayer::createButton(const std::string& imagePath,
                                      const std::string& title,
                                      const std::function<void()>& callback,
-                                     int index, int total) {
+                                     int index, int total, float yOffset) {
   auto visibleSize = Director::getInstance()->getVisibleSize();
   Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
@@ -91,7 +111,7 @@ void BuildingMenuLayer::createButton(const std::string& imagePath,
   float totalWidth = total * buttonSize + (total - 1) * spacing;
   float startX =
       origin.x + (visibleSize.width - totalWidth) / 2.0f + buttonSize / 2.0f;
-  float y = origin.y + 80.0f;  // 底部上方一点
+  float y = origin.y + 80.0f + yOffset;  // 底部上方一点
 
   float x = startX + index * (buttonSize + spacing);
 
@@ -124,7 +144,10 @@ void BuildingMenuLayer::setOnCollectCallback(
     std::function<void(Building*)> callback) {
   _onCollectCallback = callback;
 }
-
+void BuildingMenuLayer::setOnRemoveCallback(
+    std::function<void(Building*)> callback) {
+  _onRemoveCallback = callback;
+}
 bool BuildingMenuLayer::isPointInMenu(const Vec2& worldPos) {
   if (!_menuContainer) {
     return false;

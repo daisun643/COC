@@ -92,6 +92,23 @@ bool MainUILayer::init() {
   replayLabel->setPosition(Vec2(origin.x + 80, origin.y + 180));
   this->addChild(replayLabel);
 
+  // 地图编辑按钮 (商店按钮上方)
+  _mapEditButton = Button::create("images/ui/map.png");
+  _mapEditButton->setScale(0.8f);
+  _mapEditButton->setPosition(
+      Vec2(origin.x + visibleSize.width - 80, origin.y + 210));
+  _mapEditButton->addClickEventListener([this](Ref* sender) {
+    if (_onMapEditClick) {
+      _onMapEditClick();
+    }
+  });
+  this->addChild(_mapEditButton);
+
+  auto mapEditLabel = createLabel("地图编辑");
+  mapEditLabel->setPosition(
+      Vec2(origin.x + visibleSize.width - 80, origin.y + 180));
+  this->addChild(mapEditLabel);
+
   // 开启 update 用于实时刷新资源
   this->scheduleUpdate();
 
@@ -125,4 +142,8 @@ void MainUILayer::setOnAttackClickCallback(std::function<void()> callback) {
 
 void MainUILayer::setOnReplayClickCallback(std::function<void()> callback) {
   _onReplayClick = callback;
+}
+
+void MainUILayer::setOnMapEditClickCallback(std::function<void()> callback) {
+  _onMapEditClick = callback;
 }

@@ -291,3 +291,12 @@ void BuildingManager::updatePlayerResourcesStats() {
     playerManager->setElixir(maxElixir);
   }
 }
+
+void BuildingManager::removeBuilding(Building* building) {
+  if (!building) return;
+  auto it = std::find(_buildings.begin(), _buildings.end(), building);
+  if (it != _buildings.end()) {
+    _buildings.erase(it);
+    updatePlayerResourcesStats();
+  }
+}

@@ -4,7 +4,7 @@
 
 TownHall::TownHall() {
   _buildingType = BuildingType::TOWN_HALL;
-  _buildingName = "Town Hall";
+  _buildingName = "TownHall";
   _maxLevel = 10;
 }
 

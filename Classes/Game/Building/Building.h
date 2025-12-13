@@ -52,6 +52,12 @@ class Building : public Sprite {
   CC_SYNTHESIZE(float, _col, Col);                    // 坐标编码：列
   CC_SYNTHESIZE(float, _anchorRatioX, AnchorRatioX);  // 建筑宽度比例
   CC_SYNTHESIZE(float, _anchorRatioY, AnchorRatioY);  // 建筑高度比例
+
+  /**
+   * 获取建筑名称
+   */
+  std::string getBuildingName() const { return _buildingName; }
+
   CC_SYNTHESIZE(float, _maxHP, MaxHP);                // 最大生命值
   CC_SYNTHESIZE(float, _currentHP, CurrentHP);        // 当前生命值
   /**
