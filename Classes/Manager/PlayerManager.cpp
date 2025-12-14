@@ -29,7 +29,8 @@ PlayerManager::PlayerManager()
       _maxGold(10000),
       _maxElixir(10000),
       _goldProduction(0),
-      _elixirProduction(0) {}
+      _elixirProduction(0),
+      _autoSaveCallback(nullptr) {}
 
 PlayerManager::~PlayerManager() {
   // 析构时取消定时器
@@ -59,9 +60,18 @@ bool PlayerManager::init() {
   // 每 5 秒自动保存一次，防止 PC 端直接关闭窗口时不触发 applicationDidEnterBackground
   Director::getInstance()->getScheduler()->schedule([this](float dt){
       this->saveUserData();
+      // 如果设置了回调（如保存建筑），则执行回调
+      if (_autoSaveCallback) {
+          _autoSaveCallback();
+      }
   }, this, 5.0f, false, "AutoSaveKey");
   
   return true;
+}
+
+// 实现设置回调的方法
+void PlayerManager::setAutoSaveCallback(const std::function<void()>& callback) {
+    _autoSaveCallback = callback;
 }
 
 void PlayerManager::setGold(int amount) {

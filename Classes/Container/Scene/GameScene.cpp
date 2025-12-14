@@ -189,6 +189,19 @@ bool GameScene::init(const std::string& jsonFilePath) {
     }
   });
 
+  // 设置自动保存回调
+  // 当 PlayerManager 触发自动保存时，同时保存建筑地图
+  auto playerManager = PlayerManager::getInstance();
+  if (playerManager) {
+      playerManager->setAutoSaveCallback([this]() {
+          if (_buildingManager) {
+              _buildingManager->saveBuildingMap();
+              // 可选：添加日志
+              // CCLOG("GameScene: Auto-saved building map.");
+          }
+      });
+  }
+
   return true;
 }
 
