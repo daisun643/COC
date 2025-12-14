@@ -7,7 +7,7 @@
 Building::Building()
     : _buildingType(BuildingType::TOWN_HALL),
       _level(1),
-      _maxLevel(10),
+      _maxLevel(3),
       _infoLabel(nullptr),
       _buildingName("Building"),
       _centerX(0.0f),
