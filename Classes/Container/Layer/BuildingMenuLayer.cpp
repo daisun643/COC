@@ -36,7 +36,12 @@ void BuildingMenuLayer::showBuildingOptions(Building* building) {
 
   // 2. 升级按钮
   buttons.push_back(std::make_tuple("images/ui/Upgrade.png", "升级", [this]() {
+    // 添加日志，确认点击事件触发
+    CCLOG("BuildingMenuLayer: Upgrade button clicked for %s", 
+          _currentBuilding ? _currentBuilding->getBuildingName().c_str() : "null");
+          
     if (_onUpgradeCallback && _currentBuilding) {
+      // 触发回调，GameScene 应在回调中调用 building->upgrade()
       _onUpgradeCallback(_currentBuilding);
     }
   }));

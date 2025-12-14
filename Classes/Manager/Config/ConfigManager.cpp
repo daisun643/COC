@@ -214,79 +214,88 @@ bool ConfigManager::loadConstantConfig() {
 
 bool ConfigManager::loadBuildingConfig() {
   rapidjson::Document doc;
-  if (!loadJsonFromFile("config/building.json", doc)) {
-    return false;
-  }
+  if (!loadJsonFromFile("config/building.json", doc)) return false;
 
-  // 遍历 JSON 对象中的所有 Key (例如 TownHall, Cannon, GoldMine...)
+  _buildingConfigs.clear();
+
   for (auto& m : doc.GetObject()) {
     std::string name = m.name.GetString();
     const rapidjson::Value& val = m.value;
 
     if (val.IsObject()) {
-      BuildingConfig config;
-
-      // 1. 读取基础通用属性
-      if (val.HasMember("type")) config.type = val["type"].GetString();
-      if (val.HasMember("image")) config.image = val["image"].GetString();
-
+      BuildingConfig baseConfig;
+      // 读取通用属性
+      if (val.HasMember("type")) baseConfig.type = val["type"].GetString();
       if (val.HasMember("GridSize"))
-        config.gridCount = val["GridSize"].GetInt();
+        baseConfig.gridCount = val["GridSize"].GetInt();
       if (val.HasMember("imageScale"))
-        config.imageScale = val["imageScale"].GetFloat();
-      if (val.HasMember("maxLevel")) config.maxLevel = val["maxLevel"].GetInt();
-
-      if (val.HasMember("AnchorRatio") && val["AnchorRatio"].IsArray() &&
-          val["AnchorRatio"].Size() >= 2) {
-        config.anchorRatioX = val["AnchorRatio"][0].GetFloat();
-        config.anchorRatioY = val["AnchorRatio"][1].GetFloat();
-      }
-
-      // 2. 读取防御属性
-      if (val.HasMember("damage")) config.damage = val["damage"].GetInt();
-      if (val.HasMember("attackRange"))
-        config.attackRange = val["attackRange"].GetFloat();
-      if (val.HasMember("attackSpeed"))
-        config.attackSpeed = val["attackSpeed"].GetFloat();
-
-      // 3. 读取资源/储存属性
-      if (val.HasMember("productionRate"))
-        config.productionRate = val["productionRate"].GetInt();
-      if (val.HasMember("capacity")) config.capacity = val["capacity"].GetInt();
+        baseConfig.imageScale = val["imageScale"].GetFloat();
+      if (val.HasMember("maxLevel"))
+        baseConfig.maxLevel = val["maxLevel"].GetInt();
       if (val.HasMember("resourceType"))
-        config.resourceType = val["resourceType"].GetString();
+        baseConfig.resourceType = val["resourceType"].GetString();
 
-      // 4. 读取兵营属性
-      if (val.HasMember("queueSize"))
-        config.queueSize = val["queueSize"].GetInt();
-
-      // 5. 读取城墙属性
-      if (val.HasMember("defense")) config.defense = val["defense"].GetFloat();
-
-      // 6. 读取生命值属性
-      if (val.HasMember("MAXHP")) config.maxHP = val["MAXHP"].GetFloat();
-      if (!val.HasMember("MAXHP") && val.HasMember("HP")) {
-        config.maxHP = val["HP"].GetFloat();
+      if (val.HasMember("AnchorRatio") && val["AnchorRatio"].IsArray()) {
+        baseConfig.anchorRatioX = val["AnchorRatio"][0].GetFloat();
+        baseConfig.anchorRatioY = val["AnchorRatio"][1].GetFloat();
       }
 
-      // 存入 Map
-      _buildingConfigs[name] = config;
+      // 遍历解析 1 到 maxLevel
+      for (int lvl = 1; lvl <= baseConfig.maxLevel; lvl++) {
+        std::string lvlKey = std::to_string(lvl);
+        BuildingConfig levelConfig = baseConfig;  // 复制基础配置
+
+        if (val.HasMember(lvlKey.c_str())) {
+          const rapidjson::Value& lvlVal = val[lvlKey.c_str()];
+
+          if (lvlVal.HasMember("image"))
+            levelConfig.image = lvlVal["image"].GetString();
+          if (lvlVal.HasMember("health"))
+            levelConfig.maxHP = lvlVal["health"].GetFloat();
+          if (lvlVal.HasMember("maxHP"))
+            levelConfig.maxHP = lvlVal["maxHP"].GetFloat();
+
+          // Defense
+          if (lvlVal.HasMember("damage"))
+            levelConfig.damage = lvlVal["damage"].GetInt();
+          if (lvlVal.HasMember("attackRange"))
+            levelConfig.attackRange = lvlVal["attackRange"].GetFloat();
+          if (lvlVal.HasMember("attackSpeed"))
+            levelConfig.attackSpeed = lvlVal["attackSpeed"].GetFloat();
+
+          // Resource & Storage
+          if (lvlVal.HasMember("productionRate"))
+            levelConfig.productionRate = lvlVal["productionRate"].GetInt();
+          if (lvlVal.HasMember("capacity"))
+            levelConfig.capacity = lvlVal["capacity"].GetInt();
+
+          // Barracks
+          if (lvlVal.HasMember("queueSize"))
+            levelConfig.queueSize = lvlVal["queueSize"].GetInt();
+        }
+        _buildingConfigs[name][lvl] = levelConfig;
+      }
     }
   }
-
   return true;
 }
 
 // 实现获取接口
 ConfigManager::BuildingConfig ConfigManager::getBuildingConfig(
-    const std::string& name) const {
-  auto it = _buildingConfigs.find(name);
-  if (it != _buildingConfigs.end()) {
-    return it->second;
+    const std::string& name, int level) const {
+  auto nameIt = _buildingConfigs.find(name);
+  if (nameIt != _buildingConfigs.end()) {
+    auto levelIt = nameIt->second.find(level);
+    if (levelIt != nameIt->second.end()) {
+      return levelIt->second;
+    }
+    // 降级处理：如果没有该等级配置，尝试返回等级1
+    if (!nameIt->second.empty()) {
+      return nameIt->second.begin()->second;
+    }
   }
-  CCLOG("Warning: Config for building '%s' not found, returning default.",
-        name.c_str());
-  return BuildingConfig();  // 返回默认空配置
+  CCLOG("Warning: Config for building '%s' not found.", name.c_str());
+  return BuildingConfig();
 }
 
 bool ConfigManager::loadSoldierConfig() {

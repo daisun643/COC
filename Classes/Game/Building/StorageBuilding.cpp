@@ -20,7 +20,8 @@ StorageBuilding* StorageBuilding::create(int level,
 }
 
 bool StorageBuilding::init(int level, const std::string& buildingName) {
-  auto config = ConfigManager::getInstance()->getBuildingConfig(buildingName);
+  auto config =
+      ConfigManager::getInstance()->getBuildingConfig(buildingName, level);
   _buildingName = buildingName;
 
   if (!Building::init(config.image, BuildingType::STORAGE, level,
@@ -31,9 +32,16 @@ bool StorageBuilding::init(int level, const std::string& buildingName) {
 
   this->_capacity = config.capacity;
   this->_resourceType = config.resourceType;
-
   // 设置最大生命值（当前生命值将在 BuildingManager 中设置，默认为 MaxHP）
   this->_maxHP = config.maxHP;
 
   return true;
+}
+
+void StorageBuilding::upgrade() {
+  Building::upgrade();
+  auto config =
+      ConfigManager::getInstance()->getBuildingConfig(_buildingName, _level);
+  this->_capacity = config.capacity;
+  CCLOG("StorageBuilding upgraded: Capacity -> %d", _capacity);
 }

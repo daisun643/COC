@@ -2,6 +2,7 @@
 #define __PLAYER_MANAGER_H__
 
 #include "cocos2d.h"
+#include <functional>
 
 class PlayerManager {
  public:
@@ -32,6 +33,13 @@ class PlayerManager {
   bool consumeGold(int amount);
   bool consumeElixir(int amount);
 
+  // 新增保存和加载方法
+  void saveUserData();
+  bool loadUserData();
+
+  // 设置自动保存回调函数
+  void setAutoSaveCallback(const std::function<void()>& callback);
+
  private:
   PlayerManager();
   ~PlayerManager();
@@ -44,6 +52,9 @@ class PlayerManager {
   int _maxElixir;
   int _goldProduction;
   int _elixirProduction;
+
+  // 自动保存回调
+  std::function<void()> _autoSaveCallback;
 };
 
 #endif  // __PLAYER_MANAGER_H__

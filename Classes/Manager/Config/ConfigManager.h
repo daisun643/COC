@@ -129,12 +129,13 @@ class ConfigManager {
   /**
    * 获取指定名称建筑的配置
    */
-  BuildingConfig getBuildingConfig(const std::string& name) const;
+  BuildingConfig getBuildingConfig(const std::string& name,
+                                   int level = 1) const;
 
   /**
    * 获取士兵配置
    * @param soldierType 士兵类型（字符串："barbarian", "archer", "giant",
-   * "bomber"）
+   * "goblin"）
    * @param level 士兵等级
    * @return 士兵配置，如果不存在则返回默认配置
    */
@@ -190,8 +191,8 @@ class ConfigManager {
 
   static ConfigManager* _instance;
 
-  // 存储所有建筑配置的字典
-  std::map<std::string, BuildingConfig> _buildingConfigs;
+  // 存储所有建筑配置的字典（按名称和等级）
+  std::map<std::string, std::map<int, BuildingConfig>> _buildingConfigs;
 };
 
 #endif  // __CONFIG_MANAGER_H__

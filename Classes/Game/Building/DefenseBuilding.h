@@ -11,6 +11,9 @@ class DefenseBuilding : public Building {
   static DefenseBuilding* create(int level, const std::string& buildingName);
   bool init(int level, const std::string& buildingName);
 
+  // 重写升级方法
+  virtual void upgrade() override;
+
   CC_SYNTHESIZE(float, _attackRange, AttackRange);
   CC_SYNTHESIZE(int, _damage, Damage);
   CC_SYNTHESIZE(float, _attackSpeed, AttackSpeed);

@@ -2,11 +2,15 @@
 #define __RESOURCE_BUILDING_H__
 
 #include "Building.h"
+#include <chrono>
 
 class ResourceBuilding : public Building {
  public:
   static ResourceBuilding* create(int level, const std::string& buildingName);
   bool init(int level, const std::string& buildingName);
+
+  // 重写升级方法
+  virtual void upgrade() override;
 
   CC_SYNTHESIZE(int, _productionRate, ProductionRate);
   CC_SYNTHESIZE(int, _capacity, Capacity);
@@ -20,6 +24,13 @@ class ResourceBuilding : public Building {
 
   // 每帧更新生产
   virtual void update(float dt) override;
+
+  // 计算离线产出
+  // 参数: lastTimestamp (上次存档/退出的时间戳，秒), savedStoredAmount (上次存档时已有的资源量)
+  void updateOfflineProduction(long long lastTimestamp, float savedStoredAmount);
+
+  // 获取当前时间戳（秒），用于保存存档时调用
+  static long long getCurrentTimestamp();
 
  protected:
   ResourceBuilding();

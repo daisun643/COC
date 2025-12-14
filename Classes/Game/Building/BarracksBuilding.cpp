@@ -20,7 +20,8 @@ BarracksBuilding* BarracksBuilding::create(int level,
 }
 
 bool BarracksBuilding::init(int level, const std::string& buildingName) {
-  auto config = ConfigManager::getInstance()->getBuildingConfig(buildingName);
+  auto config =
+      ConfigManager::getInstance()->getBuildingConfig(buildingName, level);
   _buildingName = buildingName;
 
   if (!Building::init(config.image, BuildingType::BARRACKS, level,
@@ -31,8 +32,19 @@ bool BarracksBuilding::init(int level, const std::string& buildingName) {
 
   this->_queueSize = config.queueSize;
 
+  return true;
+}
+
+void BarracksBuilding::upgrade() {
+  // 1. 调用基类升级（更新等级、纹理、血量）
+  Building::upgrade();
+  // 2. 获取新等级配置
+  auto config =
+      ConfigManager::getInstance()->getBuildingConfig(_buildingName, _level);
+  // 3. 更新兵营特有属性
+  this->_queueSize = config.queueSize;
+
+  CCLOG("BarracksBuilding upgraded: QueueSize -> %d", _queueSize);
   // 设置最大生命值（当前生命值将在 BuildingManager 中设置，默认为 MaxHP）
   this->_maxHP = config.maxHP;
-
-  return true;
 }

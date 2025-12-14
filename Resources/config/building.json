@@ -1,108 +1,223 @@
 {
     "TownHall": {
         "type": "TOWN_HALL",
-        "image": "images/buildings/TownHall.png",
+        "GridSize": 3,
         "AnchorRatio": [
             0.55,
             0.30
         ],
-        "imageScale": 0.6,
-        "GridSize": 4,
-        "defaultLevel": 1,
-        "maxLevel": 10,
-        "MAXHP": 100,
-        "tips": "GridPosition表示建筑中心所在的网格坐标，GridSize表示建筑占用的菱形边长"
+        "imageScale": 0.8,
+        "maxLevel": 3,
+        "1": {
+            "image": "images/buildings/TownHall.png",
+            "health": 1500
+        },
+        "2": {
+            "image": "images/buildings/TownHall2.png",
+            "health": 2000
+        },
+        "3": {
+            "image": "images/buildings/TownHall3.png",
+            "health": 2500
+        },
+        "tips": "GridPosition表示建筑中心所在的网格坐标，GridSize表示建筑占用的菱形边长,大本营定义了其他建筑的等级上限"
     },
     "Cannon": {
         "type": "DEFENSE",
-        "image": "images/buildings/cannon.png",
         "GridSize": 3,
         "AnchorRatio": [
             0.5,
             0.5
         ],
-        "imageScale": 1.0,
-        "attackRange": 7.0,
-        "damage": 50,
-        "attackSpeed": 1.2,
-        "MAXHP": 100
+        "imageScale": 1.5,
+        "maxLevel": 3,
+        "1": {
+            "image": "images/buildings/cannon.png",
+            "attackRange": 7.0,
+            "damage": 50,
+            "attackSpeed": 1.2,
+            "health": 400
+        },
+        "2": {
+            "image": "images/buildings/cannon2.png",
+            "attackRange": 7.5,
+            "damage": 65,
+            "attackSpeed": 1.1,
+            "health": 550
+        },
+        "3": {
+            "image": "images/buildings/cannon3.png",
+            "attackRange": 8.0,
+            "damage": 85,
+            "attackSpeed": 1.0,
+            "health": 750
+        }
     },
     "ArcherTower": {
         "type": "DEFENSE",
-        "image": "images/buildings/archer_tower.png",
         "GridSize": 3,
         "AnchorRatio": [
             0.5,
             0.5
         ],
-        "imageScale": 1.0,
-        "attackRange": 10.0,
-        "damage": 35,
-        "attackSpeed": 0.8,
-        "MAXHP": 100
+        "imageScale": 1.5,
+        "maxLevel": 3,
+        "1": {
+            "image": "images/buildings/archer_tower.png",
+            "attackRange": 10.0,
+            "damage": 35,
+            "attackSpeed": 0.8,
+            "health": 380
+        },
+        "2": {
+            "image": "images/buildings/archer_tower2.png",
+            "attackRange": 10.5,
+            "damage": 45,
+            "attackSpeed": 0.8,
+            "health": 480
+        },
+        "3": {
+            "image": "images/buildings/archer_tower3.png",
+            "attackRange": 11.0,
+            "damage": 58,
+            "attackSpeed": 0.7,
+            "health": 600
+        }
     },
     "GoldMine": {
         "type": "RESOURCE",
-        "image": "images/buildings/gold_mine.png",
         "GridSize": 3,
         "AnchorRatio": [
             0.5,
             0.5
         ],
-        "imageScale": 1.0,
-        "productionRate": 200,
-        "capacity": 500,
+        "imageScale": 1.5,
         "resourceType": "Gold",
-        "MAXHP": 100
+        "maxLevel": 3,
+        "1": {
+            "image": "images/buildings/gold_mine.png",
+            "productionRate": 200,
+            "capacity": 500,
+            "health": 300
+        },
+        "2": {
+            "image": "images/buildings/gold_mine2.png",
+            "productionRate": 400,
+            "capacity": 1000,
+            "health": 450
+        },
+        "3": {
+            "image": "images/buildings/gold_mine3.png",
+            "productionRate": 600,
+            "capacity": 2000,
+            "health": 650
+        }
     },
     "ElixirPump": {
         "type": "RESOURCE",
-        "image": "images/buildings/elixir_pump.png",
-        "GridSize": 3,
+        "GridSize": 4,
         "AnchorRatio": [
             0.5,
             0.5
         ],
         "imageScale": 1.0,
-        "productionRate": 200,
-        "capacity": 500,
         "resourceType": "Elixir",
-        "MAXHP": 100
+        "maxLevel": 3,
+        "1": {
+            "image": "images/buildings/elixir_pump.png",
+            "productionRate": 200,
+            "capacity": 500,
+            "health": 300
+        },
+        "2": {
+            "image": "images/buildings/elixir_pump2.png",
+            "productionRate": 400,
+            "capacity": 1000,
+            "health": 450
+        },
+        "3": {
+            "image": "images/buildings/elixir_pump3.png",
+            "productionRate": 600,
+            "capacity": 2000,
+            "health": 650
+        }
     },
     "GoldStorage": {
         "type": "STORAGE",
-        "image": "images/buildings/gold_storage.png",
+        "GridSize": 4,
+        "AnchorRatio": [
+            0.5,
+            0.5
+        ],
+        "imageScale": 0.8,
+        "resourceType": "Gold",
+        "maxLevel": 3,
+        "1": {
+            "image": "images/buildings/gold_storage.png",
+            "capacity": 10000,
+            "health": 800
+        },
+        "2": {
+            "image": "images/buildings/gold_storage2.png",
+            "capacity": 25000,
+            "health": 1200
+        },
+        "3": {
+            "image": "images/buildings/gold_storage3.png",
+            "capacity": 50000,
+            "health": 1800
+        }
+    },
+    "ElixirBottle": {
+        "type": "STORAGE",
         "GridSize": 3,
         "AnchorRatio": [
             0.5,
             0.5
         ],
         "imageScale": 1.0,
-        "capacity": 10000,
-        "resourceType": "Gold",
-        "MAXHP": 100
+        "resourceType": "Elixir",
+        "maxLevel": 3,
+        "1": {
+            "image": "images/buildings/elixir_bottle.png",
+            "capacity": 10000,
+            "health": 800
+        },
+        "2": {
+            "image": "images/buildings/elixir_bottle2.png",
+            "capacity": 25000,
+            "health": 1200
+        },
+        "3": {
+            "image": "images/buildings/elixir_bottle3.png",
+            "capacity": 50000,
+            "health": 1800
+        }
     },
     "Barracks": {
         "type": "BARRACKS",
-        "image": "images/buildings/barracks.png",
-        "GridSize": 3,
+        "MAXHP": 100,
+        "GridSize": 4,
         "AnchorRatio": [
             0.5,
             0.5
         ],
         "imageScale": 1.0,
-        "queueSize": 20,
-        "MAXHP": 100
-    },
-    "Wall": {
-        "type": "WALL",
-        "image": "images/buildings/wall/1.png",
-        "GridSize": 1,
-        "AnchorRatio": [
-            0.5,
-            0.45
-        ],
-        "imageScale": 0.6,
-        "MAXHP": 100
+        "maxLevel": 3,
+        "1": {
+            "image": "images/buildings/barracks.png",
+            "queueSize": 20,
+            "health": 400
+        },
+        "2": {
+            "image": "images/buildings/barracks2.png",
+            "queueSize": 30,
+            "health": 550
+        },
+        "3": {
+            "image": "images/buildings/barracks3.png",
+            "queueSize": 40,
+            "health": 750
+        }
     }
 }

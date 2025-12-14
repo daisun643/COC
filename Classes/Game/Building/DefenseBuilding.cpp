@@ -30,7 +30,7 @@ DefenseBuilding* DefenseBuilding::create(int level,
 
 bool DefenseBuilding::init(int level, const std::string& buildingName) {
   // 获取配置
-  auto config = ConfigManager::getInstance()->getBuildingConfig(buildingName);
+  auto config = ConfigManager::getInstance()->getBuildingConfig(buildingName, level);
   _buildingName = buildingName;
 
   // 调用基类初始化通用外观
@@ -140,4 +140,18 @@ bool DefenseBuilding::attackSoldiers(const std::vector<BasicSoldier*>& soldiers,
                                      float delta) {
   std::vector<SoldierCategory> categories = {targetCategory};
   return attackSoldiers(soldiers, categories, delta);
+}
+
+void DefenseBuilding::upgrade() {
+  // 调用基类升级（处理等级+1，纹理更新，血量更新）
+  Building::upgrade();
+  
+  // 获取新等级的配置来更新防御属性
+  auto config = ConfigManager::getInstance()->getBuildingConfig(_buildingName, _level);
+  
+  this->_attackRange = config.attackRange;
+  this->_damage = config.damage;
+  this->_attackSpeed = config.attackSpeed;
+  
+  CCLOG("DefenseBuilding upgraded: Damage -> %d", _damage);
 }

@@ -8,6 +8,9 @@ class StorageBuilding : public Building {
   static StorageBuilding* create(int level, const std::string& buildingName);
   bool init(int level, const std::string& buildingName);
 
+  // 重写升级方法
+  virtual void upgrade() override;
+
   CC_SYNTHESIZE(int, _capacity, Capacity);
   CC_SYNTHESIZE(std::string, _resourceType, ResourceType);
 

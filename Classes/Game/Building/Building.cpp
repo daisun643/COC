@@ -7,7 +7,7 @@
 Building::Building()
     : _buildingType(BuildingType::TOWN_HALL),
       _level(1),
-      _maxLevel(10),
+      _maxLevel(3),
       _infoLabel(nullptr),
       _buildingName("Building"),
       _centerX(0.0f),
@@ -295,6 +295,70 @@ bool Building::inDiamond(const Vec2& pos) const {
   float manhattanDist = std::abs(dx) + std::abs(dy);
 
   return manhattanDist <= _gridCount;
+}
+
+// 建筑升级：包含重新设置纹理和刷新血量
+void Building::upgrade() {
+  if (_level >= _maxLevel) {
+    CCLOG("Building %s reached max level %d", _buildingName.c_str(), _maxLevel);
+    return;
+  }
+
+  _level++;
+
+  // 使用新的 ConfigManager 接口
+  auto config =
+      ConfigManager::getInstance()->getBuildingConfig(_buildingName, _level);
+
+  if (!config.image.empty()) {
+    // 使用 TextureCache 获取纹理，确保资源存在
+    auto texture = Director::getInstance()->getTextureCache()->addImage(config.image);
+    if (texture) {
+        // 切换纹理
+        this->setTexture(texture);
+        // 设置纹理矩形（这对 Sprite 显示完整图片很重要）
+        this->setTextureRect(Rect(0, 0, texture->getContentSize().width, texture->getContentSize().height));
+        // [修改 2] 显式更新 ContentSize，因为新等级图片大小可能不同
+        this->setContentSize(texture->getContentSize());
+    } else {
+        CCLOG("Failed to load image for upgrade: %s", config.image.c_str());
+    }
+  }
+
+  // 由于 ContentSize 可能改变，需要刷新依赖尺寸的子节点位置
+
+  // 1. 刷新信息标签位置
+  if (_infoLabel) {
+    _infoLabel->setPosition(Vec2(this->getContentSize().width / 2,
+                                 this->getContentSize().height + 20));
+  }
+
+  // 2. 刷新选中光晕（Glow），因为光晕中心依赖于 ContentSize 和 anchor
+  updateGlowDrawing();
+
+  // 3. 刷新调试锚点显示
+  if (_anchorNode) {
+      _anchorNode->clear();
+      float width = this->getContentSize().width;
+      float height = this->getContentSize().height;
+      _anchorNode->drawDot(Vec2(_anchorRatioX * width, _anchorRatioY * height), 5.0f,
+                       Color4F(1.0f, 0.0f, 0.0f, 1.0f));
+  }
+  
+  // 4. 刷新错误遮罩大小
+  if (_errorLayer) {
+      _errorLayer->setContentSize(this->getContentSize());
+  }
+
+  // 更新血量
+  _maxHP = config.maxHP;
+  // 升级通常会将血量回满
+  _currentHP = _maxHP;
+
+  // 5. 刷新血条（updateHPBar 内部会使用新的 ContentSize 重新计算位置）
+  updateHPBar();
+
+  CCLOG("Upgraded %s to level %d. Image: %s", _buildingName.c_str(), _level, config.image.c_str());
 }
 
 void Building::updateHPBar() {
