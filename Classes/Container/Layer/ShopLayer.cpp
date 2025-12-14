@@ -12,11 +12,25 @@ const Color4B COLOR_TEXT_NORMAL(200, 200, 200, 255);
 const Color4B COLOR_TEXT_DESC(210, 210, 210, 255);
 const Color4B COLOR_TEXT_PRICE(255, 215, 0, 255);
 const std::string FONT_NAME = "Arial";
+const std::string CUSTOM_FONT = "fonts/NotoSansSC-VariableFont_wght.ttf";
+static bool s_fontChecked = false;
+static bool s_useCustomFont = false;
 
 Label* createLabel(const std::string& text, int fontSize,
                    const Color4B& color = Color4B::WHITE,
                    const Vec2& anchor = Vec2::ANCHOR_MIDDLE) {
-  auto label = Label::createWithSystemFont(text, FONT_NAME, fontSize);
+  if (!s_fontChecked) {
+    s_useCustomFont = FileUtils::getInstance()->isFileExist(CUSTOM_FONT);
+    s_fontChecked = true;
+  }
+
+  Label* label;
+  if (s_useCustomFont) {
+    TTFConfig ttfConfig(CUSTOM_FONT, fontSize);
+    label = Label::createWithTTF(ttfConfig, text);
+  } else {
+    label = Label::createWithSystemFont(text, FONT_NAME, fontSize);
+  }
   label->setTextColor(color);
   label->setAnchorPoint(anchor);
   return label;

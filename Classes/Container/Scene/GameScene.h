@@ -118,6 +118,7 @@ class GameScene : public BasicScene {
   cocos2d::Vec2 _placementPreviewAnchor;  // 预览锚点位置
   cocos2d::Vec2 _currentMousePos;         // 当前鼠标位置
   bool _ignoreNextMouseUp;                // 是否忽略下一次鼠标抬起事件
+  bool _autoSaveOnExit;                   // 退出场景时是否自动保存
 };
 
 #endif  // __GAME_SCENE_H__

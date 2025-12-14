@@ -132,6 +132,10 @@ bool ResourceWidget::init(Type type) {
 }
 
 void ResourceWidget::updateAmount(int amount, int maxAmount) {
+  if (_currentAmount == amount && _maxAmount == maxAmount) {
+    return;
+  }
+
   _currentAmount = amount;
   _maxAmount = maxAmount;
 

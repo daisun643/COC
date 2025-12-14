@@ -6,12 +6,12 @@
 #include "Container/Layer/ReplayLayer.h"
 #include "Container/Scene/SenceHelper.h"
 #include "Game/Building/AllBuildings.h"
-#include "Game/Building/TownHall.h"
-#include "Game/Building/ResourceBuilding.h"
-#include "Game/Building/DefenseBuilding.h"
-#include "Game/Building/StorageBuilding.h"
 #include "Game/Building/BarracksBuilding.h"
+#include "Game/Building/DefenseBuilding.h"
 #include "Game/Building/PlaceholderBuilding.h"
+#include "Game/Building/ResourceBuilding.h"
+#include "Game/Building/StorageBuilding.h"
+#include "Game/Building/TownHall.h"
 #include "Manager/Config/ConfigManager.h"
 
 Scene* GameScene::createScene(const std::string& jsonFilePath) {
@@ -112,6 +112,7 @@ bool GameScene::init(const std::string& jsonFilePath) {
   _placementPreviewAnchor = Vec2::ZERO;
   _currentMousePos = Vec2::ZERO;
   _ignoreNextMouseUp = false;
+  _autoSaveOnExit = true;
 
   // 创建放置提示标签
   _placementHintLabel = Label::createWithSystemFont("", "Arial", 20);
@@ -136,8 +137,9 @@ bool GameScene::init(const std::string& jsonFilePath) {
   _buildingMenuLayer->setOnUpgradeCallback([this](Building* b) {
     if (!b) return;
 
-    CCLOG("Upgrade clicked for building: %s, level: %d", b->getBuildingName().c_str(), b->getLevel());
-    
+    CCLOG("Upgrade clicked for building: %s, level: %d",
+          b->getBuildingName().c_str(), b->getLevel());
+
     // 调用建筑的升级方法，这将触发 Building::upgrade()
     // 从而加载新配置并切换图片
     b->upgrade();
@@ -148,11 +150,11 @@ bool GameScene::init(const std::string& jsonFilePath) {
     // 显示提示信息
     showPlacementHint("升级成功！");
     if (_placementHintLabel) {
-        _placementHintLabel->stopAllActions();
-        _placementHintLabel->setVisible(true);
-        auto delay = DelayTime::create(1.5f);
-        auto clear = CallFunc::create([this]() { showPlacementHint(""); });
-        _placementHintLabel->runAction(Sequence::create(delay, clear, nullptr));
+      _placementHintLabel->stopAllActions();
+      _placementHintLabel->setVisible(true);
+      auto delay = DelayTime::create(1.5f);
+      auto clear = CallFunc::create([this]() { showPlacementHint(""); });
+      _placementHintLabel->runAction(Sequence::create(delay, clear, nullptr));
     }
   });
   _buildingMenuLayer->setOnCollectCallback([this](Building* b) {
@@ -193,13 +195,13 @@ bool GameScene::init(const std::string& jsonFilePath) {
   // 当 PlayerManager 触发自动保存时，同时保存建筑地图
   auto playerManager = PlayerManager::getInstance();
   if (playerManager) {
-      playerManager->setAutoSaveCallback([this]() {
-          if (_buildingManager) {
-              _buildingManager->saveBuildingMap();
-              // 可选：添加日志
-              // CCLOG("GameScene: Auto-saved building map.");
-          }
-      });
+    playerManager->setAutoSaveCallback([this]() {
+      if (_buildingManager) {
+        _buildingManager->saveBuildingMap();
+        // 可选：添加日志
+        // CCLOG("GameScene: Auto-saved building map.");
+      }
+    });
   }
 
   return true;
@@ -810,12 +812,14 @@ bool GameScene::isPlacementValid(Building* building) const {
 
 GameScene::~GameScene() {
   // 退出场景时保存所有数据
-  if (_buildingManager) {
+  if (_autoSaveOnExit) {
+    if (_buildingManager) {
       _buildingManager->saveBuildingMap();
-  }
-  auto playerManager = PlayerManager::getInstance();
-  if (playerManager) {
+    }
+    auto playerManager = PlayerManager::getInstance();
+    if (playerManager) {
       playerManager->saveUserData();
+    }
   }
   // 取消放置模式（不退回资源，因为析构时资源已经不需要了）
   cancelPlacementMode(false);
@@ -863,17 +867,18 @@ void GameScene::exitMapEditMode(bool save) {
 
   if (!save) {
     // Reload scene to revert changes
+    _autoSaveOnExit = false;  // 禁止析构时保存，防止覆盖存档
     Director::getInstance()->replaceScene(GameScene::createScene());
     return;
   }
 
   // 编辑模式保存时，同时保存建筑和玩家数据
   if (_buildingManager) {
-      _buildingManager->saveBuildingMap();
+    _buildingManager->saveBuildingMap();
   }
   auto playerManager = PlayerManager::getInstance();
   if (playerManager) {
-      playerManager->saveUserData();
+    playerManager->saveUserData();
   }
 
   _isMapEditMode = false;

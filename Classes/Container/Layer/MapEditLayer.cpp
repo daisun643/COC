@@ -7,6 +7,27 @@ namespace {
 const Color3B COLOR_PANEL_BG(40, 42, 54);
 const Color3B COLOR_CARD_BG(58, 60, 72);
 const std::string FONT_NAME = "Arial";
+const std::string CUSTOM_FONT = "fonts/NotoSansSC-VariableFont_wght.ttf";
+static bool s_fontChecked = false;
+static bool s_useCustomFont = false;
+
+Label* createLabel(const std::string& text, int fontSize,
+                   const Color3B& color = Color3B::WHITE) {
+  if (!s_fontChecked) {
+    s_useCustomFont = FileUtils::getInstance()->isFileExist(CUSTOM_FONT);
+    s_fontChecked = true;
+  }
+
+  Label* label;
+  if (s_useCustomFont) {
+    TTFConfig ttfConfig(CUSTOM_FONT, fontSize);
+    label = Label::createWithTTF(ttfConfig, text);
+  } else {
+    label = Label::createWithSystemFont(text, FONT_NAME, fontSize);
+  }
+  label->setColor(color);
+  return label;
+}
 }  // namespace
 
 MapEditLayer* MapEditLayer::createWithItems(
@@ -175,15 +196,14 @@ cocos2d::ui::Layout* MapEditLayer::createInventoryCard(const ShopItem& item,
   }
 
   // Name
-  auto nameLabel = Label::createWithSystemFont(item.displayName, FONT_NAME, 14);
+  auto nameLabel = createLabel(item.displayName, 14);
   nameLabel->setPosition(Vec2(60, 30));
   layout->addChild(nameLabel);
 
   // Count
   auto countLabel =
-      Label::createWithSystemFont("x" + std::to_string(count), FONT_NAME, 16);
+      createLabel("x" + std::to_string(count), 16, Color3B::GREEN);
   countLabel->setPosition(Vec2(100, 120));
-  countLabel->setColor(Color3B::GREEN);
   layout->addChild(countLabel);
 
   return layout;

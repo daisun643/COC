@@ -3,6 +3,29 @@
 USING_NS_CC;
 using namespace cocos2d::ui;
 
+namespace {
+const std::string FONT_NAME = "Arial";
+const std::string CUSTOM_FONT = "fonts/NotoSansSC-VariableFont_wght.ttf";
+static bool s_fontChecked = false;
+static bool s_useCustomFont = false;
+
+Label* createLabel(const std::string& text, int fontSize) {
+  if (!s_fontChecked) {
+    s_useCustomFont = FileUtils::getInstance()->isFileExist(CUSTOM_FONT);
+    s_fontChecked = true;
+  }
+
+  Label* label;
+  if (s_useCustomFont) {
+    TTFConfig ttfConfig(CUSTOM_FONT, fontSize);
+    label = Label::createWithTTF(ttfConfig, text);
+  } else {
+    label = Label::createWithSystemFont(text, FONT_NAME, fontSize);
+  }
+  return label;
+}
+}  // namespace
+
 bool BuildingMenuLayer::init() {
   if (!Layer::init()) {
     return false;
@@ -37,9 +60,10 @@ void BuildingMenuLayer::showBuildingOptions(Building* building) {
   // 2. 升级按钮
   buttons.push_back(std::make_tuple("images/ui/Upgrade.png", "升级", [this]() {
     // 添加日志，确认点击事件触发
-    CCLOG("BuildingMenuLayer: Upgrade button clicked for %s", 
-          _currentBuilding ? _currentBuilding->getBuildingName().c_str() : "null");
-          
+    CCLOG("BuildingMenuLayer: Upgrade button clicked for %s",
+          _currentBuilding ? _currentBuilding->getBuildingName().c_str()
+                           : "null");
+
     if (_onUpgradeCallback && _currentBuilding) {
       // 触发回调，GameScene 应在回调中调用 building->upgrade()
       _onUpgradeCallback(_currentBuilding);
@@ -129,7 +153,7 @@ void BuildingMenuLayer::createButton(const std::string& imagePath,
   _menuContainer->addChild(button);
 
   // 标题
-  auto label = Label::createWithSystemFont(title, "Arial", 16);
+  auto label = createLabel(title, 16);
   label->setPosition(Vec2(x, y - 50.0f));
   label->enableOutline(Color4B::BLACK, 1);
   _menuContainer->addChild(label);

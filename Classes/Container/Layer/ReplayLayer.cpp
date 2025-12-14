@@ -14,10 +14,24 @@ namespace {
 const Color3B COLOR_PANEL_BG(40, 42, 54);
 const Color3B COLOR_ITEM_BG(58, 60, 72);
 const std::string FONT_NAME = "Arial";
+const std::string CUSTOM_FONT = "fonts/NotoSansSC-VariableFont_wght.ttf";
+static bool s_fontChecked = false;
+static bool s_useCustomFont = false;
 
 Label* createLabel(const std::string& text, int fontSize,
                    const Color4B& color = Color4B::WHITE) {
-  auto label = Label::createWithSystemFont(text, FONT_NAME, fontSize);
+  if (!s_fontChecked) {
+    s_useCustomFont = FileUtils::getInstance()->isFileExist(CUSTOM_FONT);
+    s_fontChecked = true;
+  }
+
+  Label* label;
+  if (s_useCustomFont) {
+    TTFConfig ttfConfig(CUSTOM_FONT, fontSize);
+    label = Label::createWithTTF(ttfConfig, text);
+  } else {
+    label = Label::createWithSystemFont(text, FONT_NAME, fontSize);
+  }
   label->setTextColor(color);
   return label;
 }

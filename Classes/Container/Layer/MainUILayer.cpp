@@ -45,69 +45,53 @@ bool MainUILayer::init() {
     return label;
   };
 
-  // 商店按钮 (右下角)
-  _shopButton = Button::create("images/ui/Shop.png");
-  _shopButton->setScale(0.3f);  // 调整大小，根据实际图片大小修改
-  _shopButton->setPosition(Vec2(origin.x + visibleSize.width - 80,
-                                origin.y + 80));  // 调整位置，留出更多边距
-  _shopButton->addClickEventListener([this](Ref* sender) {
-    if (_onShopClick) {
-      _onShopClick();
-    }
-  });
-  this->addChild(_shopButton);
+  auto createButton = [&](const std::string& img, float scale, const Vec2& pos,
+                          const std::string& labelText, const Vec2& labelPos,
+                          const std::function<void()>& callback) -> Button* {
+    auto btn = Button::create(img);
+    btn->setScale(scale);
+    btn->setPosition(pos);
+    btn->addClickEventListener([callback](Ref*) {
+      if (callback) callback();
+    });
+    this->addChild(btn);
 
-  auto shopLabel = createLabel("商店");
-  shopLabel->setPosition(
-      Vec2(origin.x + visibleSize.width - 80, origin.y + 30));
-  this->addChild(shopLabel);
+    auto label = createLabel(labelText);
+    label->setPosition(labelPos);
+    this->addChild(label);
+
+    return btn;
+  };
+
+  // 商店按钮 (右下角)
+  _shopButton = createButton(
+      "images/ui/Shop.png", 0.3f,
+      Vec2(origin.x + visibleSize.width - 80, origin.y + 80), "商店",
+      Vec2(origin.x + visibleSize.width - 80, origin.y + 30), [this]() {
+        if (_onShopClick) _onShopClick();
+      });
 
   // 进攻按钮 (左下角)
-  _attackButton = Button::create("images/ui/Attack.png");
-  _attackButton->setScale(0.8f);                                   // 调整大小
-  _attackButton->setPosition(Vec2(origin.x + 80, origin.y + 80));  // 调整位置
-  _attackButton->addClickEventListener([this](Ref* sender) {
-    if (_onAttackClick) {
-      _onAttackClick();
-    }
-  });
-  this->addChild(_attackButton);
-
-  auto attackLabel = createLabel("进攻");
-  attackLabel->setPosition(Vec2(origin.x + 80, origin.y + 30));
-  this->addChild(attackLabel);
+  _attackButton = createButton("images/ui/Attack.png", 0.8f,
+                               Vec2(origin.x + 80, origin.y + 80), "进攻",
+                               Vec2(origin.x + 80, origin.y + 30), [this]() {
+                                 if (_onAttackClick) _onAttackClick();
+                               });
 
   // 回放按钮 (进攻按钮上方)
-  _replayButton = Button::create("images/ui/record.png");
-  _replayButton->setScale(0.8f);
-  _replayButton->setPosition(Vec2(origin.x + 80, origin.y + 210));
-  _replayButton->addClickEventListener([this](Ref* sender) {
-    if (_onReplayClick) {
-      _onReplayClick();
-    }
-  });
-  this->addChild(_replayButton);
-
-  auto replayLabel = createLabel("回放");
-  replayLabel->setPosition(Vec2(origin.x + 80, origin.y + 180));
-  this->addChild(replayLabel);
+  _replayButton = createButton("images/ui/record.png", 0.8f,
+                               Vec2(origin.x + 80, origin.y + 210), "回放",
+                               Vec2(origin.x + 80, origin.y + 180), [this]() {
+                                 if (_onReplayClick) _onReplayClick();
+                               });
 
   // 地图编辑按钮 (商店按钮上方)
-  _mapEditButton = Button::create("images/ui/map.png");
-  _mapEditButton->setScale(0.8f);
-  _mapEditButton->setPosition(
-      Vec2(origin.x + visibleSize.width - 80, origin.y + 210));
-  _mapEditButton->addClickEventListener([this](Ref* sender) {
-    if (_onMapEditClick) {
-      _onMapEditClick();
-    }
-  });
-  this->addChild(_mapEditButton);
-
-  auto mapEditLabel = createLabel("地图编辑");
-  mapEditLabel->setPosition(
-      Vec2(origin.x + visibleSize.width - 80, origin.y + 180));
-  this->addChild(mapEditLabel);
+  _mapEditButton = createButton(
+      "images/ui/map.png", 0.8f,
+      Vec2(origin.x + visibleSize.width - 80, origin.y + 210), "地图编辑",
+      Vec2(origin.x + visibleSize.width - 80, origin.y + 180), [this]() {
+        if (_onMapEditClick) _onMapEditClick();
+      });
 
   // 开启 update 用于实时刷新资源
   this->scheduleUpdate();
