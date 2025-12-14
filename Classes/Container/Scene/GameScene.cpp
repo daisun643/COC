@@ -796,6 +796,14 @@ bool GameScene::isPlacementValid(Building* building) const {
 }
 
 GameScene::~GameScene() {
+  // 退出场景时保存所有数据
+  if (_buildingManager) {
+      _buildingManager->saveBuildingMap();
+  }
+  auto playerManager = PlayerManager::getInstance();
+  if (playerManager) {
+      playerManager->saveUserData();
+  }
   // 取消放置模式（不退回资源，因为析构时资源已经不需要了）
   cancelPlacementMode(false);
   // 注意：父类 BasicScene 的析构函数会自动调用，不需要显式调用
@@ -844,6 +852,15 @@ void GameScene::exitMapEditMode(bool save) {
     // Reload scene to revert changes
     Director::getInstance()->replaceScene(GameScene::createScene());
     return;
+  }
+
+  // 编辑模式保存时，同时保存建筑和玩家数据
+  if (_buildingManager) {
+      _buildingManager->saveBuildingMap();
+  }
+  auto playerManager = PlayerManager::getInstance();
+  if (playerManager) {
+      playerManager->saveUserData();
   }
 
   _isMapEditMode = false;

@@ -32,6 +32,10 @@ class PlayerManager {
   bool consumeGold(int amount);
   bool consumeElixir(int amount);
 
+  // 新增保存和加载方法
+  void saveUserData();
+  bool loadUserData();
+
  private:
   PlayerManager();
   ~PlayerManager();

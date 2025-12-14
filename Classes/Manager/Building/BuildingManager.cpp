@@ -16,6 +16,8 @@
 #include "Manager/PlayerManager.h"
 #include "Utils/GridUtils.h"
 #include "json/document.h"
+#include "json/stringbuffer.h" 
+#include "json/writer.h"       
 
 BuildingManager::BuildingManager(const std::string& jsonFilePath,
                                  const Vec2& p00)
@@ -51,39 +53,40 @@ bool BuildingManager::init() {
 bool BuildingManager::loadBuildingMap() {
   rapidjson::Document doc;
 
-  // 使用构造函数传入的JSON文件路径
-  FileUtils* fileUtils = FileUtils::getInstance();
-  std::string fullPath = fileUtils->fullPathForFilename(_jsonFilePath);
+  // 优先从 WritablePath (存档) 加载
+  std::string writablePath = FileUtils::getInstance()->getWritablePath() + "map.json";
+  std::string content;
+  bool isSaveFile = false;
 
-  if (fullPath.empty()) {
-    CCLOG("Config file not found: %s", _jsonFilePath.c_str());
-    return false;
+  if (FileUtils::getInstance()->isFileExist(writablePath)) {
+      content = FileUtils::getInstance()->getStringFromFile(writablePath);
+      CCLOG("BuildingManager: Loading map from save file: %s", writablePath.c_str());
+      isSaveFile = true;
+  } else {
+      // 如果没有存档，从 Resources 加载默认配置
+      std::string fullPath = FileUtils::getInstance()->fullPathForFilename(_jsonFilePath);
+      if (fullPath.empty()) {
+        CCLOG("Config file not found: %s", _jsonFilePath.c_str());
+        return false;
+      }
+      content = FileUtils::getInstance()->getStringFromFile(fullPath);
+      CCLOG("BuildingManager: Loading map from default config: %s", fullPath.c_str());
   }
 
-  // 读取文件内容
-  std::string content = fileUtils->getStringFromFile(fullPath);
   if (content.empty()) {
-    CCLOG("Config file is empty: %s", _jsonFilePath.c_str());
     return false;
   }
 
-  // 解析JSON
   doc.Parse(content.c_str());
   if (doc.HasParseError()) {
-    CCLOG("JSON parse error in file %s at offset %u (error code: %d)",
-          _jsonFilePath.c_str(), (unsigned)doc.GetErrorOffset(),
-          (int)doc.GetParseError());
+    CCLOG("JSON parse error");
     return false;
   }
 
-  // 遍历 JSON 中的所有键 (TownHall, Cannon, etc.)
   for (auto& m : doc.GetObject()) {
     std::string buildingName = m.name.GetString();
-
-    // 跳过可能的非建筑字段 (如 tips)
     if (buildingName == "tips") continue;
 
-    // 对应的值必须是一个数组，包含多个坐标对象
     if (m.value.IsArray()) {
       const rapidjson::Value& array = m.value;
       for (rapidjson::SizeType i = 0; i < array.Size(); ++i) {
@@ -92,14 +95,34 @@ bool BuildingManager::loadBuildingMap() {
           float row = item["row"].GetFloat();
           float col = item["col"].GetFloat();
           int level = item.HasMember("level") ? item["level"].GetInt() : 1;
-          float hp = item.HasMember("HP")
-                         ? item["HP"].GetFloat()
-                         : -1.0f;  // -1 表示使用默认值（MaxHP）
+          float hp = item.HasMember("HP") ? item["HP"].GetFloat() : -1.0f;
 
-          // 调用工厂方法创建建筑
+          // 读取存档中的 storedResource 和 lastTimestamp
+          float storedResource = 0.0f;
+          long long lastTimestamp = 0;
+          if (item.HasMember("storedResource")) {
+              storedResource = item["storedResource"].GetFloat();
+          }
+          if (item.HasMember("lastTimestamp")) {
+              lastTimestamp = item["lastTimestamp"].GetInt64();
+          }
+
           Building* building =
               createBuilding(buildingName, row, col, level, hp);
           if (building) {
+            // 如果是资源建筑，设置暂存量并计算离线产出
+            auto resBuilding = dynamic_cast<ResourceBuilding*>(building);
+            if (resBuilding) {
+                // 如果是从存档加载，计算离线产出
+                if (isSaveFile && lastTimestamp > 0) {
+                     // updateOfflineProduction 会设置 storedResource 并加上离线产出
+                    resBuilding->updateOfflineProduction(lastTimestamp, storedResource);
+                } else {
+                    // 如果是初始配置或没有存档，重置为0 (ResourceBuilding 构造函数已做，但这里确保一下)
+                    // 注意：初始配置没有 lastTimestamp，逻辑会自动跳过计算
+                }
+            }
+
             registerBuilding(building);
           }
         }
@@ -108,6 +131,64 @@ bool BuildingManager::loadBuildingMap() {
   }
 
   return true;
+}
+
+// 实现保存地图功能
+void BuildingManager::saveBuildingMap() {
+    rapidjson::Document doc;
+    doc.SetObject();
+    rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+
+    // 将建筑按名称分组
+    std::map<std::string, rapidjson::Value> buildingMap;
+
+    for (auto building : _buildings) {
+        if (!building) continue;
+
+        std::string name = building->getBuildingName();
+        if (buildingMap.find(name) == buildingMap.end()) {
+            rapidjson::Value arr(rapidjson::kArrayType);
+            buildingMap[name] = arr;
+        }
+
+        rapidjson::Value obj(rapidjson::kObjectType);
+        obj.AddMember("row", building->getRow(), allocator);
+        obj.AddMember("col", building->getCol(), allocator);
+        obj.AddMember("level", building->getLevel(), allocator);
+        obj.AddMember("HP", building->getCurrentHP(), allocator);
+
+        // 保存资源建筑的状态
+        auto resBuilding = dynamic_cast<ResourceBuilding*>(building);
+        if (resBuilding) {
+            // 保存当前未收集的资源
+            obj.AddMember("storedResource", resBuilding->getStoredResource(), allocator);
+            // 保存当前时间戳
+            obj.AddMember("lastTimestamp", ResourceBuilding::getCurrentTimestamp(), allocator);
+        }
+
+        buildingMap[name].PushBack(obj, allocator);
+    }
+
+    for (auto& pair : buildingMap) {
+        rapidjson::Value k(pair.first.c_str(), allocator);
+        doc.AddMember(k, pair.second, allocator);
+    }
+
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    doc.Accept(writer);
+
+    // 保存到 WritablePath 下的 map.json
+    std::string path = FileUtils::getInstance()->getWritablePath() + "map.json";
+    
+    std::ofstream outFile(path.c_str());
+    if (outFile.is_open()) {
+        outFile << buffer.GetString();
+        outFile.close();
+        CCLOG("BuildingManager: Map saved to %s", path.c_str());
+    } else {
+        CCLOG("BuildingManager: Failed to save map.");
+    }
 }
 
 Building* BuildingManager::createBuilding(const std::string& buildingName,
@@ -282,14 +363,6 @@ void BuildingManager::updatePlayerResourcesStats() {
   playerManager->setMaxElixir(maxElixir);
   playerManager->setGoldProduction(goldProd);
   playerManager->setElixirProduction(elixirProd);
-
-  // 确保当前资源不超过新上限
-  if (playerManager->getGold() > maxGold) {
-    playerManager->setGold(maxGold);
-  }
-  if (playerManager->getElixir() > maxElixir) {
-    playerManager->setElixir(maxElixir);
-  }
 }
 
 void BuildingManager::removeBuilding(Building* building) {

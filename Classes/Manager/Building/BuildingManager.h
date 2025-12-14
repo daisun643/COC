@@ -70,6 +70,11 @@ class BuildingManager {
   void updatePlayerResourcesStats();
 
   /**
+   * 保存当前建筑状态（位置、等级、HP、资源产出状态）到JSON文件
+   */
+  void saveBuildingMap();
+
+  /**
    * 析构函数
    */
   ~BuildingManager();

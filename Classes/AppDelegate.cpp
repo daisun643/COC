@@ -4,6 +4,7 @@
 #include "Container/Scene/GameScene.h"
 #include "Container/Scene/Record/RecordScene.h"
 #include "Manager/Config/ConfigManager.h"
+#include "Manager/PlayerManager.h"
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
 #include <windows.h>
@@ -96,6 +97,12 @@ bool AppDelegate::applicationDidFinishLaunching() {
 
 void AppDelegate::applicationDidEnterBackground() {
   Director::getInstance()->stopAnimation();
+  // 这是移动设备上保存进度的标准时机
+  auto playerManager = PlayerManager::getInstance();
+  if (playerManager) {
+      playerManager->saveUserData();
+      CCLOG("AppDelegate: Application entered background, data saved.");
+  }
 }
 
 void AppDelegate::applicationWillEnterForeground() {
