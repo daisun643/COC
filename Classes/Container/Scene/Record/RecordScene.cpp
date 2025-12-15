@@ -167,17 +167,67 @@ bool RecordScene::loadRecordFile(const std::string& filePath) {
   return true;
 }
 
+// 辅助函数：创建橙色圆角背景
+static DrawNode* createOrangeRoundedBackground(const Size& size, float radius = 8.0f) {
+  auto drawNode = DrawNode::create();
+  // 橙色背景 (255, 165, 0)
+  Color4F orangeColor(255.0f/255.0f, 165.0f/255.0f, 0.0f/255.0f, 1.0f);
+  
+  float width = size.width;
+  float height = size.height;
+  
+  // 绘制圆角矩形（通过绘制多个部分来模拟圆角）
+  // 绘制中心矩形
+  drawNode->drawSolidRect(
+    Vec2(radius, radius),
+    Vec2(width - radius, height - radius),
+    orangeColor);
+  
+  // 绘制四个圆角
+  drawNode->drawSolidCircle(Vec2(radius, radius), radius, 0, 20, orangeColor);
+  drawNode->drawSolidCircle(Vec2(width - radius, radius), radius, 0, 20, orangeColor);
+  drawNode->drawSolidCircle(Vec2(radius, height - radius), radius, 0, 20, orangeColor);
+  drawNode->drawSolidCircle(Vec2(width - radius, height - radius), radius, 0, 20, orangeColor);
+  
+  // 绘制连接圆角的矩形
+  drawNode->drawSolidRect(
+    Vec2(radius, 0),
+    Vec2(width - radius, height),
+    orangeColor);
+  drawNode->drawSolidRect(
+    Vec2(0, radius),
+    Vec2(width, height - radius),
+    orangeColor);
+  
+  return drawNode;
+}
+
 void RecordScene::createPlaybackButtons() {
   auto visibleSize = Director::getInstance()->getVisibleSize();
   Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
-  // 创建播放按钮（左上角）
+  // 按钮尺寸和间距
+  const float buttonWidth = 100.0f;
+  const float buttonHeight = 40.0f;
+  const float buttonSpacing = 10.0f;
+  const float margin = 20.0f;
+  const float radius = 8.0f;
+
+  // 创建播放按钮（左上角，水平排列）
+  Vec2 playButtonPos(origin.x + margin + buttonWidth/2,
+                     origin.y + visibleSize.height - margin - buttonHeight/2);
+  
+  // 创建橙色圆角背景
+  auto playBgDrawNode = createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
+  playBgDrawNode->setPosition(Vec2(playButtonPos.x - buttonWidth/2, playButtonPos.y - buttonHeight/2));
+  this->addChild(playBgDrawNode, 199);
+  
   _playButton = ui::Button::create();
   _playButton->setTitleText("播放");
   _playButton->setTitleFontSize(20);
-  _playButton->setContentSize(Size(100, 40));
-  _playButton->setPosition(
-      Vec2(origin.x + 60, origin.y + visibleSize.height - 50));
+  _playButton->setTitleColor(Color3B::WHITE);
+  _playButton->setContentSize(Size(buttonWidth, buttonHeight));
+  _playButton->setPosition(playButtonPos);
   _playButton->addClickEventListener([this](Ref* sender) {
     if (!_isPlaying) {
       this->startPlayback();
@@ -185,13 +235,21 @@ void RecordScene::createPlaybackButtons() {
   });
   this->addChild(_playButton, 200);
 
-  // 创建暂停按钮
+  // 创建暂停按钮（在播放按钮右侧）
+  Vec2 pauseButtonPos(origin.x + margin + buttonWidth/2 + buttonWidth + buttonSpacing,
+                      origin.y + visibleSize.height - margin - buttonHeight/2);
+  
+  // 创建橙色圆角背景
+  auto pauseBgDrawNode = createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
+  pauseBgDrawNode->setPosition(Vec2(pauseButtonPos.x - buttonWidth/2, pauseButtonPos.y - buttonHeight/2));
+  this->addChild(pauseBgDrawNode, 199);
+  
   _pauseButton = ui::Button::create();
   _pauseButton->setTitleText("暂停");
   _pauseButton->setTitleFontSize(20);
-  _pauseButton->setContentSize(Size(100, 40));
-  _pauseButton->setPosition(
-      Vec2(origin.x + 170, origin.y + visibleSize.height - 50));
+  _pauseButton->setTitleColor(Color3B::WHITE);
+  _pauseButton->setContentSize(Size(buttonWidth, buttonHeight));
+  _pauseButton->setPosition(pauseButtonPos);
   _pauseButton->setEnabled(false);
   _pauseButton->setBright(false);
   _pauseButton->addClickEventListener([this](Ref* sender) {
@@ -211,24 +269,33 @@ void RecordScene::createPlaybackButtons() {
   });
   this->addChild(_pauseButton, 200);
 
-  // 创建停止按钮
+  // 创建停止按钮（在暂停按钮右侧）
+  Vec2 stopButtonPos(origin.x + margin + buttonWidth/2 + (buttonWidth + buttonSpacing) * 2,
+                     origin.y + visibleSize.height - margin - buttonHeight/2);
+  
+  // 创建橙色圆角背景
+  auto stopBgDrawNode = createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
+  stopBgDrawNode->setPosition(Vec2(stopButtonPos.x - buttonWidth/2, stopButtonPos.y - buttonHeight/2));
+  this->addChild(stopBgDrawNode, 199);
+  
   _stopButton = ui::Button::create();
   _stopButton->setTitleText("停止");
   _stopButton->setTitleFontSize(20);
-  _stopButton->setContentSize(Size(100, 40));
-  _stopButton->setPosition(
-      Vec2(origin.x + 280, origin.y + visibleSize.height - 50));
+  _stopButton->setTitleColor(Color3B::WHITE);
+  _stopButton->setContentSize(Size(buttonWidth, buttonHeight));
+  _stopButton->setPosition(stopButtonPos);
   _stopButton->setEnabled(false);
   _stopButton->setBright(false);
   _stopButton->addClickEventListener(
       [this](Ref* sender) { this->stopPlayback(); });
   this->addChild(_stopButton, 200);
 
-  // 创建时间标签
+  // 创建时间标签（在停止按钮右侧）
   _timeLabel = Label::createWithSystemFont("00:00 / 00:00", "Arial", 20);
   _timeLabel->setColor(Color3B::WHITE);
   _timeLabel->setPosition(
-      Vec2(origin.x + 400, origin.y + visibleSize.height - 50));
+      Vec2(origin.x + margin + buttonWidth/2 + (buttonWidth + buttonSpacing) * 3 + 50,
+           origin.y + visibleSize.height - margin - buttonHeight/2));
   this->addChild(_timeLabel, 200);
 
   // 更新时间显示
@@ -622,14 +689,27 @@ void RecordScene::createExitButton() {
   auto visibleSize = Director::getInstance()->getVisibleSize();
   Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
-  // 创建退出按钮（左上角）
+  // 创建退出按钮（右上角）
   if (!_exitButton) {
+    const float buttonWidth = 120.0f;
+    const float buttonHeight = 40.0f;
+    const float margin = 20.0f;
+    const float radius = 8.0f;
+    
+    Vec2 buttonPos(origin.x + visibleSize.width - margin - buttonWidth/2,
+                   origin.y + visibleSize.height - margin - buttonHeight/2);
+    
+    // 创建橙色圆角背景
+    auto bgDrawNode = createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
+    bgDrawNode->setPosition(Vec2(buttonPos.x - buttonWidth/2, buttonPos.y - buttonHeight/2));
+    this->addChild(bgDrawNode, 199);
+    
     _exitButton = ui::Button::create();
     _exitButton->setTitleText("退出");
     _exitButton->setTitleFontSize(20);
-    _exitButton->setContentSize(Size(120, 40));
-    _exitButton->setPosition(
-        Vec2(origin.x + 100, origin.y + visibleSize.height - 50));
+    _exitButton->setTitleColor(Color3B::WHITE);
+    _exitButton->setContentSize(Size(buttonWidth, buttonHeight));
+    _exitButton->setPosition(buttonPos);
     _exitButton->addClickEventListener(
         [this](Ref* sender) { this->exitScene(); });
     this->addChild(_exitButton, 200);

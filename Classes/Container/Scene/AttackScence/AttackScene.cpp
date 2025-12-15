@@ -817,6 +817,41 @@ void AttackScene::onMouseUp(Event* event) {
   }
 }
 
+// 辅助函数：创建橙色圆角背景
+static DrawNode* createOrangeRoundedBackground(const Size& size, float radius = 8.0f) {
+  auto drawNode = DrawNode::create();
+  // 橙色背景 (255, 165, 0)
+  Color4F orangeColor(255.0f/255.0f, 165.0f/255.0f, 0.0f/255.0f, 1.0f);
+  
+  float width = size.width;
+  float height = size.height;
+  
+  // 绘制圆角矩形（通过绘制多个部分来模拟圆角）
+  // 绘制中心矩形
+  drawNode->drawSolidRect(
+    Vec2(radius, radius),
+    Vec2(width - radius, height - radius),
+    orangeColor);
+  
+  // 绘制四个圆角
+  drawNode->drawSolidCircle(Vec2(radius, radius), radius, 0, 20, orangeColor);
+  drawNode->drawSolidCircle(Vec2(width - radius, radius), radius, 0, 20, orangeColor);
+  drawNode->drawSolidCircle(Vec2(radius, height - radius), radius, 0, 20, orangeColor);
+  drawNode->drawSolidCircle(Vec2(width - radius, height - radius), radius, 0, 20, orangeColor);
+  
+  // 绘制连接圆角的矩形
+  drawNode->drawSolidRect(
+    Vec2(radius, 0),
+    Vec2(width - radius, height),
+    orangeColor);
+  drawNode->drawSolidRect(
+    Vec2(0, radius),
+    Vec2(width, height - radius),
+    orangeColor);
+  
+  return drawNode;
+}
+
 void AttackScene::createAttackButtons() {
   // 如果按钮已存在，不重复创建
   if (_startAttackButton && _endAttackButton && _countdownLabel) {
@@ -826,27 +861,50 @@ void AttackScene::createAttackButtons() {
   auto visibleSize = Director::getInstance()->getVisibleSize();
   Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
-  // 创建开始进攻按钮（右上角）
+  // 按钮尺寸和间距
+  const float buttonWidth = 120.0f;
+  const float buttonHeight = 40.0f;
+  const float buttonSpacing = 10.0f;
+  const float margin = 20.0f;
+  const float radius = 8.0f;
+
+  // 创建开始进攻按钮（右上角，垂直排列）
   if (!_startAttackButton) {
+    Vec2 buttonPos(origin.x + visibleSize.width - margin - buttonWidth/2,
+                   origin.y + visibleSize.height - margin - buttonHeight/2);
+    
+    // 创建橙色圆角背景
+    auto bgDrawNode = createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
+    bgDrawNode->setPosition(Vec2(buttonPos.x - buttonWidth/2, buttonPos.y - buttonHeight/2));
+    this->addChild(bgDrawNode, 199);
+    
     _startAttackButton = ui::Button::create();
     _startAttackButton->setTitleText("开始进攻");
     _startAttackButton->setTitleFontSize(20);
-    _startAttackButton->setContentSize(Size(120, 40));
-    _startAttackButton->setPosition(Vec2(origin.x + visibleSize.width - 100,
-                                         origin.y + visibleSize.height - 50));
+    _startAttackButton->setTitleColor(Color3B::WHITE);
+    _startAttackButton->setContentSize(Size(buttonWidth, buttonHeight));
+    _startAttackButton->setPosition(buttonPos);
     _startAttackButton->addClickEventListener(
         [this](Ref* sender) { this->startAttack(); });
     this->addChild(_startAttackButton, 200);
   }
 
-  // 创建结束进攻按钮（右上角，在开始按钮下方）
+  // 创建结束进攻按钮（在开始按钮下方）
   if (!_endAttackButton) {
+    Vec2 buttonPos(origin.x + visibleSize.width - margin - buttonWidth/2,
+                   origin.y + visibleSize.height - margin - buttonHeight/2 - buttonHeight - buttonSpacing);
+    
+    // 创建橙色圆角背景
+    auto bgDrawNode = createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
+    bgDrawNode->setPosition(Vec2(buttonPos.x - buttonWidth/2, buttonPos.y - buttonHeight/2));
+    this->addChild(bgDrawNode, 199);
+    
     _endAttackButton = ui::Button::create();
     _endAttackButton->setTitleText("结束进攻");
     _endAttackButton->setTitleFontSize(20);
-    _endAttackButton->setContentSize(Size(120, 40));
-    _endAttackButton->setPosition(Vec2(origin.x + visibleSize.width - 100,
-                                       origin.y + visibleSize.height - 100));
+    _endAttackButton->setTitleColor(Color3B::WHITE);
+    _endAttackButton->setContentSize(Size(buttonWidth, buttonHeight));
+    _endAttackButton->setPosition(buttonPos);
     _endAttackButton->setEnabled(false);
     _endAttackButton->setBright(false);
     _endAttackButton->addClickEventListener(
@@ -856,12 +914,20 @@ void AttackScene::createAttackButtons() {
 
   // 创建退出按钮（左上角）
   if (!_exitButton) {
+    Vec2 buttonPos(origin.x + margin + buttonWidth/2,
+                   origin.y + visibleSize.height - margin - buttonHeight/2);
+    
+    // 创建橙色圆角背景
+    auto bgDrawNode = createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
+    bgDrawNode->setPosition(Vec2(buttonPos.x - buttonWidth/2, buttonPos.y - buttonHeight/2));
+    this->addChild(bgDrawNode, 199);
+    
     _exitButton = ui::Button::create();
     _exitButton->setTitleText("退出");
     _exitButton->setTitleFontSize(20);
-    _exitButton->setContentSize(Size(120, 40));
-    _exitButton->setPosition(
-        Vec2(origin.x + 100, origin.y + visibleSize.height - 50));
+    _exitButton->setTitleColor(Color3B::WHITE);
+    _exitButton->setContentSize(Size(buttonWidth, buttonHeight));
+    _exitButton->setPosition(buttonPos);
     _exitButton->addClickEventListener(
         [this](Ref* sender) { this->exitScene(); });
     this->addChild(_exitButton, 200);
@@ -871,8 +937,8 @@ void AttackScene::createAttackButtons() {
   if (!_countdownLabel) {
     _countdownLabel = Label::createWithSystemFont("", "Arial", 24);
     _countdownLabel->setColor(Color3B::YELLOW);
-    _countdownLabel->setPosition(Vec2(origin.x + visibleSize.width - 100,
-                                      origin.y + visibleSize.height - 150));
+    _countdownLabel->setPosition(Vec2(origin.x + visibleSize.width - margin - buttonWidth/2,
+                                      origin.y + visibleSize.height - margin - buttonHeight/2 - (buttonHeight + buttonSpacing) * 2));
     _countdownLabel->setString(formatTime(ATTACK_DURATION));
     this->addChild(_countdownLabel, 200);
   }
