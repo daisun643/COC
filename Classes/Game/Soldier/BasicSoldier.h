@@ -88,7 +88,19 @@ class BasicSoldier : public Sprite {
   CC_SYNTHESIZE(SoldierCategory, _soldierCategory, SoldierCategory);
   CC_SYNTHESIZE(float, _centerX, CenterX);
   CC_SYNTHESIZE(float, _centerY, CenterY);
+
+  // 寻路相关
+  std::vector<Vec2> _pathQueue;
+  int _currentPathIndex;
+  std::function<bool(int, int)> _gridStatusCallback;
+
   CC_SYNTHESIZE(Building*, _target, Target);
+  CC_SYNTHESIZE(Vec2, _p00, P00);  // 地图原点
+
+  /**
+   * 设置网格状态回调
+   */
+  void setGridStatusCallback(std::function<bool(int, int)> callback);
 
   /**
    * 受到伤害

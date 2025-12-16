@@ -21,9 +21,52 @@
 
 BuildingManager::BuildingManager(const std::string& jsonFilePath,
                                  const Vec2& p00)
-    : _jsonFilePath(jsonFilePath), _p00(p00) {}
+    : _jsonFilePath(jsonFilePath), _p00(p00) {
+  // 初始化网格地图为可通行 (0)
+  for (int i = 0; i < MAP_GRID_SIZE; ++i) {
+    for (int j = 0; j < MAP_GRID_SIZE; ++j) {
+      _gridMap[i][j] = 0;
+    }
+  }
+}
 
 BuildingManager::~BuildingManager() { clearAllBuildings(); }
+
+bool BuildingManager::isWalkable(int row, int col) const {
+  if (!isValidGrid(row, col)) {
+    return false;
+  }
+  return _gridMap[row][col] == 0;
+}
+
+bool BuildingManager::isValidGrid(int row, int col) const {
+  return row >= 0 && row < MAP_GRID_SIZE && col >= 0 && col < MAP_GRID_SIZE;
+}
+
+void BuildingManager::updateGridState(int row, int col, int size,
+                                      bool blocked) {
+  // 假设 row, col 是中心点
+  // 计算左下角起始点
+  // 对于奇数 size (1, 3, 5): 中心在网格中心。范围 [c - s/2, c + s/2]
+  // 对于偶数 size (2, 4): 中心在顶点。范围 [c - s/2, c + s/2 - 1]
+
+  // 修正：根据 createBuilding 中的逻辑
+  // if (gridCount % 2 != 0) anchorPos.x += _deltaX;
+  // 这意味着奇数尺寸时，传入的 row/col
+  // 对应的是网格坐标的整数部分，但实际中心偏移了。 让我们统一使用：row/col
+  // 是中心网格坐标（或中心顶点坐标）。
+
+  int startRow = row - size / 2;
+  int startCol = col - size / 2;
+
+  for (int r = startRow; r < startRow + size; ++r) {
+    for (int c = startCol; c < startCol + size; ++c) {
+      if (isValidGrid(r, c)) {
+        _gridMap[r][c] = blocked ? 1 : 0;
+      }
+    }
+  }
+}
 
 bool BuildingManager::init() {
   // 获取配置管理器
@@ -53,19 +96,26 @@ bool BuildingManager::init() {
 bool BuildingManager::loadBuildingMap() {
   rapidjson::Document doc;
 
-  // 优先从 WritablePath (存档) 加载
-  std::string writablePath =
-      FileUtils::getInstance()->getWritablePath() + "map.json";
   std::string content;
   bool isSaveFile = false;
+  bool loadedFromSave = false;
 
-  if (FileUtils::getInstance()->isFileExist(writablePath)) {
-    content = FileUtils::getInstance()->getStringFromFile(writablePath);
-    CCLOG("BuildingManager: Loading map from save file: %s",
-          writablePath.c_str());
-    isSaveFile = true;
-  } else {
-    // 如果没有存档，从 Resources 加载默认配置
+  // 只有当加载的是默认地图配置时，才尝试加载用户存档
+  // 这样可以避免关卡地图（如 level/1.json）被用户存档覆盖
+  if (_jsonFilePath == "develop/map.json") {
+    std::string writablePath =
+        FileUtils::getInstance()->getWritablePath() + "map.json";
+    if (FileUtils::getInstance()->isFileExist(writablePath)) {
+      content = FileUtils::getInstance()->getStringFromFile(writablePath);
+      CCLOG("BuildingManager: Loading map from save file: %s",
+            writablePath.c_str());
+      isSaveFile = true;
+      loadedFromSave = true;
+    }
+  }
+
+  if (!loadedFromSave) {
+    // 如果没有存档或不是加载默认地图，从 Resources 加载指定配置
     std::string fullPath =
         FileUtils::getInstance()->fullPathForFilename(_jsonFilePath);
     if (fullPath.empty()) {
@@ -73,8 +123,7 @@ bool BuildingManager::loadBuildingMap() {
       return false;
     }
     content = FileUtils::getInstance()->getStringFromFile(fullPath);
-    CCLOG("BuildingManager: Loading map from default config: %s",
-          fullPath.c_str());
+    CCLOG("BuildingManager: Loading map from config: %s", fullPath.c_str());
   }
 
   if (content.empty()) {
@@ -330,6 +379,11 @@ void BuildingManager::registerBuilding(Building* building) {
   building->retain();
   _buildings.push_back(building);
 
+  // 更新网格状态
+  updateGridState(static_cast<int>(building->getRow()),
+                  static_cast<int>(building->getCol()),
+                  building->getGridCount(), true);
+
   // 更新资源统计
   updatePlayerResourcesStats();
 }
@@ -388,6 +442,11 @@ void BuildingManager::removeBuilding(Building* building) {
   if (!building) return;
   auto it = std::find(_buildings.begin(), _buildings.end(), building);
   if (it != _buildings.end()) {
+    // 更新网格状态
+    updateGridState(static_cast<int>(building->getRow()),
+                    static_cast<int>(building->getCol()),
+                    building->getGridCount(), false);
+
     _buildings.erase(it);
     updatePlayerResourcesStats();
   }

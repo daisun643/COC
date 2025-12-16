@@ -8,6 +8,7 @@
 #include "Game/Soldier/Bomber.h"
 #include "Game/Soldier/Gaint.h"
 #include "Manager/Config/ConfigManager.h"
+#include "Utils/PathFinder.h"
 
 BasicSoldier::BasicSoldier()
     : _soldierType(SoldierType::BARBARIAN),
@@ -29,7 +30,10 @@ BasicSoldier::BasicSoldier()
       _hpBarBackground(nullptr),
       _hpBarForeground(nullptr),
       _infoLabel(nullptr),
-      _buildingFinderCallback(nullptr) {}
+      _buildingFinderCallback(nullptr),
+      _currentPathIndex(0),
+      _gridStatusCallback(nullptr),
+      _p00(Vec2::ZERO) {}
 
 BasicSoldier::~BasicSoldier() {
   // 停止更新调度，避免析构后继续调用update
@@ -317,8 +321,16 @@ void BasicSoldier::moveToTarget(float delta) {
 
   // 如果已经到达目标位置
   if (distance < 5.0f) {
+    // 检查是否有后续路径点
+    if (!_pathQueue.empty() && _currentPathIndex < _pathQueue.size() - 1) {
+      _currentPathIndex++;
+      _targetPosition = _pathQueue[_currentPathIndex];
+      return;
+    }
+
     _targetPosition = Vec2::ZERO;
     _state = SoldierState::IDLE;
+    _pathQueue.clear();
     return;
   }
 
@@ -341,12 +353,14 @@ void BasicSoldier::moveToTarget(float delta) {
     if (isInRange(targetPos)) {
       _state = SoldierState::ATTACKING;
       _targetPosition = Vec2::ZERO;
+      _pathQueue.clear();
     }
   } else if (_target && (!_target->isVisible() || !_target->isAlive())) {
     // 目标被摧毁或消失，清除目标并回到待机状态
     _target = nullptr;
     _targetPosition = Vec2::ZERO;
     _state = SoldierState::IDLE;
+    _pathQueue.clear();
   }
 }
 
@@ -484,9 +498,28 @@ bool BasicSoldier::findTarget(const std::vector<Building*>& buildings) {
     if (isInRange(targetPos)) {
       _state = SoldierState::ATTACKING;
       _targetPosition = Vec2::ZERO;  // 清除移动目标
+      _pathQueue.clear();
     } else {
       // 否则移动到目标位置
-      setTargetPosition(targetPos);
+      // 尝试寻路
+      bool pathFound = false;
+      // 只有陆军需要寻路，且必须有网格回调和原点信息
+      if (_soldierCategory == SoldierCategory::LAND && _gridStatusCallback &&
+          !_p00.equals(Vec2::ZERO)) {
+        _pathQueue = PathFinder::findPath(this->getPosition(), targetPos, _p00,
+                                          _gridStatusCallback);
+        if (!_pathQueue.empty()) {
+          _currentPathIndex = 0;
+          setTargetPosition(_pathQueue[_currentPathIndex]);
+          pathFound = true;
+        }
+      }
+
+      if (!pathFound) {
+        _pathQueue.clear();
+        setTargetPosition(targetPos);
+      }
+
       _state = SoldierState::MOVING;
     }
     return true;
@@ -509,6 +542,11 @@ float BasicSoldier::getDistanceTo(const Vec2& pos) const {
 void BasicSoldier::setBuildingFinderCallback(
     std::function<std::vector<Building*>()> callback) {
   _buildingFinderCallback = callback;
+}
+
+void BasicSoldier::setGridStatusCallback(
+    std::function<bool(int, int)> callback) {
+  _gridStatusCallback = callback;
 }
 
 void BasicSoldier::updateHPBar() {

@@ -489,6 +489,15 @@ void AttackScene::placeSoldier(const Vec2& worldPos, const TroopItem& item) {
       return buildings;
     });
 
+    // 设置网格状态回调
+    soldier->setP00(_p00);
+    soldier->setGridStatusCallback([this](int row, int col) {
+      if (_buildingManager) {
+        return _buildingManager->isWalkable(row, col);
+      }
+      return true;  // 默认可通行
+    });
+
     // 通过 TroopManager 减少数量
     if (_troopManager) {
       if (!_troopManager->consumeTroop(item.soldierType, item.level)) {
@@ -818,37 +827,35 @@ void AttackScene::onMouseUp(Event* event) {
 }
 
 // 辅助函数：创建橙色圆角背景
-static DrawNode* createOrangeRoundedBackground(const Size& size, float radius = 8.0f) {
+static DrawNode* createOrangeRoundedBackground(const Size& size,
+                                               float radius = 8.0f) {
   auto drawNode = DrawNode::create();
   // 橙色背景 (255, 165, 0)
-  Color4F orangeColor(255.0f/255.0f, 165.0f/255.0f, 0.0f/255.0f, 1.0f);
-  
+  Color4F orangeColor(255.0f / 255.0f, 165.0f / 255.0f, 0.0f / 255.0f, 1.0f);
+
   float width = size.width;
   float height = size.height;
-  
+
   // 绘制圆角矩形（通过绘制多个部分来模拟圆角）
   // 绘制中心矩形
-  drawNode->drawSolidRect(
-    Vec2(radius, radius),
-    Vec2(width - radius, height - radius),
-    orangeColor);
-  
+  drawNode->drawSolidRect(Vec2(radius, radius),
+                          Vec2(width - radius, height - radius), orangeColor);
+
   // 绘制四个圆角
   drawNode->drawSolidCircle(Vec2(radius, radius), radius, 0, 20, orangeColor);
-  drawNode->drawSolidCircle(Vec2(width - radius, radius), radius, 0, 20, orangeColor);
-  drawNode->drawSolidCircle(Vec2(radius, height - radius), radius, 0, 20, orangeColor);
-  drawNode->drawSolidCircle(Vec2(width - radius, height - radius), radius, 0, 20, orangeColor);
-  
+  drawNode->drawSolidCircle(Vec2(width - radius, radius), radius, 0, 20,
+                            orangeColor);
+  drawNode->drawSolidCircle(Vec2(radius, height - radius), radius, 0, 20,
+                            orangeColor);
+  drawNode->drawSolidCircle(Vec2(width - radius, height - radius), radius, 0,
+                            20, orangeColor);
+
   // 绘制连接圆角的矩形
-  drawNode->drawSolidRect(
-    Vec2(radius, 0),
-    Vec2(width - radius, height),
-    orangeColor);
-  drawNode->drawSolidRect(
-    Vec2(0, radius),
-    Vec2(width, height - radius),
-    orangeColor);
-  
+  drawNode->drawSolidRect(Vec2(radius, 0), Vec2(width - radius, height),
+                          orangeColor);
+  drawNode->drawSolidRect(Vec2(0, radius), Vec2(width, height - radius),
+                          orangeColor);
+
   return drawNode;
 }
 
@@ -870,14 +877,16 @@ void AttackScene::createAttackButtons() {
 
   // 创建开始进攻按钮（右上角，垂直排列）
   if (!_startAttackButton) {
-    Vec2 buttonPos(origin.x + visibleSize.width - margin - buttonWidth/2,
-                   origin.y + visibleSize.height - margin - buttonHeight/2);
-    
+    Vec2 buttonPos(origin.x + visibleSize.width - margin - buttonWidth / 2,
+                   origin.y + visibleSize.height - margin - buttonHeight / 2);
+
     // 创建橙色圆角背景
-    auto bgDrawNode = createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
-    bgDrawNode->setPosition(Vec2(buttonPos.x - buttonWidth/2, buttonPos.y - buttonHeight/2));
+    auto bgDrawNode =
+        createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
+    bgDrawNode->setPosition(
+        Vec2(buttonPos.x - buttonWidth / 2, buttonPos.y - buttonHeight / 2));
     this->addChild(bgDrawNode, 199);
-    
+
     _startAttackButton = ui::Button::create();
     _startAttackButton->setTitleText("开始进攻");
     _startAttackButton->setTitleFontSize(20);
@@ -891,14 +900,17 @@ void AttackScene::createAttackButtons() {
 
   // 创建结束进攻按钮（在开始按钮下方）
   if (!_endAttackButton) {
-    Vec2 buttonPos(origin.x + visibleSize.width - margin - buttonWidth/2,
-                   origin.y + visibleSize.height - margin - buttonHeight/2 - buttonHeight - buttonSpacing);
-    
+    Vec2 buttonPos(origin.x + visibleSize.width - margin - buttonWidth / 2,
+                   origin.y + visibleSize.height - margin - buttonHeight / 2 -
+                       buttonHeight - buttonSpacing);
+
     // 创建橙色圆角背景
-    auto bgDrawNode = createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
-    bgDrawNode->setPosition(Vec2(buttonPos.x - buttonWidth/2, buttonPos.y - buttonHeight/2));
+    auto bgDrawNode =
+        createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
+    bgDrawNode->setPosition(
+        Vec2(buttonPos.x - buttonWidth / 2, buttonPos.y - buttonHeight / 2));
     this->addChild(bgDrawNode, 199);
-    
+
     _endAttackButton = ui::Button::create();
     _endAttackButton->setTitleText("结束进攻");
     _endAttackButton->setTitleFontSize(20);
@@ -914,14 +926,16 @@ void AttackScene::createAttackButtons() {
 
   // 创建退出按钮（左上角）
   if (!_exitButton) {
-    Vec2 buttonPos(origin.x + margin + buttonWidth/2,
-                   origin.y + visibleSize.height - margin - buttonHeight/2);
-    
+    Vec2 buttonPos(origin.x + margin + buttonWidth / 2,
+                   origin.y + visibleSize.height - margin - buttonHeight / 2);
+
     // 创建橙色圆角背景
-    auto bgDrawNode = createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
-    bgDrawNode->setPosition(Vec2(buttonPos.x - buttonWidth/2, buttonPos.y - buttonHeight/2));
+    auto bgDrawNode =
+        createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
+    bgDrawNode->setPosition(
+        Vec2(buttonPos.x - buttonWidth / 2, buttonPos.y - buttonHeight / 2));
     this->addChild(bgDrawNode, 199);
-    
+
     _exitButton = ui::Button::create();
     _exitButton->setTitleText("退出");
     _exitButton->setTitleFontSize(20);
@@ -937,8 +951,10 @@ void AttackScene::createAttackButtons() {
   if (!_countdownLabel) {
     _countdownLabel = Label::createWithSystemFont("", "Arial", 24);
     _countdownLabel->setColor(Color3B::YELLOW);
-    _countdownLabel->setPosition(Vec2(origin.x + visibleSize.width - margin - buttonWidth/2,
-                                      origin.y + visibleSize.height - margin - buttonHeight/2 - (buttonHeight + buttonSpacing) * 2));
+    _countdownLabel->setPosition(
+        Vec2(origin.x + visibleSize.width - margin - buttonWidth / 2,
+             origin.y + visibleSize.height - margin - buttonHeight / 2 -
+                 (buttonHeight + buttonSpacing) * 2));
     _countdownLabel->setString(formatTime(ATTACK_DURATION));
     this->addChild(_countdownLabel, 200);
   }

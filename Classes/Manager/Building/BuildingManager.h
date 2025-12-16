@@ -79,7 +79,37 @@ class BuildingManager {
    */
   ~BuildingManager();
 
+  // 网格地图相关
+  static const int MAP_GRID_SIZE = 44;
+
+  /**
+   * 检查指定网格是否可通行
+   * @param row 行坐标
+   * @param col 列坐标
+   * @return 是否可通行
+   */
+  bool isWalkable(int row, int col) const;
+
+  /**
+   * 检查网格坐标是否有效
+   * @param row 行坐标
+   * @param col 列坐标
+   * @return 是否在地图范围内
+   */
+  bool isValidGrid(int row, int col) const;
+
  private:
+  /**
+   * 更新网格状态
+   * @param row 起始行坐标
+   * @param col 起始列坐标
+   * @param size 占用网格大小（边长）
+   * @param blocked 是否阻挡
+   */
+  void updateGridState(int row, int col, int size, bool blocked);
+
+  int _gridMap[MAP_GRID_SIZE][MAP_GRID_SIZE];  // 0: Passable, 1: Blocked
+
   /**
    * 从配置文件加载建筑地图
    */
