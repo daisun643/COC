@@ -1,11 +1,12 @@
 #include "AppDelegate.h"
 
 #include "Container/Scene/AttackScence/AttackScene.h"
+#include "Container/Scene/Authentication/AuthScene.h"
 #include "Container/Scene/GameScene.h"
 #include "Container/Scene/Record/RecordScene.h"
 #include "Manager/Config/ConfigManager.h"
 #include "Manager/PlayerManager.h"
-
+#include "Utils/Profile/Profile.h"
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
 #include <windows.h>
 #endif
@@ -15,7 +16,7 @@ USING_NS_CC;
 AppDelegate::AppDelegate() {}
 
 AppDelegate::~AppDelegate() {}
-
+// TODO 希望这里能 封装在 Bridge中桥接
 bool AppDelegate::applicationDidFinishLaunching() {
   // 初始化配置管理器
   auto configManager = ConfigManager::getInstance();
@@ -86,12 +87,21 @@ bool AppDelegate::applicationDidFinishLaunching() {
             smallResolutionSize.width / designResolutionSize.width));
   }
 
-  // 创建游戏场景
-  auto scene = GameScene::createScene();
-  // auto scene = AttackScene::createScene();
-  // auto scene = RecordScene::createScene();
-  director->runWithScene(scene);
+  // 检查登录状态
+  Profile* profile = Profile::getInstance();
+  if (!profile) {
+    CCLOG("Profile is null");
+    return false;
+  }
+  Scene* startScene = nullptr;
 
+  if (!profile->getIsLogin()) {
+    startScene = AuthScene::createScene();
+  } else {
+    startScene = GameScene::createScene();
+  }
+
+  director->runWithScene(startScene);
   return true;
 }
 
@@ -100,8 +110,8 @@ void AppDelegate::applicationDidEnterBackground() {
   // 这是移动设备上保存进度的标准时机
   auto playerManager = PlayerManager::getInstance();
   if (playerManager) {
-      playerManager->saveUserData();
-      CCLOG("AppDelegate: Application entered background, data saved.");
+    playerManager->saveUserData();
+    CCLOG("AppDelegate: Application entered background, data saved.");
   }
 }
 
