@@ -20,7 +20,6 @@ Building::Building()
       _anchorNode(nullptr),
       _glowAction(nullptr),
       _glowColor(1.0f, 1.0f, 0.0f, 0.6f),
-      _errorLayer(nullptr),
       _maxHP(1000.0f),
       _currentHP(1000.0f),
       _hpBarBackground(nullptr),
@@ -76,14 +75,7 @@ bool Building::init(const std::string& imagePath, BuildingType type,
   // 创建光晕效果节点（初始隐藏）
   _glowNode = DrawNode::create();
   _glowNode->setVisible(false);
-  this->addChild(_glowNode, -1);  // 放在建筑后面
-
-  // 创建错误遮罩层（红色半透明，初始隐藏）
-  _errorLayer = LayerColor::create(Color4B(255, 0, 0, 128));
-  _errorLayer->setContentSize(this->getContentSize());
-  _errorLayer->setPosition(Vec2::ZERO);
-  _errorLayer->setVisible(false);
-  this->addChild(_errorLayer, 5);  // 放在内容之上，标签之下
+  this->addChild(_glowNode, 6);  // 放在建筑前面，防止被大建筑遮挡
 
   // 创建锚点标记节点（红点）
   _anchorNode = DrawNode::create();
@@ -222,16 +214,26 @@ void Building::updateGlowDrawing() {
   float deltaX = constantConfig.deltaX;
   float deltaY = constantConfig.deltaY;
 
+  // 获取当前缩放比例
+  float scaleX = this->getScaleX();
+  float scaleY = this->getScaleY();
+  // 防止除以零
+  if (scaleX == 0.0f) scaleX = 1.0f;
+  if (scaleY == 0.0f) scaleY = 1.0f;
+
   // 绘制光晕边框（使用黄色半透明）
-  float glowWidth = 3.0f;  // 光晕宽度
+  // 线宽也需要反向缩放，以保持视觉一致性
+  float glowWidth = 3.0f / ((scaleX + scaleY) / 2.0f);
 
   int gridCount = _gridCount;  // 使用getter方法获取宽度
   Vec2 center(this->getContentSize().width * _anchorRatioX,
               this->getContentSize().height * _anchorRatioY);
-  Vec2 top = center + Vec2(0, gridCount * deltaY);
-  Vec2 right = center + Vec2(gridCount * deltaX, 0);
-  Vec2 bottom = center + Vec2(0, -gridCount * deltaY);
-  Vec2 left = center + Vec2(-gridCount * deltaX, 0);
+
+  // 坐标偏移量需要反向缩放，以抵消节点的缩放影响，确保光晕大小与地图网格一致
+  Vec2 top = center + Vec2(0, gridCount * deltaY / scaleY);
+  Vec2 right = center + Vec2(gridCount * deltaX / scaleX, 0);
+  Vec2 bottom = center + Vec2(0, -gridCount * deltaY / scaleY);
+  Vec2 left = center + Vec2(-gridCount * deltaX / scaleX, 0);
   // Vec2 top(_gridCount * deltaX, 2 * _gridCount * deltaY);
   // Vec2 right(2 * _gridCount * deltaX, _gridCount * deltaY);
   // Vec2 bottom(_gridCount * deltaX, 0);
@@ -247,15 +249,9 @@ void Building::setPlacementValid(bool isValid) {
   if (isValid) {
     // 有效：黄色光晕，正常颜色
     _glowColor = Color4F(1.0f, 1.0f, 0.0f, 0.6f);
-    if (_errorLayer) {
-      _errorLayer->setVisible(false);
-    }
   } else {
-    // 无效：红色光晕，红色叠加
+    // 无效：红色光晕
     _glowColor = Color4F(1.0f, 0.0f, 0.0f, 0.8f);
-    if (_errorLayer) {
-      _errorLayer->setVisible(true);
-    }
   }
   // 立即更新光晕
   updateGlowDrawing();
@@ -312,16 +308,18 @@ void Building::upgrade() {
 
   if (!config.image.empty()) {
     // 使用 TextureCache 获取纹理，确保资源存在
-    auto texture = Director::getInstance()->getTextureCache()->addImage(config.image);
+    auto texture =
+        Director::getInstance()->getTextureCache()->addImage(config.image);
     if (texture) {
-        // 切换纹理
-        this->setTexture(texture);
-        // 设置纹理矩形（这对 Sprite 显示完整图片很重要）
-        this->setTextureRect(Rect(0, 0, texture->getContentSize().width, texture->getContentSize().height));
-        // [修改 2] 显式更新 ContentSize，因为新等级图片大小可能不同
-        this->setContentSize(texture->getContentSize());
+      // 切换纹理
+      this->setTexture(texture);
+      // 设置纹理矩形（这对 Sprite 显示完整图片很重要）
+      this->setTextureRect(Rect(0, 0, texture->getContentSize().width,
+                                texture->getContentSize().height));
+      // [修改 2] 显式更新 ContentSize，因为新等级图片大小可能不同
+      this->setContentSize(texture->getContentSize());
     } else {
-        CCLOG("Failed to load image for upgrade: %s", config.image.c_str());
+      CCLOG("Failed to load image for upgrade: %s", config.image.c_str());
     }
   }
 
@@ -338,16 +336,11 @@ void Building::upgrade() {
 
   // 3. 刷新调试锚点显示
   if (_anchorNode) {
-      _anchorNode->clear();
-      float width = this->getContentSize().width;
-      float height = this->getContentSize().height;
-      _anchorNode->drawDot(Vec2(_anchorRatioX * width, _anchorRatioY * height), 5.0f,
-                       Color4F(1.0f, 0.0f, 0.0f, 1.0f));
-  }
-  
-  // 4. 刷新错误遮罩大小
-  if (_errorLayer) {
-      _errorLayer->setContentSize(this->getContentSize());
+    _anchorNode->clear();
+    float width = this->getContentSize().width;
+    float height = this->getContentSize().height;
+    _anchorNode->drawDot(Vec2(_anchorRatioX * width, _anchorRatioY * height),
+                         5.0f, Color4F(1.0f, 0.0f, 0.0f, 1.0f));
   }
 
   // 更新血量
@@ -358,7 +351,8 @@ void Building::upgrade() {
   // 5. 刷新血条（updateHPBar 内部会使用新的 ContentSize 重新计算位置）
   updateHPBar();
 
-  CCLOG("Upgraded %s to level %d. Image: %s", _buildingName.c_str(), _level, config.image.c_str());
+  CCLOG("Upgraded %s to level %d. Image: %s", _buildingName.c_str(), _level,
+        config.image.c_str());
 }
 
 void Building::updateHPBar() {

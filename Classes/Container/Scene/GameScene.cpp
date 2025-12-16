@@ -313,9 +313,7 @@ void GameScene::onMouseUp(Event* event) {
       if (configManager) {
         auto constantConfig = configManager->getConstantConfig();
         float deltaX = constantConfig.deltaX;
-        _placementBuilding->setCenterX(_placementPreviewAnchor.x +
-                                       deltaX *
-                                           _placementBuilding->getGridCount());
+        _placementBuilding->setCenterX(_placementPreviewAnchor.x);
       } else {
         _placementBuilding->setCenterX(_placementPreviewAnchor.x);
       }
@@ -730,10 +728,15 @@ void GameScene::updatePlacementPreview(const Vec2& worldPos) {
       deltaX = configManager->getConstantConfig().deltaX;
     }
 
+    // 如果建筑占用的网格数是奇数（如3x3），其中心应该在网格中心
+    // 需要进行偏移修正，使其对齐到网格线
+    if (_placementBuilding->getGridCount() % 2 != 0) {
+      nearestPos.x += deltaX;
+    }
+
     _placementBuilding->setPosition(nearestPos);
     if (deltaX > 0.0f) {
-      _placementBuilding->setCenterX(
-          nearestPos.x + deltaX * _placementBuilding->getGridCount());
+      _placementBuilding->setCenterX(nearestPos.x);
     } else {
       _placementBuilding->setCenterX(nearestPos.x);
     }

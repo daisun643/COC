@@ -100,7 +100,6 @@ class Building : public Sprite {
   DrawNode* _anchorNode;
   Action* _glowAction;
   Color4F _glowColor;
-  LayerColor* _errorLayer;
 
   virtual void createDefaultAppearance();
   void updateGlowDrawing();

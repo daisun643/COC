@@ -16,8 +16,8 @@
 #include "Manager/PlayerManager.h"
 #include "Utils/GridUtils.h"
 #include "json/document.h"
-#include "json/stringbuffer.h" 
-#include "json/writer.h"       
+#include "json/stringbuffer.h"
+#include "json/writer.h"
 
 BuildingManager::BuildingManager(const std::string& jsonFilePath,
                                  const Vec2& p00)
@@ -54,23 +54,27 @@ bool BuildingManager::loadBuildingMap() {
   rapidjson::Document doc;
 
   // 优先从 WritablePath (存档) 加载
-  std::string writablePath = FileUtils::getInstance()->getWritablePath() + "map.json";
+  std::string writablePath =
+      FileUtils::getInstance()->getWritablePath() + "map.json";
   std::string content;
   bool isSaveFile = false;
 
   if (FileUtils::getInstance()->isFileExist(writablePath)) {
-      content = FileUtils::getInstance()->getStringFromFile(writablePath);
-      CCLOG("BuildingManager: Loading map from save file: %s", writablePath.c_str());
-      isSaveFile = true;
+    content = FileUtils::getInstance()->getStringFromFile(writablePath);
+    CCLOG("BuildingManager: Loading map from save file: %s",
+          writablePath.c_str());
+    isSaveFile = true;
   } else {
-      // 如果没有存档，从 Resources 加载默认配置
-      std::string fullPath = FileUtils::getInstance()->fullPathForFilename(_jsonFilePath);
-      if (fullPath.empty()) {
-        CCLOG("Config file not found: %s", _jsonFilePath.c_str());
-        return false;
-      }
-      content = FileUtils::getInstance()->getStringFromFile(fullPath);
-      CCLOG("BuildingManager: Loading map from default config: %s", fullPath.c_str());
+    // 如果没有存档，从 Resources 加载默认配置
+    std::string fullPath =
+        FileUtils::getInstance()->fullPathForFilename(_jsonFilePath);
+    if (fullPath.empty()) {
+      CCLOG("Config file not found: %s", _jsonFilePath.c_str());
+      return false;
+    }
+    content = FileUtils::getInstance()->getStringFromFile(fullPath);
+    CCLOG("BuildingManager: Loading map from default config: %s",
+          fullPath.c_str());
   }
 
   if (content.empty()) {
@@ -101,10 +105,10 @@ bool BuildingManager::loadBuildingMap() {
           float storedResource = 0.0f;
           long long lastTimestamp = 0;
           if (item.HasMember("storedResource")) {
-              storedResource = item["storedResource"].GetFloat();
+            storedResource = item["storedResource"].GetFloat();
           }
           if (item.HasMember("lastTimestamp")) {
-              lastTimestamp = item["lastTimestamp"].GetInt64();
+            lastTimestamp = item["lastTimestamp"].GetInt64();
           }
 
           Building* building =
@@ -113,14 +117,16 @@ bool BuildingManager::loadBuildingMap() {
             // 如果是资源建筑，设置暂存量并计算离线产出
             auto resBuilding = dynamic_cast<ResourceBuilding*>(building);
             if (resBuilding) {
-                // 如果是从存档加载，计算离线产出
-                if (isSaveFile && lastTimestamp > 0) {
-                     // updateOfflineProduction 会设置 storedResource 并加上离线产出
-                    resBuilding->updateOfflineProduction(lastTimestamp, storedResource);
-                } else {
-                    // 如果是初始配置或没有存档，重置为0 (ResourceBuilding 构造函数已做，但这里确保一下)
-                    // 注意：初始配置没有 lastTimestamp，逻辑会自动跳过计算
-                }
+              // 如果是从存档加载，计算离线产出
+              if (isSaveFile && lastTimestamp > 0) {
+                // updateOfflineProduction 会设置 storedResource 并加上离线产出
+                resBuilding->updateOfflineProduction(lastTimestamp,
+                                                     storedResource);
+              } else {
+                // 如果是初始配置或没有存档，重置为0 (ResourceBuilding
+                // 构造函数已做，但这里确保一下) 注意：初始配置没有
+                // lastTimestamp，逻辑会自动跳过计算
+              }
             }
 
             registerBuilding(building);
@@ -135,60 +141,62 @@ bool BuildingManager::loadBuildingMap() {
 
 // 实现保存地图功能
 void BuildingManager::saveBuildingMap() {
-    rapidjson::Document doc;
-    doc.SetObject();
-    rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+  rapidjson::Document doc;
+  doc.SetObject();
+  rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
 
-    // 将建筑按名称分组
-    std::map<std::string, rapidjson::Value> buildingMap;
+  // 将建筑按名称分组
+  std::map<std::string, rapidjson::Value> buildingMap;
 
-    for (auto building : _buildings) {
-        if (!building) continue;
+  for (auto building : _buildings) {
+    if (!building) continue;
 
-        std::string name = building->getBuildingName();
-        if (buildingMap.find(name) == buildingMap.end()) {
-            rapidjson::Value arr(rapidjson::kArrayType);
-            buildingMap[name] = arr;
-        }
-
-        rapidjson::Value obj(rapidjson::kObjectType);
-        obj.AddMember("row", building->getRow(), allocator);
-        obj.AddMember("col", building->getCol(), allocator);
-        obj.AddMember("level", building->getLevel(), allocator);
-        obj.AddMember("HP", building->getCurrentHP(), allocator);
-
-        // 保存资源建筑的状态
-        auto resBuilding = dynamic_cast<ResourceBuilding*>(building);
-        if (resBuilding) {
-            // 保存当前未收集的资源
-            obj.AddMember("storedResource", resBuilding->getStoredResource(), allocator);
-            // 保存当前时间戳
-            obj.AddMember("lastTimestamp", ResourceBuilding::getCurrentTimestamp(), allocator);
-        }
-
-        buildingMap[name].PushBack(obj, allocator);
+    std::string name = building->getBuildingName();
+    if (buildingMap.find(name) == buildingMap.end()) {
+      rapidjson::Value arr(rapidjson::kArrayType);
+      buildingMap[name] = arr;
     }
 
-    for (auto& pair : buildingMap) {
-        rapidjson::Value k(pair.first.c_str(), allocator);
-        doc.AddMember(k, pair.second, allocator);
+    rapidjson::Value obj(rapidjson::kObjectType);
+    obj.AddMember("row", building->getRow(), allocator);
+    obj.AddMember("col", building->getCol(), allocator);
+    obj.AddMember("level", building->getLevel(), allocator);
+    obj.AddMember("HP", building->getCurrentHP(), allocator);
+
+    // 保存资源建筑的状态
+    auto resBuilding = dynamic_cast<ResourceBuilding*>(building);
+    if (resBuilding) {
+      // 保存当前未收集的资源
+      obj.AddMember("storedResource", resBuilding->getStoredResource(),
+                    allocator);
+      // 保存当前时间戳
+      obj.AddMember("lastTimestamp", ResourceBuilding::getCurrentTimestamp(),
+                    allocator);
     }
 
-    rapidjson::StringBuffer buffer;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-    doc.Accept(writer);
+    buildingMap[name].PushBack(obj, allocator);
+  }
 
-    // 保存到 WritablePath 下的 map.json
-    std::string path = FileUtils::getInstance()->getWritablePath() + "map.json";
-    
-    std::ofstream outFile(path.c_str());
-    if (outFile.is_open()) {
-        outFile << buffer.GetString();
-        outFile.close();
-        CCLOG("BuildingManager: Map saved to %s", path.c_str());
-    } else {
-        CCLOG("BuildingManager: Failed to save map.");
-    }
+  for (auto& pair : buildingMap) {
+    rapidjson::Value k(pair.first.c_str(), allocator);
+    doc.AddMember(k, pair.second, allocator);
+  }
+
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  doc.Accept(writer);
+
+  // 保存到 WritablePath 下的 map.json
+  std::string path = FileUtils::getInstance()->getWritablePath() + "map.json";
+
+  std::ofstream outFile(path.c_str());
+  if (outFile.is_open()) {
+    outFile << buffer.GetString();
+    outFile.close();
+    CCLOG("BuildingManager: Map saved to %s", path.c_str());
+  } else {
+    CCLOG("BuildingManager: Failed to save map.");
+  }
 }
 
 Building* BuildingManager::createBuilding(const std::string& buildingName,
@@ -231,6 +239,17 @@ Building* BuildingManager::createBuilding(const std::string& buildingName,
   // 4. 设置位置 (通用逻辑)
   if (building) {
     Vec2 anchorPos = GridUtils::gridToScene(row, col, _p00);
+
+    // 如果建筑占用的网格数是奇数（如3x3），其中心应该在网格中心
+    // 但如果坐标系是基于网格顶点的（整数坐标），那么位置会偏离中心半个网格
+    // 需要进行偏移修正，使其对齐到网格线
+    // 偶数尺寸（如2x2, 4x4）的中心正好在顶点上，不需要修正
+    if (building->getGridCount() % 2 != 0) {
+      // 在等距视角下，向右移动 deltaX 相当于在网格坐标上移动 (0.5, 0.5)
+      // 即从顶点移动到网格中心
+      anchorPos.x += _deltaX;
+    }
+
     building->setPosition(anchorPos);
     building->setCenterX(anchorPos.x);
     building->setCenterY(anchorPos.y);
