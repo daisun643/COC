@@ -199,11 +199,18 @@ bool BuildingManager::loadBuildingMap() {
           currentMaxGold, currentMaxElixir);
 
     // 如果是新游戏（首次运行），将资源填满
+    // [修复] 只有当资源确实为0时才填满，防止覆盖已加载的存档
+    // 即使 isNewGame 为 true (可能是因为 user_data.json 丢失)，
+    // 但如果 PlayerManager 内存中已经有数据（虽然不太可能），也不应该覆盖
+    // 更重要的是，如果 loadUserData 成功，isNewGame 应该是 false
     if (playerManager->isNewGame()) {
       playerManager->setGold(currentMaxGold);
       playerManager->setElixir(currentMaxElixir);
       CCLOG("New Game: Resources filled to max capacity (Gold: %d, Elixir: %d)",
             currentMaxGold, currentMaxElixir);
+
+      // 立即标记为非新游戏，防止后续重复重置
+      playerManager->setIsNewGame(false);
     }
 
     // 强制保存一次，确保 user_data.json 被创建

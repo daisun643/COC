@@ -42,6 +42,7 @@ class PlayerManager {
   void setAutoSaveCallback(const std::function<void()>& callback);
 
   bool isNewGame() const { return _isNewGame; }
+  void setIsNewGame(bool isNew) { _isNewGame = isNew; }
 
  private:
   PlayerManager();

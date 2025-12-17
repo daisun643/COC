@@ -112,6 +112,8 @@ void PlayerManager::addGold(int amount) {
   if (_gold > _maxGold) {
     _gold = _maxGold;
   }
+  // [新增] 资源增加（收集）后立即保存
+  saveUserData();
 }
 
 void PlayerManager::addElixir(int amount) {
@@ -119,11 +121,15 @@ void PlayerManager::addElixir(int amount) {
   if (_elixir > _maxElixir) {
     _elixir = _maxElixir;
   }
+  // [新增] 资源增加（收集）后立即保存
+  saveUserData();
 }
 
 bool PlayerManager::consumeGold(int amount) {
   if (_gold >= amount) {
     _gold -= amount;
+    // [新增] 消费后立即保存，防止意外退出导致回档
+    saveUserData();
     return true;
   }
   return false;
@@ -132,6 +138,8 @@ bool PlayerManager::consumeGold(int amount) {
 bool PlayerManager::consumeElixir(int amount) {
   if (_elixir >= amount) {
     _elixir -= amount;
+    // [新增] 消费后立即保存，防止意外退出导致回档
+    saveUserData();
     return true;
   }
   return false;
@@ -154,6 +162,9 @@ void PlayerManager::saveUserData() {
   std::string relativePath = "develop/user_data.json";
   std::string path = PathUtils::getRealFilePath(relativePath, true);
 
+  // [新增] 确保目录存在
+  PathUtils::ensureDirectoryExists(path);
+
   // 优先使用 std::ofstream 以确保 Windows DevMode 下能写入源码目录
   std::ofstream outFile(path.c_str());
   if (outFile.is_open()) {
@@ -174,18 +185,38 @@ bool PlayerManager::loadUserData() {
   std::string relativePath = "develop/user_data.json";
   std::string path = PathUtils::getRealFilePath(relativePath, false);
 
-  // [修改] 增加日志以便调试路径
   CCLOG("PlayerManager: Loading data from %s", path.c_str());
 
-  if (path.empty() || !FileUtils::getInstance()->isFileExist(path)) {
+  std::string content;
+
+  // 策略1: 尝试使用 std::ifstream 读取绝对路径 (最优先)
+  std::ifstream inFile(path.c_str());
+  if (inFile.is_open()) {
+    std::stringstream buffer;
+    buffer << inFile.rdbuf();
+    content = buffer.str();
+    inFile.close();
+  }
+
+  // 策略2: 如果失败，尝试使用 FileUtils 读取 (兼容相对路径/SearchPaths)
+  if (content.empty()) {
+    if (FileUtils::getInstance()->isFileExist(path)) {
+      content = FileUtils::getInstance()->getStringFromFile(path);
+    } else if (FileUtils::getInstance()->isFileExist(relativePath)) {
+      content = FileUtils::getInstance()->getStringFromFile(relativePath);
+    }
+  }
+
+  if (content.empty()) {
+    CCLOG("PlayerManager: Failed to load file or file is empty.");
     return false;
   }
 
-  std::string content = FileUtils::getInstance()->getStringFromFile(path);
   rapidjson::Document doc;
   doc.Parse(content.c_str());
 
   if (doc.HasParseError()) {
+    CCLOG("PlayerManager: JSON parse error.");
     return false;
   }
 
@@ -196,6 +227,7 @@ bool PlayerManager::loadUserData() {
     _elixir = doc["elixir"].GetInt();
   }
 
-  CCLOG("PlayerManager: User data loaded.");
+  CCLOG("PlayerManager: User data loaded successfully. Gold: %d, Elixir: %d",
+        _gold, _elixir);
   return true;
 }
