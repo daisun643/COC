@@ -71,8 +71,8 @@ else()
 endif()
 
 # ================= 4. 项目文件配置 =================
-file(GLOB_RECURSE GAME_SOURCES "Classes/*.cpp" "Classes/*.h")
-file(GLOB_RECURSE GAME_RESOURCES "Resources/*")
+file(GLOB_RECURSE GAME_SOURCES CONFIGURE_DEPENDS "Classes/*.cpp" "Classes/*.h")
+file(GLOB_RECURSE GAME_RESOURCES CONFIGURE_DEPENDS "Resources/*")
 
 add_executable(${PROJECT_NAME} WIN32 ${GAME_SOURCES} ${GAME_RESOURCES})
 

@@ -1,5 +1,7 @@
 #include "PathUtils.h"
 
+#include <algorithm>
+
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
 #include <direct.h>
 #include <io.h>
@@ -12,12 +14,21 @@ std::string PathUtils::getRealFilePath(const std::string& relativePath,
                                        bool forWrite) {
   std::string path;
 
+  // [新增] 规范化传入的相对路径，防止调用者传入反斜杠
+  std::string normalizedRelativePath = relativePath;
+  std::replace(normalizedRelativePath.begin(), normalizedRelativePath.end(),
+               '\\', '/');
+
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
   // [开发模式优化] 使用可执行文件路径定位源码目录
   char exePath[MAX_PATH];
   GetModuleFileNameA(NULL, exePath, MAX_PATH);
   std::string exeDir = std::string(exePath);
-  size_t lastSlash = exeDir.find_last_of("\\/");
+
+  // 统一将反斜杠替换为正斜杠，避免混合路径分隔符
+  std::replace(exeDir.begin(), exeDir.end(), '\\', '/');
+
+  size_t lastSlash = exeDir.find_last_of("/");
   if (lastSlash != std::string::npos) {
     exeDir = exeDir.substr(0, lastSlash);
   }
@@ -36,13 +47,13 @@ std::string PathUtils::getRealFilePath(const std::string& relativePath,
       break;
     }
     // 向上移动一级
-    size_t slash = currentDir.find_last_of("\\/");
+    size_t slash = currentDir.find_last_of("/");
     if (slash == std::string::npos) break;
     currentDir = currentDir.substr(0, slash);
   }
 
   if (foundResources) {
-    path = resourceRoot + "/" + relativePath;
+    path = resourceRoot + "/" + normalizedRelativePath;
     return path;
   }
 #endif
@@ -55,12 +66,13 @@ std::string PathUtils::getRealFilePath(const std::string& relativePath,
     // 下的文件），我们先回退到默认 如果是发布版，这里应该改为
     // FileUtils::getInstance()->getWritablePath() + relativePath;
     // 目前保持原样，直接返回相对路径，由 FileUtils 处理（通常是只读的在移动端）
-    path = "Resources/" + relativePath;
+    path = "Resources/" + normalizedRelativePath;
   } else {
     // 读取操作
-    path = FileUtils::getInstance()->fullPathForFilename(relativePath);
+    path =
+        FileUtils::getInstance()->fullPathForFilename(normalizedRelativePath);
     if (path.empty()) {
-      path = "Resources/" + relativePath;
+      path = "Resources/" + normalizedRelativePath;
     }
   }
 

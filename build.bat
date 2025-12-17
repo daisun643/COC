@@ -36,6 +36,7 @@ if %errorlevel% neq 0 (
     exit /b %errorlevel%
 )
 
+echo Building cocos2d (Release)...
 cmake --build . --config Release --target cocos2d
 if %errorlevel% neq 0 (
     cd ..
@@ -44,6 +45,7 @@ if %errorlevel% neq 0 (
     exit /b %errorlevel%
 )
 
+echo Building COC (Release)...
 cmake --build . --config Release --target COC
 if %errorlevel% neq 0 (
     cd ..
