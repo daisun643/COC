@@ -142,6 +142,13 @@ class BasicSoldier : public Sprite {
   bool isInRange(const Vec2& targetPos) const;
 
   /**
+   * 检查建筑是否在攻击范围内（考虑建筑体积）
+   * @param target 目标建筑
+   * @return 是否在范围内
+   */
+  bool isInRange(Building* target) const;
+
+  /**
    * 计算到目标位置的距离
    * @param pos 目标位置
    * @return 距离

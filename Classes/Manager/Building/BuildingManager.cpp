@@ -456,6 +456,17 @@ void BuildingManager::registerBuilding(Building* building) {
   building->retain();
   _buildings.push_back(building);
 
+  // 设置死亡回调
+  building->setOnDeathCallback([this](Building* b) {
+    // 建筑被摧毁时，更新网格状态为可通行
+    this->updateGridState(static_cast<int>(b->getRow()),
+                          static_cast<int>(b->getCol()), b->getGridCount(),
+                          false);
+    // 注意：这里不立即移除建筑，避免迭代器失效或悬空指针
+    // 建筑对象会被保留在 _buildings 中直到场景销毁
+    // 但 isAlive() 会返回 false，所以逻辑上已经死亡
+  });
+
   // 更新网格状态
   updateGridState(static_cast<int>(building->getRow()),
                   static_cast<int>(building->getCol()),
