@@ -10,15 +10,24 @@
         "maxLevel": 3,
         "1": {
             "image": "images/buildings/TownHall.png",
-            "health": 1500
+            "health": 1500,
+            "upgradeCost": 0,
+            "upgradeCostType": "Gold",
+            "buildTime": 0
         },
         "2": {
             "image": "images/buildings/TownHall2.png",
-            "health": 2000
+            "health": 2000,
+            "upgradeCost": 10000,
+            "upgradeCostType": "Gold",
+            "buildTime": 10
         },
         "3": {
             "image": "images/buildings/TownHall3.png",
-            "health": 2500
+            "health": 2500,
+            "upgradeCost": 50000,
+            "upgradeCostType": "Gold",
+            "buildTime": 30
         },
         "tips": "GridPosition表示建筑中心所在的网格坐标，GridSize表示建筑占用的菱形边长,大本营定义了其他建筑的等级上限"
     },
@@ -36,21 +45,30 @@
             "attackRange": 7.0,
             "damage": 50,
             "attackSpeed": 1.2,
-            "health": 400
+            "health": 400,
+            "upgradeCost": 250,
+            "upgradeCostType": "Gold",
+            "buildTime": 5
         },
         "2": {
             "image": "images/buildings/cannon2.png",
             "attackRange": 7.5,
             "damage": 65,
             "attackSpeed": 1.1,
-            "health": 550
+            "health": 550,
+            "upgradeCost": 1000,
+            "upgradeCostType": "Gold",
+            "buildTime": 15
         },
         "3": {
             "image": "images/buildings/cannon3.png",
             "attackRange": 8.0,
             "damage": 85,
             "attackSpeed": 1.0,
-            "health": 750
+            "health": 750,
+            "upgradeCost": 2500,
+            "upgradeCostType": "Gold",
+            "buildTime": 45
         }
     },
     "ArcherTower": {
@@ -67,21 +85,30 @@
             "attackRange": 10.0,
             "damage": 35,
             "attackSpeed": 0.8,
-            "health": 380
+            "health": 380,
+            "upgradeCost": 500,
+            "upgradeCostType": "Gold",
+            "buildTime": 10
         },
         "2": {
             "image": "images/buildings/archer_tower2.png",
             "attackRange": 10.5,
             "damage": 45,
             "attackSpeed": 0.8,
-            "health": 480
+            "health": 480,
+            "upgradeCost": 1500,
+            "upgradeCostType": "Gold",
+            "buildTime": 20
         },
         "3": {
             "image": "images/buildings/archer_tower3.png",
             "attackRange": 11.0,
             "damage": 58,
             "attackSpeed": 0.7,
-            "health": 600
+            "health": 600,
+            "upgradeCost": 4000,
+            "upgradeCostType": "Gold",
+            "buildTime": 60
         }
     },
     "GoldMine": {
@@ -98,19 +125,28 @@
             "image": "images/buildings/gold_mine.png",
             "productionRate": 200,
             "capacity": 500,
-            "health": 300
+            "health": 300,
+            "upgradeCost": 150,
+            "upgradeCostType": "Elixir",
+            "buildTime": 5
         },
         "2": {
             "image": "images/buildings/gold_mine2.png",
             "productionRate": 400,
             "capacity": 1000,
-            "health": 450
+            "health": 450,
+            "upgradeCost": 500,
+            "upgradeCostType": "Elixir",
+            "buildTime": 15
         },
         "3": {
             "image": "images/buildings/gold_mine3.png",
             "productionRate": 600,
             "capacity": 2000,
-            "health": 650
+            "health": 650,
+            "upgradeCost": 1200,
+            "upgradeCostType": "Elixir",
+            "buildTime": 30
         }
     },
     "ElixirPump": {
@@ -127,19 +163,28 @@
             "image": "images/buildings/elixir_pump.png",
             "productionRate": 200,
             "capacity": 500,
-            "health": 300
+            "health": 300,
+            "upgradeCost": 150,
+            "upgradeCostType": "Gold",
+            "buildTime": 5
         },
         "2": {
             "image": "images/buildings/elixir_pump2.png",
             "productionRate": 400,
             "capacity": 1000,
-            "health": 450
+            "health": 450,
+            "upgradeCost": 500,
+            "upgradeCostType": "Gold",
+            "buildTime": 15
         },
         "3": {
             "image": "images/buildings/elixir_pump3.png",
             "productionRate": 600,
             "capacity": 2000,
-            "health": 650
+            "health": 650,
+            "upgradeCost": 1200,
+            "upgradeCostType": "Gold",
+            "buildTime": 30
         }
     },
     "GoldStorage": {
@@ -155,17 +200,26 @@
         "1": {
             "image": "images/buildings/gold_storage.png",
             "capacity": 10000,
-            "health": 800
+            "health": 800,
+            "upgradeCost": 300,
+            "upgradeCostType": "Elixir",
+            "buildTime": 10
         },
         "2": {
             "image": "images/buildings/gold_storage2.png",
             "capacity": 25000,
-            "health": 1200
+            "health": 1200,
+            "upgradeCost": 1000,
+            "upgradeCostType": "Elixir",
+            "buildTime": 30
         },
         "3": {
             "image": "images/buildings/gold_storage3.png",
             "capacity": 50000,
-            "health": 1800
+            "health": 1800,
+            "upgradeCost": 3000,
+            "upgradeCostType": "Elixir",
+            "buildTime": 60
         }
     },
     "ElixirBottle": {
@@ -181,17 +235,26 @@
         "1": {
             "image": "images/buildings/elixir_bottle.png",
             "capacity": 10000,
-            "health": 800
+            "health": 800,
+            "upgradeCost": 300,
+            "upgradeCostType": "Gold",
+            "buildTime": 10
         },
         "2": {
             "image": "images/buildings/elixir_bottle2.png",
             "capacity": 25000,
-            "health": 1200
+            "health": 1200,
+            "upgradeCost": 1000,
+            "upgradeCostType": "Gold",
+            "buildTime": 30
         },
         "3": {
             "image": "images/buildings/elixir_bottle3.png",
             "capacity": 50000,
-            "health": 1800
+            "health": 1800,
+            "upgradeCost": 3000,
+            "upgradeCostType": "Gold",
+            "buildTime": 60
         }
     },
     "Barracks": {
@@ -207,17 +270,26 @@
         "1": {
             "image": "images/buildings/barracks.png",
             "queueSize": 20,
-            "health": 400
+            "health": 400,
+            "upgradeCost": 200,
+            "upgradeCostType": "Elixir",
+            "buildTime": 10
         },
         "2": {
             "image": "images/buildings/barracks2.png",
             "queueSize": 30,
-            "health": 550
+            "health": 550,
+            "upgradeCost": 800,
+            "upgradeCostType": "Elixir",
+            "buildTime": 30
         },
         "3": {
             "image": "images/buildings/barracks3.png",
             "queueSize": 40,
-            "health": 750
+            "health": 750,
+            "upgradeCost": 2000,
+            "upgradeCostType": "Elixir",
+            "buildTime": 60
         }
     },
     "Wall": {
@@ -231,15 +303,24 @@
         "maxLevel": 3,
         "1": {
             "image": "images/buildings/wall/1.png",
-            "health": 500
+            "health": 500,
+            "upgradeCost": 50,
+            "upgradeCostType": "Gold",
+            "buildTime": 0
         },
         "2": {
             "image": "images/buildings/wall/2.png",
-            "health": 1000
+            "health": 1000,
+            "upgradeCost": 200,
+            "upgradeCostType": "Gold",
+            "buildTime": 0
         },
         "3": {
             "image": "images/buildings/wall/3.png",
-            "health": 1500
+            "health": 1500,
+            "upgradeCost": 500,
+            "upgradeCostType": "Gold",
+            "buildTime": 0
         }
     }
 }

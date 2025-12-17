@@ -69,6 +69,11 @@ class ConfigManager {
     int maxLevel = 10;
     float imageScale = 1.0f;
 
+    // 升级消耗相关配置
+    int upgradeCost = 0;             // 升级消耗数量
+    std::string upgradeCostType = "Gold"; // 升级消耗类型 ("Gold" 或 "Elixir")
+    float buildTime = 5.0f;          // 升级/建造时间 (秒)
+
     // 防御属性 (Defense)
     float attackRange = 0.0f;
     int damage = 0;

@@ -1,4 +1,6 @@
 #include "BuildingMenuLayer.h"
+#include "Game/Building/ResourceBuilding.h"
+#include "Game/Building/Building.h" // 确保包含基类
 
 USING_NS_CC;
 using namespace cocos2d::ui;
@@ -49,51 +51,73 @@ void BuildingMenuLayer::showBuildingOptions(Building* building) {
   std::vector<std::tuple<std::string, std::string, std::function<void()>>>
       buttons;
 
-  // 1. 信息按钮
-  buttons.push_back(
-      std::make_tuple("images/ui/Information.png", "信息", [this]() {
-        if (_onInfoCallback && _currentBuilding) {
-          _onInfoCallback(_currentBuilding);
-        }
+  // 检查建筑是否处于升级状态
+  if(building->isUpgrading()){
+    // --- 施工状态菜单 ---
+      
+      // 1. 立即完成 (使用 Purple.png 代表水晶/宝石操作)
+      buttons.push_back(std::make_tuple("images/ui/Upgradetime.png", "立即完成", [this]() {
+          if (_currentBuilding) {
+              _currentBuilding->finishUpgradeImmediately();
+              hideOptions(); // 操作后关闭菜单
+          }
       }));
 
-  // 2. 升级按钮
-  buttons.push_back(std::make_tuple("images/ui/Upgrade.png", "升级", [this]() {
-    // 添加日志，确认点击事件触发
-    CCLOG("BuildingMenuLayer: Upgrade button clicked for %s",
-          _currentBuilding ? _currentBuilding->getBuildingName().c_str()
-                           : "null");
-
-    if (_onUpgradeCallback && _currentBuilding) {
-      // 触发回调，GameScene 应在回调中调用 building->upgrade()
-      _onUpgradeCallback(_currentBuilding);
-    }
-  }));
-
-  // 3. 收集按钮 (仅针对资源建筑)
-  if (building->getBuildingType() == BuildingType::RESOURCE) {
-    auto resourceBuilding = dynamic_cast<ResourceBuilding*>(building);
-    if (resourceBuilding) {
-      std::string iconPath;
-      std::string title;
-      if (resourceBuilding->getResourceType() == "Gold") {
-        iconPath = "images/ui/Gold.png";
-        title = "收集金币";
-      } else if (resourceBuilding->getResourceType() == "Elixir") {
-        iconPath = "images/ui/Elixir.png";
-        title = "收集圣水";
-      }
-
-      if (!iconPath.empty()) {
-        buttons.push_back(std::make_tuple(iconPath, title, [this]() {
-          if (_onCollectCallback && _currentBuilding) {
-            _onCollectCallback(_currentBuilding);
+      // 2. 取消升级
+      buttons.push_back(std::make_tuple("images/ui/Remove.png", "取消", [this]() {
+          if (_currentBuilding) {
+              _currentBuilding->cancelUpgrade();
+              hideOptions(); // 操作后关闭菜单
+          }
+      }));
+  }else{
+    // --- 正常状态菜单 ---
+        // 1. 信息按钮
+    buttons.push_back(
+        std::make_tuple("images/ui/Information.png", "信息", [this]() {
+          if (_onInfoCallback && _currentBuilding) {
+            _onInfoCallback(_currentBuilding);
           }
         }));
+
+    // 2. 升级按钮
+    buttons.push_back(std::make_tuple("images/ui/Upgrade.png", "升级", [this]() {
+      // 添加日志，确认点击事件触发
+      CCLOG("BuildingMenuLayer: Upgrade button clicked for %s",
+            _currentBuilding ? _currentBuilding->getBuildingName().c_str()
+                            : "null");
+
+      if (_onUpgradeCallback && _currentBuilding) {
+        // 触发回调，GameScene 应在回调中调用 building->upgrade()
+        _onUpgradeCallback(_currentBuilding);
+      }
+    }));
+
+    // 3. 收集按钮 (仅针对资源建筑)
+    if (building->getBuildingType() == BuildingType::RESOURCE) {
+      auto resourceBuilding = dynamic_cast<ResourceBuilding*>(building);
+      if (resourceBuilding) {
+        std::string iconPath;
+        std::string title;
+        if (resourceBuilding->getResourceType() == "Gold") {
+          iconPath = "images/ui/Gold.png";
+          title = "收集金币";
+        } else if (resourceBuilding->getResourceType() == "Elixir") {
+          iconPath = "images/ui/Elixir.png";
+          title = "收集圣水";
+        }
+
+        if (!iconPath.empty()) {
+          buttons.push_back(std::make_tuple(iconPath, title, [this]() {
+            if (_onCollectCallback && _currentBuilding) {
+              _onCollectCallback(_currentBuilding);
+            }
+          }));
+        }
       }
     }
   }
-
+  
   // 创建按钮
   int total = buttons.size();
   for (int i = 0; i < total; ++i) {
