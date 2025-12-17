@@ -33,18 +33,24 @@ std::string PathUtils::getRealFilePath(const std::string& relativePath,
     exeDir = exeDir.substr(0, lastSlash);
   }
 
-  // 向上查找 Resources 目录 (最多向上5层)
+  // 向上查找项目根目录 (通过查找 Classes 文件夹来识别)
+  // 避免误匹配到 build 目录下复制出来的 Resources
   std::string currentDir = exeDir;
-  bool foundResources = false;
+  bool foundSourceRoot = false;
   std::string resourceRoot;
 
   for (int i = 0; i < 5; ++i) {
-    std::string testPath = currentDir + "/Resources";
+    // 检查是否存在 Classes 目录，这是源码目录的特征
+    std::string testPath = currentDir + "/Classes";
     if (_access(testPath.c_str(), 0) == 0) {
-      resourceRoot = testPath;
-      foundResources = true;
-      // CCLOG("DevMode: Found Resources at: %s", testPath.c_str());
-      break;
+      // 找到了源码根目录，构造 Resources 路径
+      std::string sourceResources = currentDir + "/Resources";
+      if (_access(sourceResources.c_str(), 0) == 0) {
+        resourceRoot = sourceResources;
+        foundSourceRoot = true;
+        // CCLOG("DevMode: Found Source Root at: %s", currentDir.c_str());
+        break;
+      }
     }
     // 向上移动一级
     size_t slash = currentDir.find_last_of("/");
@@ -52,7 +58,7 @@ std::string PathUtils::getRealFilePath(const std::string& relativePath,
     currentDir = currentDir.substr(0, slash);
   }
 
-  if (foundResources) {
+  if (foundSourceRoot) {
     path = resourceRoot + "/" + normalizedRelativePath;
     return path;
   }

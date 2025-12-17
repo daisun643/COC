@@ -344,6 +344,12 @@ void GameScene::onMouseUp(Event* event) {
         _buildingManager->registerBuilding(_placementBuilding);
         // 隐藏新建筑的血条（GameScene 中不显示血条）
         _placementBuilding->setHealthBarVisible(false);
+
+        // [修复] 强制保存一次，确保商店购买的建筑立即写入文件
+        // 虽然 registerBuilding
+        // 内部也会尝试保存，但为了保险起见，这里显式调用一次
+        _buildingManager->saveBuildingMap();
+        CCLOG("GameScene: Building placed and saved.");
       }
 
       _selectedBuilding = _placementBuilding;
