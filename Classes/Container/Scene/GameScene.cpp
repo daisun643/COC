@@ -475,7 +475,8 @@ std::vector<ShopItem> GameScene::buildShopCatalog() const {
       {"ElixirBottle",
        {"圣水瓶", "储存大量圣水", 500, 0, Color4B(186, 85, 211, 255)}},
       {"Barracks", {"兵营", "训练军队的地方", 200, 0, Color4B(139, 0, 0, 255)}},
-      {"Wall", {"城墙", "阻挡敌人进攻", 50, 0, Color4B(200, 200, 200, 255)}}};
+      {"Wall", {"城墙", "阻挡敌人进攻", 50, 0, Color4B(200, 200, 200, 255)}},
+      {"Bomb", {"隐形炸弹", "给粗心的敌人一个惊喜！", 200, 0, Color4B(50, 50, 50, 255)}}};
 
   for (const auto& name : buildingNames) {
     // 跳过没有元数据的建筑（或者使用默认值）
@@ -507,6 +508,8 @@ std::vector<ShopItem> GameScene::buildShopCatalog() const {
       item.category = BuildingType::BARRACKS;
     else if (config.type == "WALL")
       item.category = BuildingType::WALL;
+    else if (config.type == "TRAP") 
+      item.category = BuildingType::TRAP;
     else
       continue;  // 未知类型跳过
 

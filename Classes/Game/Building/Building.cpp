@@ -157,6 +157,9 @@ void Building::createDefaultAppearance() {
     case BuildingType::WALL:
       color = Color4B(128, 128, 128, 255);  // 灰色
       break;
+    case BuildingType::TRAP:
+      color = Color4B(60, 60, 60, 200);     // 深灰半透明
+      break;
   }
 
   // 创建彩色矩形作为默认外观

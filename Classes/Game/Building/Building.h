@@ -14,7 +14,8 @@ enum class BuildingType {
   RESOURCE,   // 资源建筑
   STORAGE,    // 储存建筑
   BARRACKS,   // 兵营
-  WALL        // 城墙
+  WALL,        // 城墙
+  TRAP        // 陷阱
 };
 
 /**
