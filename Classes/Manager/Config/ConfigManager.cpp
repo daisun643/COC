@@ -209,6 +209,19 @@ bool ConfigManager::loadConstantConfig() {
     _constantConfig.glowDelay = doc["GlowDelay"].GetFloat();
   }
 
+  // 解析初始资源
+  if (doc.HasMember("InitialGold") && doc["InitialGold"].IsInt()) {
+    _constantConfig.initialGold = doc["InitialGold"].GetInt();
+  } else {
+    _constantConfig.initialGold = 5000;  // 默认值
+  }
+
+  if (doc.HasMember("InitialElixir") && doc["InitialElixir"].IsInt()) {
+    _constantConfig.initialElixir = doc["InitialElixir"].GetInt();
+  } else {
+    _constantConfig.initialElixir = 500;  // 默认值
+  }
+
   return true;
 }
 
@@ -296,6 +309,14 @@ ConfigManager::BuildingConfig ConfigManager::getBuildingConfig(
   }
   CCLOG("Warning: Config for building '%s' not found.", name.c_str());
   return BuildingConfig();
+}
+
+std::vector<std::string> ConfigManager::getAllBuildingNames() const {
+  std::vector<std::string> names;
+  for (const auto& pair : _buildingConfigs) {
+    names.push_back(pair.first);
+  }
+  return names;
 }
 
 bool ConfigManager::loadSoldierConfig() {

@@ -7,6 +7,8 @@
 #include <sstream>
 #include <string>
 
+#include "Utils/PathUtils.h"
+
 #ifdef _WIN32
 #include <direct.h>
 #include <io.h>
@@ -1028,8 +1030,7 @@ void AttackScene::endAttack() {
     std::string timeStr = timeStream.str();
 
     // recordPath需要加上时间
-    std::string recordPath =
-        "Resources/record/" + cleanName + "_" + timeStr + ".json";
+    std::string recordPath = "record/" + cleanName + "_" + timeStr + ".json";
     // 保存记录文件
     if (_recordManager->endAttackAndSave(recordPath)) {
       CCLOG("AttackScene: Record saved to %s", recordPath.c_str());
@@ -1178,9 +1179,10 @@ void AttackScene::updateRecordSummary(const std::string& recordName,
   rapidjson::Document doc;
   bool fileExists = false;
 
+  // 使用 PathUtils 获取真实路径 (用于读取)
+  std::string fullPath = PathUtils::getRealFilePath(summaryPath, false);
+
   // 尝试读取现有文件（如果存在）
-  // 先尝试通过 fullPathForFilename 读取
-  std::string fullPath = fileUtils->fullPathForFilename(summaryPath);
   if (!fullPath.empty() && fileUtils->isFileExist(fullPath)) {
     std::string content = fileUtils->getStringFromFile(fullPath);
     if (!content.empty()) {
@@ -1189,10 +1191,6 @@ void AttackScene::updateRecordSummary(const std::string& recordName,
         fileExists = true;
       }
     }
-  } else {
-    CCLOG("AttackScene: Failed to read record summary from %s",
-          summaryPath.c_str());
-    return;
   }
 
   // 如果文件不存在或解析失败，创建新文档
@@ -1244,11 +1242,8 @@ void AttackScene::updateRecordSummary(const std::string& recordName,
   doc.Accept(writer);
   std::string jsonString = buffer.GetString();
 
-  // 写入文件，使用与 RecordManager 相同的方式
-  std::string writePath = fullPath;
-
-  // 将路径中的反斜杠转换为正斜杠（跨平台兼容）
-  std::replace(writePath.begin(), writePath.end(), '\\', '/');
+  // 使用 PathUtils 获取真实写入路径
+  std::string writePath = PathUtils::getRealFilePath(summaryPath, true);
 
   // 确保目录存在
   size_t pos = writePath.find_last_of("/\\");

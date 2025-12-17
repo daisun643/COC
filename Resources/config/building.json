@@ -230,15 +230,15 @@
         "imageScale": 1.0,
         "maxLevel": 3,
         "1": {
-            "image": "images/buildings/wall.png",
+            "image": "images/buildings/wall/1.png",
             "health": 500
         },
         "2": {
-            "image": "images/buildings/wall2.png",
+            "image": "images/buildings/wall/2.png",
             "health": 1000
         },
         "3": {
-            "image": "images/buildings/wall3.png",
+            "image": "images/buildings/wall/3.png",
             "health": 1500
         }
     }

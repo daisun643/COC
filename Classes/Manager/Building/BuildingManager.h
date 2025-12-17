@@ -127,6 +127,7 @@ class BuildingManager {
   Building* createBuilding(const std::string& buildingName, float row,
                            float col, int level, float hp = -1.0f);
 
+  bool _isLoading;                    // 是否正在加载地图
   std::vector<Building*> _buildings;  // 所有建筑的列表
   Vec2 _p00;                          // 地图原点
   float _deltaX;                      // X方向间距

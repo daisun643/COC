@@ -90,9 +90,9 @@ std::vector<Vec2> PathFinder::findPath(
   // 使用简单的二维数组标记已访问，假设地图最大 100x100
   // 或者使用 set
   // 为了性能，这里使用简单的 set 记录坐标
-  std::unordered_set<long> closedSet;
-  auto coordToLong = [](int r, int c) -> long {
-    return (static_cast<long>(r) << 32) | static_cast<unsigned int>(c);
+  std::unordered_set<long long> closedSet;
+  auto coordToLong = [](int r, int c) -> long long {
+    return (static_cast<long long>(r) << 32) | static_cast<unsigned int>(c);
   };
 
   PathNode* startNode = new PathNode(sRow, sCol);

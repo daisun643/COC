@@ -1,8 +1,9 @@
 #ifndef __PLAYER_MANAGER_H__
 #define __PLAYER_MANAGER_H__
 
-#include "cocos2d.h"
 #include <functional>
+
+#include "cocos2d.h"
 
 class PlayerManager {
  public:
@@ -40,12 +41,15 @@ class PlayerManager {
   // 设置自动保存回调函数
   void setAutoSaveCallback(const std::function<void()>& callback);
 
+  bool isNewGame() const { return _isNewGame; }
+
  private:
   PlayerManager();
   ~PlayerManager();
 
   static PlayerManager* _instance;
 
+  bool _isNewGame;
   int _gold;
   int _elixir;
   int _maxGold;

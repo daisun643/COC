@@ -37,6 +37,7 @@ bool TownHall::init(int level, std::string imagePath, int gridCount,
   // 设置最大生命值（当前生命值将在 BuildingManager 中设置，默认为 MaxHP）
   auto config = ConfigManager::getInstance()->getBuildingConfig("TownHall");
   this->_maxHP = config.maxHP;
+  this->_capacity = config.capacity;
 
   return true;
 }

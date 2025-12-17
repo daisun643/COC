@@ -1,5 +1,10 @@
 #include "BuildingManager.h"
 
+#include <io.h>  // for _access
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
+#include <windows.h>
+#endif
+
 #include <algorithm>
 #include <cmath>
 #include <fstream>
@@ -14,14 +19,14 @@
 #include "Game/Building/Wall.h"
 #include "Manager/Config/ConfigManager.h"
 #include "Manager/PlayerManager.h"
-#include "Utils/GridUtils.h"
+#include "Utils/PathUtils.h"
 #include "json/document.h"
 #include "json/stringbuffer.h"
 #include "json/writer.h"
 
 BuildingManager::BuildingManager(const std::string& jsonFilePath,
                                  const Vec2& p00)
-    : _jsonFilePath(jsonFilePath), _p00(p00) {
+    : _jsonFilePath(jsonFilePath), _p00(p00), _isLoading(false) {
   // 初始化网格地图为可通行 (0)
   for (int i = 0; i < MAP_GRID_SIZE; ++i) {
     for (int j = 0; j < MAP_GRID_SIZE; ++j) {
@@ -94,45 +99,47 @@ bool BuildingManager::init() {
 }
 
 bool BuildingManager::loadBuildingMap() {
+  _isLoading = true;
   rapidjson::Document doc;
 
   std::string content;
-  bool isSaveFile = false;
-  bool loadedFromSave = false;
+  bool isSaveFile = (_jsonFilePath == "develop/map.json");
 
-  // 只有当加载的是默认地图配置时，才尝试加载用户存档
-  // 这样可以避免关卡地图（如 level/1.json）被用户存档覆盖
-  if (_jsonFilePath == "develop/map.json") {
-    std::string writablePath =
-        FileUtils::getInstance()->getWritablePath() + "map.json";
-    if (FileUtils::getInstance()->isFileExist(writablePath)) {
-      content = FileUtils::getInstance()->getStringFromFile(writablePath);
-      CCLOG("BuildingManager: Loading map from save file: %s",
-            writablePath.c_str());
-      isSaveFile = true;
-      loadedFromSave = true;
-    }
-  }
+  // 使用 PathUtils 获取真实路径
+  std::string fullPath = PathUtils::getRealFilePath(_jsonFilePath, false);
 
-  if (!loadedFromSave) {
-    // 如果没有存档或不是加载默认地图，从 Resources 加载指定配置
-    std::string fullPath =
-        FileUtils::getInstance()->fullPathForFilename(_jsonFilePath);
-    if (fullPath.empty()) {
-      CCLOG("Config file not found: %s", _jsonFilePath.c_str());
-      return false;
-    }
+  bool needSaveDefault = false;
+
+  if (!fullPath.empty() && FileUtils::getInstance()->isFileExist(fullPath)) {
     content = FileUtils::getInstance()->getStringFromFile(fullPath);
     CCLOG("BuildingManager: Loading map from config: %s", fullPath.c_str());
+  } else {
+    if (_jsonFilePath == "develop/map.json") {
+      CCLOG("Map file not found, creating default map.");
+      content = R"({
+    "TownHall": [ { "row": 22, "col": 22, "level": 1, "HP": 1500 } ],
+    "GoldStorage": [ { "row": 18, "col": 22, "level": 1, "HP": 800 } ],
+    "ElixirBottle": [ { "row": 26, "col": 22, "level": 1, "HP": 800 } ],
+    "GoldMine": [ { "row": 22, "col": 18, "level": 1, "HP": 300 } ],
+    "ElixirPump": [ { "row": 22, "col": 26, "level": 1, "HP": 300 } ]
+})";
+      needSaveDefault = true;
+    } else {
+      CCLOG("Config file not found: %s", _jsonFilePath.c_str());
+      _isLoading = false;
+      return false;
+    }
   }
 
   if (content.empty()) {
+    _isLoading = false;
     return false;
   }
 
   doc.Parse(content.c_str());
   if (doc.HasParseError()) {
     CCLOG("JSON parse error");
+    _isLoading = false;
     return false;
   }
 
@@ -171,10 +178,6 @@ bool BuildingManager::loadBuildingMap() {
                 // updateOfflineProduction 会设置 storedResource 并加上离线产出
                 resBuilding->updateOfflineProduction(lastTimestamp,
                                                      storedResource);
-              } else {
-                // 如果是初始配置或没有存档，重置为0 (ResourceBuilding
-                // 构造函数已做，但这里确保一下) 注意：初始配置没有
-                // lastTimestamp，逻辑会自动跳过计算
               }
             }
 
@@ -183,6 +186,33 @@ bool BuildingManager::loadBuildingMap() {
         }
       }
     }
+  }
+
+  // 更新玩家资源上限
+  auto playerManager = PlayerManager::getInstance();
+  if (playerManager) {
+    // 资源上限已在 registerBuilding -> updatePlayerResourcesStats 中更新
+    int currentMaxGold = playerManager->getMaxGold();
+    int currentMaxElixir = playerManager->getMaxElixir();
+
+    CCLOG("BuildingManager: Total Capacity Calculated - Gold: %d, Elixir: %d",
+          currentMaxGold, currentMaxElixir);
+
+    // 如果是新游戏（首次运行），将资源填满
+    if (playerManager->isNewGame()) {
+      playerManager->setGold(currentMaxGold);
+      playerManager->setElixir(currentMaxElixir);
+      CCLOG("New Game: Resources filled to max capacity (Gold: %d, Elixir: %d)",
+            currentMaxGold, currentMaxElixir);
+    }
+
+    // 强制保存一次，确保 user_data.json 被创建
+    playerManager->saveUserData();
+  }
+
+  if (needSaveDefault) {
+    saveBuildingMap();
+    _isLoading = false;
   }
 
   return true;
@@ -235,8 +265,17 @@ void BuildingManager::saveBuildingMap() {
   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
   doc.Accept(writer);
 
-  // 保存到 WritablePath 下的 map.json
-  std::string path = FileUtils::getInstance()->getWritablePath() + "map.json";
+  // 使用 PathUtils 获取真实写入路径
+  std::string path = PathUtils::getRealFilePath(_jsonFilePath, true);
+
+  // 使用 FileUtils::writeStringToFile 统一写入
+  // 注意：PathUtils 在 Windows DevMode 下返回的是绝对路径，FileUtils 可以处理
+  // 在非 Windows 平台，返回的是相对路径，FileUtils 会写入到 WritablePath
+  // (如果设置了) 或者我们直接使用 std::ofstream 来确保绝对路径写入成功
+  // (FileUtils 有时会强制前缀)
+
+  // 为了确保 Windows DevMode 下能写入源码目录，我们优先使用 std::ofstream
+  // 因为 FileUtils::writeStringToFile 可能会强制加上 WritablePath 前缀
 
   std::ofstream outFile(path.c_str());
   if (outFile.is_open()) {
@@ -244,7 +283,12 @@ void BuildingManager::saveBuildingMap() {
     outFile.close();
     CCLOG("BuildingManager: Map saved to %s", path.c_str());
   } else {
-    CCLOG("BuildingManager: Failed to save map.");
+    CCLOG("BuildingManager: Failed to save map to %s", path.c_str());
+    // 尝试使用 MessageBox 提示错误 (仅限 Windows)
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
+    std::string msg = "Failed to save map to: " + path;
+    MessageBoxA(NULL, msg.c_str(), "Save Error", MB_OK | MB_ICONERROR);
+#endif
   }
 }
 
@@ -386,6 +430,10 @@ void BuildingManager::registerBuilding(Building* building) {
 
   // 更新资源统计
   updatePlayerResourcesStats();
+
+  if (!_isLoading) {
+    saveBuildingMap();
+  }
 }
 
 void BuildingManager::updatePlayerResourcesStats() {
@@ -399,10 +447,9 @@ void BuildingManager::updatePlayerResourcesStats() {
   int goldProd = 0;
   int elixirProd = 0;
 
-  // 基础容量（例如大本营自带的，或者系统默认的）
-  // 这里假设默认有1000容量，避免初始为0
-  maxGold = 1000;
-  maxElixir = 1000;
+  // 基础容量
+  maxGold = 0;
+  maxElixir = 0;
 
   for (auto building : _buildings) {
     if (!building) continue;
@@ -449,5 +496,6 @@ void BuildingManager::removeBuilding(Building* building) {
 
     _buildings.erase(it);
     updatePlayerResourcesStats();
+    saveBuildingMap();
   }
 }

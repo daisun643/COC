@@ -14,5 +14,7 @@
         "tips": "网格间距，deltaX = W/2 + 16, deltaY = H/2"
     },
     "GlowDelay": 0.5,
-    "imageRatio": 0.9
+    "imageRatio": 0.9,
+    "InitialGold": 5000,
+    "InitialElixir": 5000
 }

@@ -401,6 +401,11 @@ void BasicScene::onMouseUp(Event* event) {
           GridUtils::screenToGrid(originalPos, _p00, startRow, startCol);
           _draggingBuilding->setRow(startRow);
           _draggingBuilding->setCol(startCol);
+        } else {
+          // 移动成功且有效，保存地图
+          if (_buildingManager) {
+            _buildingManager->saveBuildingMap();
+          }
         }
       } else {
         // 找不到有效网格点，恢复到之前的位置

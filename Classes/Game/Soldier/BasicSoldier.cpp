@@ -517,7 +517,43 @@ bool BasicSoldier::findTarget(const std::vector<Building*>& buildings) {
 
       if (!pathFound) {
         _pathQueue.clear();
-        setTargetPosition(targetPos);
+
+        // 寻路失败（可能是被墙挡住了），尝试寻找最近的墙作为临时目标
+        Building* nearestWall = nullptr;
+        float minWallDist = FLT_MAX;
+
+        for (Building* b : buildings) {
+          if (b && b->isVisible() && b->isAlive() &&
+              b->getBuildingType() == BuildingType::WALL) {
+            float d = getDistanceTo(b->getPosition());
+            if (d < minWallDist) {
+              minWallDist = d;
+              nearestWall = b;
+            }
+          }
+        }
+
+        if (nearestWall) {
+          _target = nearestWall;
+          targetPos = nearestWall->getPosition();
+
+          // 重新尝试寻路到墙
+          if (_soldierCategory == SoldierCategory::LAND &&
+              _gridStatusCallback && !_p00.equals(Vec2::ZERO)) {
+            _pathQueue = PathFinder::findPath(this->getPosition(), targetPos,
+                                              _p00, _gridStatusCallback);
+            if (!_pathQueue.empty()) {
+              _currentPathIndex = 0;
+              setTargetPosition(_pathQueue[_currentPathIndex]);
+              pathFound = true;
+            }
+          }
+        }
+
+        if (!pathFound) {
+          // 如果还是找不到路径（或者没有墙），只能直走
+          setTargetPosition(targetPos);
+        }
       }
 
       _state = SoldierState::MOVING;
