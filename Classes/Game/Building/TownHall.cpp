@@ -48,5 +48,5 @@ void TownHall::upgrade() {
 
   // 如果大本营升级有特殊逻辑（比如触发成就、解锁新功能），可以在这里添加
   // 目前主要依赖配置文件的数值变化
-  CCLOG("TownHall upgraded to level %d. MaxHP: %.0f", _level, _maxHealth);
+  CCLOG("TownHall upgraded to level %d. MaxHP: %.0f", _level, _maxHP);
 }
