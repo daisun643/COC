@@ -19,6 +19,7 @@
 
 #include "Container/Scene/SenceHelper.h"
 #include "Game/Building/DefenseBuilding.h"
+#include "Game/Building/TrapBuilding.h"
 #include "Game/Soldier/BasicSoldier.h"
 #include "Game/Spell/HealSpell.h"
 #include "Game/Spell/LightningSpell.h"
@@ -80,6 +81,20 @@ bool AttackScene::init(const std::string& jsonFilePath) {
   _exitButton = nullptr;
   _countdownLabel = nullptr;
   // _levelName 在 createScene() 中设置，这里不要重置
+
+  // 初始化时将所有陷阱设为不可见（隐形）
+  if (_buildingManager) {
+      const auto& allBuildings = _buildingManager->getAllBuildings();
+      for (Building* building : allBuildings) {
+          if (building && building->getBuildingType() == BuildingType::TRAP) {
+              TrapBuilding* trap = dynamic_cast<TrapBuilding*>(building);
+              if (trap) {
+                  trap->hide(); // 隐藏陷阱
+                  CCLOG("Trap hidden at init: %s", trap->getBuildingName().c_str());
+              }
+          }
+      }
+  }
 
   // 创建并初始化 TroopManager
   _troopManager = new (std::nothrow) TroopManager();
@@ -993,6 +1008,9 @@ void AttackScene::startAttack() {
   this->schedule([this](float dt) { this->updateDefenseBuildings(dt); }, 0.0f,
                  "updateDefenseBuildings");
 
+  // 启动陷阱检测更新 (每 0.1 秒检查一次)
+  this->schedule([this](float dt) { this->updateTraps(dt); }, 0.1f, "updateTraps");
+
   CCLOG("Attack started, countdown: %d seconds", _countdownSeconds);
 }
 
@@ -1006,6 +1024,9 @@ void AttackScene::endAttack() {
 
   // 停止防御建筑攻击更新
   this->unschedule("updateDefenseBuildings");
+
+  // 停止陷阱检测
+  this->unschedule("updateTraps");
 
   // 保存记录
   if (_recordManager) {
@@ -1140,6 +1161,28 @@ void AttackScene::updateDefenseBuildings(float delta) {
     // 调用防御建筑的攻击方法
     defenseBuilding->attackSoldiers(_placedSoldiers, targetCategories, delta);
   }
+}
+
+// 陷阱检测更新函数
+void AttackScene::updateTraps(float delta) {
+    if (!_isAttackStarted || !_buildingManager || _placedSoldiers.empty()) {
+        return;
+    }
+
+    const auto& allBuildings = _buildingManager->getAllBuildings();
+    
+    // 遍历所有建筑
+    for (Building* building : allBuildings) {
+        // 筛选出存活的陷阱建筑
+        if (building && building->getBuildingType() == BuildingType::TRAP && building->isAlive()) {
+            TrapBuilding* trap = dynamic_cast<TrapBuilding*>(building);
+            // 只有处于布防状态（未爆炸）的陷阱才需要检查
+            if (trap && trap->getIsArmed()) {
+                // 如果检测到触发，trap 内部会处理伤害、显形和特效
+                trap->checkTrigger(_placedSoldiers);
+            }
+        }
+    }
 }
 
 AttackScene::~AttackScene() {

@@ -30,7 +30,17 @@ public:
     bool checkTrigger(const std::vector<BasicSoldier*>& soldiers);
 
     /**
-     * 重置陷阱（例如战斗结束后重新布防）
+     * 显示陷阱（用于触发时或自己查看时）
+     */
+    void reveal();
+
+    /**
+     * 隐藏陷阱（用于进攻开始时）
+     */
+    void hide();
+
+    /**
+     * 重置陷阱（重新布防）
      */
     void rearm();
 
@@ -38,7 +48,10 @@ protected:
     TrapBuilding();
     virtual ~TrapBuilding();
 
-    void explode(); // 执行爆炸逻辑（特效、伤害计算等）
+    /**
+     * 执行爆炸逻辑：造成伤害、播放特效、移除自身状态
+     */
+    void explode(const std::vector<BasicSoldier*>& soldiers);
 };
 
 #endif // __TRAP_BUILDING_H__

@@ -57,6 +57,15 @@ void TrapBuilding::upgrade() {
     rearm();
 }
 
+void TrapBuilding::hide() {
+    this->setVisible(false);
+}
+
+void TrapBuilding::reveal() {
+    this->setVisible(true);
+    this->setOpacity(255);
+}
+
 bool TrapBuilding::checkTrigger(const std::vector<BasicSoldier*>& soldiers) {
     if (!_isArmed) return false;
 
@@ -67,40 +76,63 @@ bool TrapBuilding::checkTrigger(const std::vector<BasicSoldier*>& soldiers) {
     Vec2 myPos = this->getPosition(); 
     
     for (const auto& soldier : soldiers) {
-        if (soldier && soldier->getPosition().distance(myPos) <= _triggerRange) {
+        if (soldier && soldier->isAlive() && soldier->getPosition().distance(myPos) <= _triggerRange) {
             triggered = true;
             break;
         }
     }
 
     if (triggered) {
-        explode();
+        explode(soldiers);
         return true;
     }
 
     return false;
 }
 
-void TrapBuilding::explode() {
-    _isArmed = false;
-    
-    // 1. 播放爆炸特效 (示例)
+void TrapBuilding::explode(const std::vector<BasicSoldier*>& soldiers) {
+    _isArmed = false; // [新增] 标记为已触发，防止重复爆炸
+
+    // 1. 显形
+    reveal();
+
+    // 2. 播放爆炸特效
     auto particle = ParticleExplosion::create();
-    particle->setPosition(this->getContentSize().width / 2, this->getContentSize().height / 2);
-    particle->setAutoRemoveOnFinish(true);
-    this->addChild(particle, 20);
-
-    // 2. 变更外观为已损毁 (可选)
-    this->setColor(Color3B::GRAY);
-
-    CCLOG("Trap %s exploded! Dealt %d damage.", _buildingName.c_str(), _damage);
+    if (particle) {
+        particle->setPosition(Vec2(this->getContentSize().width / 2, this->getContentSize().height / 2));
+        particle->setAutoRemoveOnFinish(true);
+        particle->setScale(0.8f);
+        // 设置粒子颜色为黑/红/橙，模拟炸弹
+        particle->setStartColor(Color4F::ORANGE);
+        particle->setEndColor(Color4F::BLACK);
+        this->addChild(particle, 100);
+    }
     
-    // 注意：实际的伤害扣除逻辑通常由 BattleLayer 调用 checkTrigger 后，
-    // 获取返回值，再对范围内的所有单位进行扣血。
-    // 或者在这里通过回调函数通知战斗层造成区域伤害。
+    // 3. 造成区域伤害
+    // 爆炸范围通常等于或略大于触发范围
+    float damageRadius = _triggerRange * 1.5f; 
+    Vec2 myPos = this->getPosition();
+
+    // 现在可以直接使用 soldiers 变量了
+    for (const auto& soldier : soldiers) {
+        // 增加存活检查
+        if (soldier && soldier->isAlive()) {
+            float distance = soldier->getPosition().distance(myPos);
+            if (distance <= damageRadius) {
+                soldier->takeDamage(_damage);
+            }
+        }
+    }
+
+    // 4. 自身状态变为废墟 (变灰)
+    this->setColor(Color3B::GRAY);
+    this->setOpacity(128);
+    
+    CCLOG("Trap %s exploded! Dealt %d damage.", _buildingName.c_str(), _damage);
 }
 
 void TrapBuilding::rearm() {
     _isArmed = true;
-    this->setColor(Color3B::WHITE); // 恢复颜色
+    this->setColor(Color3B::WHITE);
+    this->setOpacity(180); // 恢复半透明状态
 }

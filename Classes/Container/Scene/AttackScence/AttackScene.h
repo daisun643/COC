@@ -11,6 +11,7 @@
 #include "Manager/Record/RecordManager.h"
 #include "Manager/Troop/TroopManager.h"
 #include "ui/CocosGUI.h"
+#include "Game/Building/TrapBuilding.h"
 
 USING_NS_CC;
 
@@ -115,6 +116,12 @@ class AttackScene : public BasicScene {
    * @param delta 时间间隔
    */
   void updateDefenseBuildings(float delta);
+
+  /**
+     * 更新陷阱检测（每帧调用）
+     * 检测是否有士兵触发陷阱
+     */
+    void updateTraps(float delta);
 
   /**
    * 更新记录摘要文件 record/summary.json
