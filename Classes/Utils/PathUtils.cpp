@@ -1,5 +1,7 @@
 #include "PathUtils.h"
 
+#include <algorithm>
+
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
 #include <direct.h>
 #include <io.h>
@@ -17,7 +19,11 @@ std::string PathUtils::getRealFilePath(const std::string& relativePath,
   char exePath[MAX_PATH];
   GetModuleFileNameA(NULL, exePath, MAX_PATH);
   std::string exeDir = std::string(exePath);
-  size_t lastSlash = exeDir.find_last_of("\\/");
+
+  // 统一将反斜杠替换为正斜杠，避免混合路径分隔符
+  std::replace(exeDir.begin(), exeDir.end(), '\\', '/');
+
+  size_t lastSlash = exeDir.find_last_of("/");
   if (lastSlash != std::string::npos) {
     exeDir = exeDir.substr(0, lastSlash);
   }
@@ -36,7 +42,7 @@ std::string PathUtils::getRealFilePath(const std::string& relativePath,
       break;
     }
     // 向上移动一级
-    size_t slash = currentDir.find_last_of("\\/");
+    size_t slash = currentDir.find_last_of("/");
     if (slash == std::string::npos) break;
     currentDir = currentDir.substr(0, slash);
   }
