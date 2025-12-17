@@ -43,21 +43,35 @@ bool ResourceBuilding::init(int level, const std::string& buildingName) {
 }
 
 void ResourceBuilding::upgrade() {
+  // 只调用父类开始倒计时，不要在这里更新属性
+  // 属性更新应该在倒计时结束后的 completeUpgrade 中进行
   Building::upgrade();
-  auto config =
-      ConfigManager::getInstance()->getBuildingConfig(_buildingName, _level);
-  this->_productionRate = config.productionRate;
-  this->_capacity = config.capacity;
-  CCLOG("ResourceBuilding upgraded: Rate -> %d", _productionRate);
+}
+
+// 新增 completeUpgrade 实现
+void ResourceBuilding::completeUpgrade() {
+    // 1. 先调用父类完成通用逻辑（等级+1，外观更新，血量更新等）
+    Building::completeUpgrade();
+
+    // 2. 更新资源建筑特有的属性（产能、容量）
+    auto config = ConfigManager::getInstance()->getBuildingConfig(_buildingName, _level);
+    this->_productionRate = config.productionRate;
+    this->_capacity = config.capacity;
+
+    CCLOG("ResourceBuilding upgrade completed! New Rate: %d, New Capacity: %d", _productionRate, _capacity);
 }
 
 void ResourceBuilding::update(float dt) {
+  // 必须调用父类 update 以执行倒计时逻辑
+  Building::update(dt);
+
+  // 可选：如果希望升级时停止生产，可以打开下面这行注释
+  // if (isUpgrading()) return;
+
   if (_productionRate <= 0 || _capacity <= 0) return;
 
-  // 生产逻辑：为了加快测试速度，将配置的产量视为“每分钟产量”
-  // 原逻辑是 / 3600.0f (每小时)，现在改为 / 60.0f (每分钟)
+  // 生产逻辑
   float productionPerSecond = _productionRate / 60.0f;
-
   _storedResource += productionPerSecond * dt;
 
   if (_storedResource > _capacity) {

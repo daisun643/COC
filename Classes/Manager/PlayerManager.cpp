@@ -37,6 +37,7 @@ PlayerManager::PlayerManager()
     : _isNewGame(false),
       _gold(0),
       _elixir(0),
+      _gems(20),
       _maxGold(0),
       _maxElixir(0),
       _goldProduction(0),
@@ -97,6 +98,19 @@ bool PlayerManager::init() {
 // 实现设置回调的方法
 void PlayerManager::setAutoSaveCallback(const std::function<void()>& callback) {
   _autoSaveCallback = callback;
+}
+
+void PlayerManager::addGems(int amount) {
+    _gems += amount;
+    // saveUserData(); // 建议保存
+}
+bool PlayerManager::consumeGems(int amount) {
+    if (_gems >= amount) {
+        _gems -= amount;
+        // saveUserData(); // 建议保存
+        return true;
+    }
+    return false;
 }
 
 void PlayerManager::setGold(int amount) {

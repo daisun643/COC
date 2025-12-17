@@ -268,6 +268,14 @@ bool ConfigManager::loadBuildingConfig() {
           if (lvlVal.HasMember("maxHP"))
             levelConfig.maxHP = lvlVal["maxHP"].GetFloat();
 
+          // 解析升级消耗和时间配置
+          if (lvlVal.HasMember("upgradeCost"))
+            levelConfig.upgradeCost = lvlVal["upgradeCost"].GetInt();
+          if (lvlVal.HasMember("upgradeCostType"))
+            levelConfig.upgradeCostType = lvlVal["upgradeCostType"].GetString();
+          if (lvlVal.HasMember("buildTime"))
+            levelConfig.buildTime = lvlVal["buildTime"].GetFloat();
+
           // Defense
           if (lvlVal.HasMember("damage"))
             levelConfig.damage = lvlVal["damage"].GetInt();
