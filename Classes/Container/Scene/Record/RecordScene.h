@@ -91,6 +91,7 @@ class RecordScene : public BasicScene {
   std::vector<PlacementRecord> _records;       // 记录列表
   std::vector<BasicSoldier*> _placedSoldiers;  // 已布置的士兵列表
   std::vector<BasicSpell*> _activeSpells;      // 活跃的法术列表
+  int _totalDuration;                          // 总时长（秒）
 
   // 回放控制相关
   cocos2d::ui::Button* _playButton;   // 播放按钮

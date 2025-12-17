@@ -392,6 +392,29 @@ Building* BuildingManager::getBuildingAtPosition(const Vec2& pos) const {
   return nullptr;
 }
 
+Building* BuildingManager::getBuildingAtGrid(int row, int col) const {
+  for (Building* building : _buildings) {
+    if (building && building->isAlive()) {
+      // 建筑中心坐标
+      float bRow = building->getRow();
+      float bCol = building->getCol();
+      int gridSize = building->getGridCount();
+
+      // 建筑占据的范围是从 center - size/2 到 center + size/2
+      float halfSize = gridSize / 2.0f;
+
+      // 检查点 (row, col) 是否在建筑范围内
+      // 注意：这里使用简单的矩形范围检查，因为网格坐标系本身是正交的（虽然渲染是菱形）
+      // 建筑占据的网格是 [bRow - halfSize, bRow + halfSize)
+      if (row >= bRow - halfSize && row < bRow + halfSize &&
+          col >= bCol - halfSize && col < bCol + halfSize) {
+        return building;
+      }
+    }
+  }
+  return nullptr;
+}
+
 void BuildingManager::addBuildingsToLayer(Layer* layer) {
   if (!layer) {
     return;

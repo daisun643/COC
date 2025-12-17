@@ -3,6 +3,8 @@
 #include <fstream>
 #include <sstream>
 
+#include "Utils/PathUtils.h"
+
 USING_NS_CC;
 
 ConfigManager* ConfigManager::_instance = nullptr;
@@ -81,9 +83,15 @@ bool ConfigManager::init() {
 
 bool ConfigManager::loadJsonFromFile(const std::string& filePath,
                                      rapidjson::Document& doc) {
-  // 使用cocos2d-x的FileUtils读取文件
+  // 使用 PathUtils 获取真实路径，确保在开发模式下读取源码目录的配置
+  // 这样修改配置文件后无需重新复制资源即可生效
+  std::string fullPath = PathUtils::getRealFilePath(filePath, false);
   FileUtils* fileUtils = FileUtils::getInstance();
-  std::string fullPath = fileUtils->fullPathForFilename(filePath);
+
+  if (fullPath.empty() || !fileUtils->isFileExist(fullPath)) {
+    // 如果 PathUtils 没找到（比如非 Windows 平台），回退到默认查找
+    fullPath = fileUtils->fullPathForFilename(filePath);
+  }
 
   if (fullPath.empty()) {
     CCLOG("Config file not found: %s", filePath.c_str());
