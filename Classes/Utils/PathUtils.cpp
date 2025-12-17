@@ -84,3 +84,27 @@ std::string PathUtils::getRealFilePath(const std::string& relativePath,
 
   return path;
 }
+
+bool PathUtils::ensureDirectoryExists(const std::string& filePath) {
+  std::string path = filePath;
+  std::replace(path.begin(), path.end(), '\\', '/');
+
+  size_t lastSlash = path.find_last_of("/");
+  if (lastSlash == std::string::npos) {
+    return true;
+  }
+
+  std::string dir = path.substr(0, lastSlash);
+  if (dir.empty()) return true;
+
+  if (_access(dir.c_str(), 0) == 0) {
+    return true;
+  }
+
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
+  return (_mkdir(dir.c_str()) == 0);
+#else
+  // 简单的非递归创建，对于目前需求足够
+  return (mkdir(dir.c_str(), 0777) == 0);
+#endif
+}

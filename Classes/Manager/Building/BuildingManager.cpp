@@ -268,6 +268,9 @@ void BuildingManager::saveBuildingMap() {
   // 使用 PathUtils 获取真实写入路径
   std::string path = PathUtils::getRealFilePath(_jsonFilePath, true);
 
+  // [新增] 确保目录存在
+  PathUtils::ensureDirectoryExists(path);
+
   // 使用 FileUtils::writeStringToFile 统一写入
   // 注意：PathUtils 在 Windows DevMode 下返回的是绝对路径，FileUtils 可以处理
   // 在非 Windows 平台，返回的是相对路径，FileUtils 会写入到 WritablePath

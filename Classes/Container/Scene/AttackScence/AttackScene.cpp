@@ -1246,23 +1246,7 @@ void AttackScene::updateRecordSummary(const std::string& recordName,
   std::string writePath = PathUtils::getRealFilePath(summaryPath, true);
 
   // 确保目录存在
-  size_t pos = writePath.find_last_of("/\\");
-  if (pos != std::string::npos) {
-    std::string dir = writePath.substr(0, pos);
-    // 创建目录（如果不存在）
-#ifdef _WIN32
-    // Windows下使用_mkdir，如果目录不存在则创建
-    if (_access(dir.c_str(), 0) != 0) {
-      _mkdir(dir.c_str());
-    }
-#else
-    // Linux/Mac下使用mkdir
-    struct stat info;
-    if (stat(dir.c_str(), &info) != 0) {
-      mkdir(dir.c_str(), 0755);
-    }
-#endif
-  }
+  PathUtils::ensureDirectoryExists(writePath);
 
   // 写入文件
   std::ofstream outFile(writePath, std::ios::out | std::ios::trunc);

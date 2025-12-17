@@ -148,6 +148,9 @@ bool RecordManager::endAttackAndSave(const std::string& filePath) {
   // 使用 PathUtils 获取真实写入路径
   std::string fullPath = PathUtils::getRealFilePath(filePath, true);
 
+  // [新增] 确保目录存在
+  PathUtils::ensureDirectoryExists(fullPath);
+
   // 确保目录存在 (PathUtils 返回的是文件路径，我们需要父目录)
   // 确保目录存在
   size_t pos = fullPath.find_last_of("/\\");
