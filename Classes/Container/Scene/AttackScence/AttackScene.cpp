@@ -516,8 +516,13 @@ void AttackScene::placeSoldier(const Vec2& worldPos, const TroopItem& item) {
       createStatusBar();
     }
 
+    // 如果进攻尚未开始，则自动开始
+    if (!_isAttackStarted) {
+      startAttack();
+    }
+
     // 记录兵种布置
-    if (_recordManager && _isAttackStarted) {
+    if (_recordManager) {
       int timestamp = _recordManager->getCurrentTimestamp();
       _recordManager->recordTroopPlacement(item.soldierType, item.level,
                                            worldPos.x, worldPos.y, timestamp);
@@ -603,8 +608,13 @@ void AttackScene::castSpell(const Vec2& worldPos, const SpellItem& item) {
         createStatusBar();
       }
 
+      // 如果进攻尚未开始，则自动开始
+      if (!_isAttackStarted) {
+        startAttack();
+      }
+
       // 记录法术布置
-      if (_recordManager && _isAttackStarted) {
+      if (_recordManager) {
         int timestamp = _recordManager->getCurrentTimestamp();
         _recordManager->recordSpellPlacement(item.spellType, worldPos.x,
                                              worldPos.y, timestamp);

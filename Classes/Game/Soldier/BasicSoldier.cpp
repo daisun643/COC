@@ -1,6 +1,7 @@
 #include "BasicSoldier.h"
 
 #include <cmath>
+#include <set>
 #include <string>
 
 #include "Game/Soldier/Archer.h"
@@ -8,6 +9,7 @@
 #include "Game/Soldier/Bomber.h"
 #include "Game/Soldier/Gaint.h"
 #include "Manager/Config/ConfigManager.h"
+#include "Utils/GridUtils.h"
 #include "Utils/PathFinder.h"
 
 BasicSoldier::BasicSoldier()
@@ -325,13 +327,16 @@ void BasicSoldier::moveToTarget(float delta) {
     if (!_pathQueue.empty() && _currentPathIndex < _pathQueue.size() - 1) {
       _currentPathIndex++;
       _targetPosition = _pathQueue[_currentPathIndex];
+
+      // [优化] 立即更新方向和距离，在本帧继续移动，避免停顿
+      direction = _targetPosition - currentPos;
+      distance = direction.length();
+    } else {
+      _targetPosition = Vec2::ZERO;
+      _state = SoldierState::IDLE;
+      _pathQueue.clear();
       return;
     }
-
-    _targetPosition = Vec2::ZERO;
-    _state = SoldierState::IDLE;
-    _pathQueue.clear();
-    return;
   }
 
   // 标准化方向向量
@@ -346,6 +351,26 @@ void BasicSoldier::moveToTarget(float delta) {
   // 移动
   Vec2 newPos = currentPos + direction * moveDistance;
   this->setPosition(newPos);
+
+  // 特殊逻辑：炸弹人移动过程中如果遇到任何墙壁，都应该攻击
+  // 这样可以避免炸弹人绕过面前的墙去攻击远处的墙，或者因为目标选择问题而忽略身边的墙
+  if (_attackType == AttackType::WALL && _buildingFinderCallback) {
+    std::vector<Building*> buildings = _buildingFinderCallback();
+    for (Building* b : buildings) {
+      if (b && b->isVisible() && b->isAlive() &&
+          b->getBuildingType() == BuildingType::WALL) {
+        // 检查是否在攻击范围内
+        if (isInRange(b->getPosition())) {
+          // 发现射程内的墙壁，立即切换目标并攻击
+          _target = b;
+          _state = SoldierState::ATTACKING;
+          _targetPosition = Vec2::ZERO;
+          _pathQueue.clear();
+          return;
+        }
+      }
+    }
+  }
 
   // 如果正在移动向目标，检查是否进入攻击范围
   if (_target && _target->isVisible() && _target->isAlive()) {
@@ -506,8 +531,37 @@ bool BasicSoldier::findTarget(const std::vector<Building*>& buildings) {
       // 只有陆军需要寻路，且必须有网格回调和原点信息
       if (_soldierCategory == SoldierCategory::LAND && _gridStatusCallback &&
           !_p00.equals(Vec2::ZERO)) {
+        // 自定义可行走判断逻辑
+        std::function<bool(int, int)> isWalkable = _gridStatusCallback;
+
+        // 如果是炸弹人（攻击墙壁），则允许穿过墙壁（即墙壁视为可行走）
+        if (_attackType == AttackType::WALL) {
+          // 构建墙壁坐标集合，用于快速查找
+          std::set<std::pair<int, int>> wallCoords;
+          for (Building* b : buildings) {
+            if (b && b->isVisible() && b->isAlive() &&
+                b->getBuildingType() == BuildingType::WALL) {
+              float r, c;
+              if (GridUtils::screenToGrid(b->getPosition(), _p00, r, c)) {
+                wallCoords.insert({(int)std::round(r), (int)std::round(c)});
+              }
+            }
+          }
+
+          isWalkable = [this, wallCoords](int r, int c) -> bool {
+            // 如果原本可行走，直接返回true
+            if (_gridStatusCallback(r, c)) return true;
+
+            // 如果不可行走，检查是否是墙壁
+            if (wallCoords.count({r, c})) {
+              return true;  // 炸弹人可以把墙壁视为通路（目标）
+            }
+            return false;
+          };
+        }
+
         _pathQueue = PathFinder::findPath(this->getPosition(), targetPos, _p00,
-                                          _gridStatusCallback);
+                                          isWalkable);
         if (!_pathQueue.empty()) {
           _currentPathIndex = 0;
           setTargetPosition(_pathQueue[_currentPathIndex]);

@@ -438,9 +438,10 @@ void Building::takeDamage(float damage) {
   }
   updateHPBar();
 
-  // 如果HP为0，隐藏建筑
+  // 如果HP为0，隐藏建筑并移除
   if (_currentHP <= 0) {
     this->setVisible(false);
+    this->removeFromParent();
   }
 }
 
