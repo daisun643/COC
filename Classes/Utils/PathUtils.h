@@ -18,6 +18,13 @@ class PathUtils {
    */
   static std::string getRealFilePath(const std::string& relativePath,
                                      bool forWrite = false);
+
+  /**
+   * 确保文件所在的目录存在，如果不存在则创建
+   * @param filePath 文件的完整路径
+   * @return 是否成功
+   */
+  static bool ensureDirectoryExists(const std::string& filePath);
 };
 
 #endif  // __PATH_UTILS_H__

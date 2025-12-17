@@ -100,8 +100,8 @@ void AppDelegate::applicationDidEnterBackground() {
   // 这是移动设备上保存进度的标准时机
   auto playerManager = PlayerManager::getInstance();
   if (playerManager) {
-      playerManager->saveUserData();
-      CCLOG("AppDelegate: Application entered background, data saved.");
+    playerManager->saveUserData();
+    CCLOG("AppDelegate: Application entered background, data saved.");
   }
 }
 
