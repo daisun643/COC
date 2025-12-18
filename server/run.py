@@ -1,10 +1,13 @@
 from flask import Flask
 from app.api.auth import auth_bp
+from app.api.clans import clans_bp
 
 app = Flask(__name__)
 
 # 注册认证相关的蓝图
 app.register_blueprint(auth_bp, url_prefix='/api')
+# 注册部落相关的蓝图
+app.register_blueprint(clans_bp, url_prefix='/api')
 
 @app.route('/')
 def hello():

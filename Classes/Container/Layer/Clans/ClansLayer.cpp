@@ -1,6 +1,6 @@
 #include "ClansLayer.h"
-#include "MyClansLayer.h"
-#include "JoinClansLayer.h"
+#include "MyClans/MyClansLayer.h"
+#include "JoinClans/JoinClansLayer.h"
 
 USING_NS_CC;
 using namespace cocos2d::ui;

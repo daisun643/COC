@@ -111,7 +111,7 @@ void AppDelegate::applicationDidEnterBackground() {
   auto playerManager = PlayerManager::getInstance();
   if (playerManager) {
     playerManager->saveUserData();
-    CCLOG("AppDelegate: Application entered background, data saved.");
+    CCLOG("AppDelegate: Application entered background, player data saved.");
   }
 }
 

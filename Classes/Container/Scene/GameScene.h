@@ -108,6 +108,7 @@ class GameScene : public BasicScene {
   Building* _placementBuilding;           // 正在放置的建筑
   ShopItem _placementItem;                // 当前放置商品
   cocos2d::Label* _placementHintLabel;    // 放置提示文本
+  cocos2d::Label* _userInfoLabel;         // 用户信息标签（左上角显示id和用户名）
   bool _isPlacementMouseDown;             // 放置模式左键是否按下
   bool _placementDraggingMap;             // 放置模式是否正在拖动地图
   cocos2d::Vec2 _placementMouseDownPos;   // 放置模式按下位置

@@ -16,6 +16,7 @@
 #include "Game/Building/TownHall.h"
 #include "Game/Building/Wall.h"
 #include "Manager/Config/ConfigManager.h"
+#include "Utils/Profile/Profile.h"
 
 Scene* GameScene::createScene(const std::string& jsonFilePath) {
   GameScene* scene = new (std::nothrow) GameScene();
@@ -116,6 +117,7 @@ bool GameScene::init(const std::string& jsonFilePath) {
   _isPlacingBuilding = false;
   _placementBuilding = nullptr;
   _placementHintLabel = nullptr;
+  _userInfoLabel = nullptr;
   _isPlacementMouseDown = false;
   _placementDraggingMap = false;
   _placementMouseDownPos = Vec2::ZERO;
@@ -137,6 +139,22 @@ bool GameScene::init(const std::string& jsonFilePath) {
     _placementHintLabel->setPosition(
         Vec2(origin.x + visibleSize.width / 2.0f, origin.y + 250.0f));
     this->addChild(_placementHintLabel, 150);
+  }
+
+  // 创建用户信息标签（左上角显示id和用户名）
+  auto profile = Profile::getInstance();
+  if (profile) {
+    std::string userInfo = "ID: " + std::to_string(profile->getId()) + 
+                          "  " + profile->getName();
+    _userInfoLabel = Label::createWithSystemFont(userInfo, "Arial", 18);
+    if (_userInfoLabel) {
+      _userInfoLabel->setColor(Color3B::WHITE);
+      // 设置在左上角，留出一些边距
+      _userInfoLabel->setAnchorPoint(Vec2(0, 1));  // 左上角对齐
+      _userInfoLabel->setPosition(
+          Vec2(origin.x + 20, origin.y + visibleSize.height - 20));
+      this->addChild(_userInfoLabel, 150);
+    }
   }
 
   // 创建建筑菜单层 (ZOrder 150, above map but below popups)

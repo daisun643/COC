@@ -1,5 +1,7 @@
 {
     "isLogin": true,
     "id": 1,
-    "name": "John Doe"
+    "name": "John Doe",
+    "clans-id": 1,
+    "clans-name":"clans-name"
 }

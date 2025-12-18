@@ -1,5 +1,7 @@
 #include "MyClansLayer.h"
 
+#include "Member/MemberLayer.h"
+#include "Chat/ChatLayer.h"
 #include "ui/CocosGUI.h"
 
 USING_NS_CC;
@@ -62,6 +64,11 @@ bool MyClansLayer::init() {
     return false;
   }
 
+  _contentArea = nullptr;
+  _memberLayer = nullptr;
+  _chatLayer = nullptr;
+  _currentSubLayer = nullptr;
+
   buildUI();
   return true;
 }
@@ -71,17 +78,17 @@ void MyClansLayer::buildUI() {
   Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
   // 创建内容区域
-  auto contentArea = Layer::create();
-  contentArea->setContentSize(Size(760.0f, 450.0f));
-  this->addChild(contentArea);
+  _contentArea = Layer::create();
+  _contentArea->setContentSize(Size(760.0f, 450.0f));
+  this->addChild(_contentArea);
 
   // 三个按钮：成员、部落战、聊天室
   float buttonHeight = 50.0f;
   float buttonWidth = 200.0f;
   float spacing = 20.0f;
-  float topY = contentArea->getContentSize().height - 30.0f;
+  float topY = _contentArea->getContentSize().height - 30.0f;
   float totalWidth = 3 * buttonWidth + 2 * spacing;
-  float startX = (contentArea->getContentSize().width - totalWidth) / 2.0f;
+  float startX = (_contentArea->getContentSize().width - totalWidth) / 2.0f;
   float radius = 8.0f;
 
   // "成员" 按钮
@@ -90,11 +97,30 @@ void MyClansLayer::buildUI() {
   auto memberBg = createRoundedBackground(Size(buttonWidth, buttonHeight), radius);
   memberBg->setAnchorPoint(Vec2::ANCHOR_MIDDLE);
   memberBg->setPosition(Vec2(memberCenterX - buttonWidth / 2.0f, memberCenterY - buttonHeight / 2.0f));
-  contentArea->addChild(memberBg);
+  _contentArea->addChild(memberBg);
 
   auto memberLabel = createLabel("成员", 28);
   memberLabel->setPosition(Vec2(memberCenterX, memberCenterY));
-  contentArea->addChild(memberLabel);
+  _contentArea->addChild(memberLabel);
+
+  // 为"成员"按钮添加触摸事件
+  auto memberListener = EventListenerTouchOneByOne::create();
+  memberListener->setSwallowTouches(true);
+  memberListener->onTouchBegan = [this, memberCenterX, memberCenterY, buttonWidth, buttonHeight](Touch* touch, Event* event) {
+    Vec2 location = touch->getLocation();
+    Vec2 contentPos = _contentArea->convertToNodeSpace(location);
+    Rect memberRect(memberCenterX - buttonWidth / 2.0f, 
+                    memberCenterY - buttonHeight / 2.0f, 
+                    buttonWidth, buttonHeight);
+    if (memberRect.containsPoint(contentPos)) {
+      return true;
+    }
+    return false;
+  };
+  memberListener->onTouchEnded = [this](Touch* touch, Event* event) {
+    this->showMemberLayer();
+  };
+  _eventDispatcher->addEventListenerWithSceneGraphPriority(memberListener, _contentArea);
 
   // "部落战" 按钮
   float warCenterX = startX + buttonWidth + spacing + buttonWidth / 2.0f;
@@ -102,11 +128,11 @@ void MyClansLayer::buildUI() {
   auto warBg = createRoundedBackground(Size(buttonWidth, buttonHeight), radius);
   warBg->setAnchorPoint(Vec2::ANCHOR_MIDDLE);
   warBg->setPosition(Vec2(warCenterX - buttonWidth / 2.0f, warCenterY - buttonHeight / 2.0f));
-  contentArea->addChild(warBg);
+  _contentArea->addChild(warBg);
 
   auto warLabel = createLabel("部落战", 28);
   warLabel->setPosition(Vec2(warCenterX, warCenterY));
-  contentArea->addChild(warLabel);
+  _contentArea->addChild(warLabel);
 
   // "聊天室" 按钮
   float chatCenterX = startX + 2 * (buttonWidth + spacing) + buttonWidth / 2.0f;
@@ -114,10 +140,70 @@ void MyClansLayer::buildUI() {
   auto chatBg = createRoundedBackground(Size(buttonWidth, buttonHeight), radius);
   chatBg->setAnchorPoint(Vec2::ANCHOR_MIDDLE);
   chatBg->setPosition(Vec2(chatCenterX - buttonWidth / 2.0f, chatCenterY - buttonHeight / 2.0f));
-  contentArea->addChild(chatBg);
+  _contentArea->addChild(chatBg);
 
   auto chatLabel = createLabel("聊天室", 28);
   chatLabel->setPosition(Vec2(chatCenterX, chatCenterY));
-  contentArea->addChild(chatLabel);
+  _contentArea->addChild(chatLabel);
+
+  // 为"聊天室"按钮添加触摸事件
+  auto chatListener = EventListenerTouchOneByOne::create();
+  chatListener->setSwallowTouches(true);
+  chatListener->onTouchBegan = [this, chatCenterX, chatCenterY, buttonWidth, buttonHeight](Touch* touch, Event* event) {
+    Vec2 location = touch->getLocation();
+    Vec2 contentPos = _contentArea->convertToNodeSpace(location);
+    Rect chatRect(chatCenterX - buttonWidth / 2.0f, 
+                  chatCenterY - buttonHeight / 2.0f, 
+                  buttonWidth, buttonHeight);
+    if (chatRect.containsPoint(contentPos)) {
+      return true;
+    }
+    return false;
+  };
+  chatListener->onTouchEnded = [this](Touch* touch, Event* event) {
+    this->showChatLayer();
+  };
+  _eventDispatcher->addEventListenerWithSceneGraphPriority(chatListener, _contentArea);
+}
+
+void MyClansLayer::showMemberLayer() {
+  // 隐藏当前子Layer
+  hideCurrentSubLayer();
+
+  // 创建或显示 MemberLayer
+  if (!_memberLayer) {
+    _memberLayer = MemberLayer::create();
+    if (_memberLayer) {
+      _contentArea->addChild(_memberLayer);
+      _currentSubLayer = _memberLayer;
+    }
+  } else {
+    _contentArea->addChild(_memberLayer);
+    _currentSubLayer = _memberLayer;
+  }
+}
+
+void MyClansLayer::showChatLayer() {
+  // 隐藏当前子Layer
+  hideCurrentSubLayer();
+
+  // 创建或显示 ChatLayer
+  if (!_chatLayer) {
+    _chatLayer = ChatLayer::create();
+    if (_chatLayer) {
+      _contentArea->addChild(_chatLayer);
+      _currentSubLayer = _chatLayer;
+    }
+  } else {
+    _contentArea->addChild(_chatLayer);
+    _currentSubLayer = _chatLayer;
+  }
+}
+
+void MyClansLayer::hideCurrentSubLayer() {
+  if (_currentSubLayer) {
+    _currentSubLayer->removeFromParent();
+    _currentSubLayer = nullptr;
+  }
 }
 
