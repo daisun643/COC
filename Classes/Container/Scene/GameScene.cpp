@@ -3,6 +3,7 @@
 #include <float.h>
 
 #include "Container/Layer/AttackLayer.h"
+#include "Container/Layer/Clans/ClansLayer.h"
 #include "Container/Layer/ReplayLayer.h"
 #include "Container/Scene/SenceHelper.h"
 #include "Game/Building/AllBuildings.h"
@@ -59,6 +60,17 @@ bool GameScene::init(const std::string& jsonFilePath) {
 
   // 设置 UI 按钮回调
   _uiLayer->setOnShopClickCallback([this]() { this->openShop(); });
+
+  _uiLayer->setOnClansClickCallback([this]() {
+    if (this->getChildByName("ClansLayerUI")) {
+      return;
+    }
+    auto clansLayer = ClansLayer::create();
+    if (clansLayer) {
+      clansLayer->setName("ClansLayerUI");
+      this->addChild(clansLayer, 200);
+    }
+  });
 
   _uiLayer->setOnAttackClickCallback([this]() {
     if (this->getChildByName("AttackLayerUI")) {
@@ -432,7 +444,8 @@ void GameScene::openShop() {
 bool GameScene::isPopupOpen() const {
   return this->getChildByName("ShopLayerUI") != nullptr ||
          this->getChildByName("AttackLayerUI") != nullptr ||
-         this->getChildByName("ReplayLayerUI") != nullptr;
+         this->getChildByName("ReplayLayerUI") != nullptr ||
+         this->getChildByName("ClansLayerUI") != nullptr;
 }
 
 std::vector<ShopItem> GameScene::buildShopCatalog() const {
