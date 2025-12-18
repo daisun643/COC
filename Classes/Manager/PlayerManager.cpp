@@ -1,6 +1,16 @@
 #include "PlayerManager.h"
 
-#include "cocos2d.h" 
+#include <direct.h>  // for _getcwd
+
+#include "Utils/PathUtils.h"
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
+#include <io.h>
+#include <windows.h>
+#endif
+
+#include <fstream>  // Added for std::ofstream
+
+#include "cocos2d.h"
 #include "json/document.h"
 #include "json/stringbuffer.h"
 #include "json/writer.h"
@@ -24,10 +34,12 @@ PlayerManager* PlayerManager::getInstance() {
 void PlayerManager::destroyInstance() { CC_SAFE_DELETE(_instance); }
 
 PlayerManager::PlayerManager()
-    : _gold(0),
+    : _isNewGame(false),
+      _gold(0),
       _elixir(0),
-      _maxGold(10000),
-      _maxElixir(10000),
+      _gems(20),
+      _maxGold(0),
+      _maxElixir(0),
       _goldProduction(0),
       _elixirProduction(0),
       _autoSaveCallback(nullptr) {}
@@ -37,41 +49,68 @@ PlayerManager::~PlayerManager() {
   Director::getInstance()->getScheduler()->unschedule("AutoSaveKey", this);
 }
 
+#include "Manager/Config/ConfigManager.h"
+
 bool PlayerManager::init() {
   // 尝试加载存档，如果加载失败则使用默认值
   bool loadSuccess = loadUserData();
   if (!loadSuccess) {
-      CCLOG("PlayerManager: No save data found or load failed, using default values.");
-      _gold = 5000;
-      _elixir = 500;
+    _isNewGame = true;
+    CCLOG(
+        "PlayerManager: No save data found or load failed, using default "
+        "values.");
+
+    // 初始资源设为0，等待BuildingManager计算上限后填满
+    _gold = 0;
+    _elixir = 0;
   } else {
-      CCLOG("PlayerManager: Initialized with saved data - Gold: %d, Elixir: %d", _gold, _elixir);
+    _isNewGame = false;
+    CCLOG("PlayerManager: Initialized with saved data - Gold: %d, Elixir: %d",
+          _gold, _elixir);
   }
 
   // [注意] _maxGold 和 _maxElixir 这里是初始值。
-  // 实际游戏中，这些值应该由 BuildingManager 根据已加载的建筑（如储金罐等级）来重新计算并设置。
-  // 如果 BuildingManager 没有保存/加载功能，重启后最大容量可能会变回 10000。
-  _maxGold = 10000;
-  _maxElixir = 10000;
+  // 实际游戏中，这些值应该由 BuildingManager
+  // 根据已加载的建筑（如储金罐等级）来重新计算并设置。
+  if (_isNewGame) {
+    _maxGold = 0;
+    _maxElixir = 0;
+  }
   _goldProduction = 100;
   _elixirProduction = 100;
 
   // 开启自动保存定时器
-  // 每 5 秒自动保存一次，防止 PC 端直接关闭窗口时不触发 applicationDidEnterBackground
-  Director::getInstance()->getScheduler()->schedule([this](float dt){
-      this->saveUserData();
-      // 如果设置了回调（如保存建筑），则执行回调
-      if (_autoSaveCallback) {
+  // 每 60 秒自动保存一次，作为资源数据的备份机制
+  // 主要的保存时机应为：程序退出/后台、关键操作（如消费）
+  Director::getInstance()->getScheduler()->schedule(
+      [this](float dt) {
+        this->saveUserData();
+        // 如果设置了回调（如保存建筑），则执行回调
+        if (_autoSaveCallback) {
           _autoSaveCallback();
-      }
-  }, this, 5.0f, false, "AutoSaveKey");
-  
+        }
+      },
+      this, 60.0f, false, "AutoSaveKey");
+
   return true;
 }
 
 // 实现设置回调的方法
 void PlayerManager::setAutoSaveCallback(const std::function<void()>& callback) {
-    _autoSaveCallback = callback;
+  _autoSaveCallback = callback;
+}
+
+void PlayerManager::addGems(int amount) {
+    _gems += amount;
+    // saveUserData(); // 建议保存
+}
+bool PlayerManager::consumeGems(int amount) {
+    if (_gems >= amount) {
+        _gems -= amount;
+        // saveUserData(); // 建议保存
+        return true;
+    }
+    return false;
 }
 
 void PlayerManager::setGold(int amount) {
@@ -87,6 +126,8 @@ void PlayerManager::addGold(int amount) {
   if (_gold > _maxGold) {
     _gold = _maxGold;
   }
+  // [新增] 资源增加（收集）后立即保存
+  saveUserData();
 }
 
 void PlayerManager::addElixir(int amount) {
@@ -94,11 +135,15 @@ void PlayerManager::addElixir(int amount) {
   if (_elixir > _maxElixir) {
     _elixir = _maxElixir;
   }
+  // [新增] 资源增加（收集）后立即保存
+  saveUserData();
 }
 
 bool PlayerManager::consumeGold(int amount) {
   if (_gold >= amount) {
     _gold -= amount;
+    // [新增] 消费后立即保存，防止意外退出导致回档
+    saveUserData();
     return true;
   }
   return false;
@@ -107,6 +152,8 @@ bool PlayerManager::consumeGold(int amount) {
 bool PlayerManager::consumeElixir(int amount) {
   if (_elixir >= amount) {
     _elixir -= amount;
+    // [新增] 消费后立即保存，防止意外退出导致回档
+    saveUserData();
     return true;
   }
   return false;
@@ -114,57 +161,87 @@ bool PlayerManager::consumeElixir(int amount) {
 
 // 实现保存功能
 void PlayerManager::saveUserData() {
-    rapidjson::Document doc;
-    doc.SetObject();
-    rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+  rapidjson::Document doc;
+  doc.SetObject();
+  rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
 
-    doc.AddMember("gold", _gold, allocator);
-    doc.AddMember("elixir", _elixir, allocator);
+  doc.AddMember("gold", _gold, allocator);
+  doc.AddMember("elixir", _elixir, allocator);
 
-    rapidjson::StringBuffer buffer;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-    doc.Accept(writer);
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  doc.Accept(writer);
 
-    std::string path = FileUtils::getInstance()->getWritablePath() + "user_data.json";
-    
-    // 使用 FileUtils::writeStringToFile 替代 ofstream
-    // 这能更好地处理跨平台路径问题，且代码更简洁
-    bool success = FileUtils::getInstance()->writeStringToFile(buffer.GetString(), path);
-    
-    if (success) {
-        // 为了避免日志刷屏，仅在调试时偶尔查看，或者注释掉
-        // CCLOG("PlayerManager: User data saved to %s", path.c_str());
-    } else {
-        CCLOG("PlayerManager: Failed to save user data to %s", path.c_str());
+  // [修改] 保存到 Resources/develop/user_data.json 以便开发调试
+  std::string relativePath = "develop/user_data.json";
+  std::string path = PathUtils::getRealFilePath(relativePath, true);
+
+  // [新增] 确保目录存在
+  PathUtils::ensureDirectoryExists(path);
+
+  // 优先使用 std::ofstream 以确保 Windows DevMode 下能写入源码目录
+  std::ofstream outFile(path.c_str());
+  if (outFile.is_open()) {
+    outFile << buffer.GetString();
+    outFile.close();
+    CCLOG("PlayerManager: User data saved to %s", path.c_str());
+  } else {
+    CCLOG("PlayerManager: Failed to save user data to %s", path.c_str());
+    // 尝试使用 FileUtils 作为备选 (主要针对非 Windows 平台)
+    if (FileUtils::getInstance()->writeStringToFile(buffer.GetString(), path)) {
+      CCLOG("PlayerManager: User data saved via FileUtils to %s", path.c_str());
     }
+  }
 }
 
 // 实现加载功能
 bool PlayerManager::loadUserData() {
-    std::string path = FileUtils::getInstance()->getWritablePath() + "user_data.json";
+  std::string relativePath = "develop/user_data.json";
+  std::string path = PathUtils::getRealFilePath(relativePath, false);
 
-    // [修改] 增加日志以便调试路径
-    CCLOG("PlayerManager: Loading data from %s", path.c_str());
-    
-    if (!FileUtils::getInstance()->isFileExist(path)) {
-        return false;
+  CCLOG("PlayerManager: Loading data from %s", path.c_str());
+
+  std::string content;
+
+  // 策略1: 尝试使用 std::ifstream 读取绝对路径 (最优先)
+  std::ifstream inFile(path.c_str());
+  if (inFile.is_open()) {
+    std::stringstream buffer;
+    buffer << inFile.rdbuf();
+    content = buffer.str();
+    inFile.close();
+  }
+
+  // 策略2: 如果失败，尝试使用 FileUtils 读取 (兼容相对路径/SearchPaths)
+  if (content.empty()) {
+    if (FileUtils::getInstance()->isFileExist(path)) {
+      content = FileUtils::getInstance()->getStringFromFile(path);
+    } else if (FileUtils::getInstance()->isFileExist(relativePath)) {
+      content = FileUtils::getInstance()->getStringFromFile(relativePath);
     }
+  }
 
-    std::string content = FileUtils::getInstance()->getStringFromFile(path);
-    rapidjson::Document doc;
-    doc.Parse(content.c_str());
+  if (content.empty()) {
+    CCLOG("PlayerManager: Failed to load file or file is empty.");
+    return false;
+  }
 
-    if (doc.HasParseError()) {
-        return false;
-    }
+  rapidjson::Document doc;
+  doc.Parse(content.c_str());
 
-    if (doc.HasMember("gold") && doc["gold"].IsInt()) {
-        _gold = doc["gold"].GetInt();
-    }
-    if (doc.HasMember("elixir") && doc["elixir"].IsInt()) {
-        _elixir = doc["elixir"].GetInt();
-    }
+  if (doc.HasParseError()) {
+    CCLOG("PlayerManager: JSON parse error.");
+    return false;
+  }
 
-    CCLOG("PlayerManager: User data loaded.");
-    return true;
+  if (doc.HasMember("gold") && doc["gold"].IsInt()) {
+    _gold = doc["gold"].GetInt();
+  }
+  if (doc.HasMember("elixir") && doc["elixir"].IsInt()) {
+    _elixir = doc["elixir"].GetInt();
+  }
+
+  CCLOG("PlayerManager: User data loaded successfully. Gold: %d, Elixir: %d",
+        _gold, _elixir);
+  return true;
 }

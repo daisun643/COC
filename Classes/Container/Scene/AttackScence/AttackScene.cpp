@@ -7,6 +7,8 @@
 #include <sstream>
 #include <string>
 
+#include "Utils/PathUtils.h"
+
 #ifdef _WIN32
 #include <direct.h>
 #include <io.h>
@@ -489,6 +491,15 @@ void AttackScene::placeSoldier(const Vec2& worldPos, const TroopItem& item) {
       return buildings;
     });
 
+    // 设置网格状态回调
+    soldier->setP00(_p00);
+    soldier->setGridStatusCallback([this](int row, int col) {
+      if (_buildingManager) {
+        return _buildingManager->isWalkable(row, col);
+      }
+      return true;  // 默认可通行
+    });
+
     // 通过 TroopManager 减少数量
     if (_troopManager) {
       if (!_troopManager->consumeTroop(item.soldierType, item.level)) {
@@ -505,8 +516,13 @@ void AttackScene::placeSoldier(const Vec2& worldPos, const TroopItem& item) {
       createStatusBar();
     }
 
+    // 如果进攻尚未开始，则自动开始
+    if (!_isAttackStarted) {
+      startAttack();
+    }
+
     // 记录兵种布置
-    if (_recordManager && _isAttackStarted) {
+    if (_recordManager) {
       int timestamp = _recordManager->getCurrentTimestamp();
       _recordManager->recordTroopPlacement(item.soldierType, item.level,
                                            worldPos.x, worldPos.y, timestamp);
@@ -592,8 +608,13 @@ void AttackScene::castSpell(const Vec2& worldPos, const SpellItem& item) {
         createStatusBar();
       }
 
+      // 如果进攻尚未开始，则自动开始
+      if (!_isAttackStarted) {
+        startAttack();
+      }
+
       // 记录法术布置
-      if (_recordManager && _isAttackStarted) {
+      if (_recordManager) {
         int timestamp = _recordManager->getCurrentTimestamp();
         _recordManager->recordSpellPlacement(item.spellType, worldPos.x,
                                              worldPos.y, timestamp);
@@ -818,37 +839,35 @@ void AttackScene::onMouseUp(Event* event) {
 }
 
 // 辅助函数：创建橙色圆角背景
-static DrawNode* createOrangeRoundedBackground(const Size& size, float radius = 8.0f) {
+static DrawNode* createOrangeRoundedBackground(const Size& size,
+                                               float radius = 8.0f) {
   auto drawNode = DrawNode::create();
   // 橙色背景 (255, 165, 0)
-  Color4F orangeColor(255.0f/255.0f, 165.0f/255.0f, 0.0f/255.0f, 1.0f);
-  
+  Color4F orangeColor(255.0f / 255.0f, 165.0f / 255.0f, 0.0f / 255.0f, 1.0f);
+
   float width = size.width;
   float height = size.height;
-  
+
   // 绘制圆角矩形（通过绘制多个部分来模拟圆角）
   // 绘制中心矩形
-  drawNode->drawSolidRect(
-    Vec2(radius, radius),
-    Vec2(width - radius, height - radius),
-    orangeColor);
-  
+  drawNode->drawSolidRect(Vec2(radius, radius),
+                          Vec2(width - radius, height - radius), orangeColor);
+
   // 绘制四个圆角
   drawNode->drawSolidCircle(Vec2(radius, radius), radius, 0, 20, orangeColor);
-  drawNode->drawSolidCircle(Vec2(width - radius, radius), radius, 0, 20, orangeColor);
-  drawNode->drawSolidCircle(Vec2(radius, height - radius), radius, 0, 20, orangeColor);
-  drawNode->drawSolidCircle(Vec2(width - radius, height - radius), radius, 0, 20, orangeColor);
-  
+  drawNode->drawSolidCircle(Vec2(width - radius, radius), radius, 0, 20,
+                            orangeColor);
+  drawNode->drawSolidCircle(Vec2(radius, height - radius), radius, 0, 20,
+                            orangeColor);
+  drawNode->drawSolidCircle(Vec2(width - radius, height - radius), radius, 0,
+                            20, orangeColor);
+
   // 绘制连接圆角的矩形
-  drawNode->drawSolidRect(
-    Vec2(radius, 0),
-    Vec2(width - radius, height),
-    orangeColor);
-  drawNode->drawSolidRect(
-    Vec2(0, radius),
-    Vec2(width, height - radius),
-    orangeColor);
-  
+  drawNode->drawSolidRect(Vec2(radius, 0), Vec2(width - radius, height),
+                          orangeColor);
+  drawNode->drawSolidRect(Vec2(0, radius), Vec2(width, height - radius),
+                          orangeColor);
+
   return drawNode;
 }
 
@@ -870,14 +889,16 @@ void AttackScene::createAttackButtons() {
 
   // 创建开始进攻按钮（右上角，垂直排列）
   if (!_startAttackButton) {
-    Vec2 buttonPos(origin.x + visibleSize.width - margin - buttonWidth/2,
-                   origin.y + visibleSize.height - margin - buttonHeight/2);
-    
+    Vec2 buttonPos(origin.x + visibleSize.width - margin - buttonWidth / 2,
+                   origin.y + visibleSize.height - margin - buttonHeight / 2);
+
     // 创建橙色圆角背景
-    auto bgDrawNode = createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
-    bgDrawNode->setPosition(Vec2(buttonPos.x - buttonWidth/2, buttonPos.y - buttonHeight/2));
+    auto bgDrawNode =
+        createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
+    bgDrawNode->setPosition(
+        Vec2(buttonPos.x - buttonWidth / 2, buttonPos.y - buttonHeight / 2));
     this->addChild(bgDrawNode, 199);
-    
+
     _startAttackButton = ui::Button::create();
     _startAttackButton->setTitleText("开始进攻");
     _startAttackButton->setTitleFontSize(20);
@@ -891,14 +912,17 @@ void AttackScene::createAttackButtons() {
 
   // 创建结束进攻按钮（在开始按钮下方）
   if (!_endAttackButton) {
-    Vec2 buttonPos(origin.x + visibleSize.width - margin - buttonWidth/2,
-                   origin.y + visibleSize.height - margin - buttonHeight/2 - buttonHeight - buttonSpacing);
-    
+    Vec2 buttonPos(origin.x + visibleSize.width - margin - buttonWidth / 2,
+                   origin.y + visibleSize.height - margin - buttonHeight / 2 -
+                       buttonHeight - buttonSpacing);
+
     // 创建橙色圆角背景
-    auto bgDrawNode = createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
-    bgDrawNode->setPosition(Vec2(buttonPos.x - buttonWidth/2, buttonPos.y - buttonHeight/2));
+    auto bgDrawNode =
+        createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
+    bgDrawNode->setPosition(
+        Vec2(buttonPos.x - buttonWidth / 2, buttonPos.y - buttonHeight / 2));
     this->addChild(bgDrawNode, 199);
-    
+
     _endAttackButton = ui::Button::create();
     _endAttackButton->setTitleText("结束进攻");
     _endAttackButton->setTitleFontSize(20);
@@ -914,14 +938,16 @@ void AttackScene::createAttackButtons() {
 
   // 创建退出按钮（左上角）
   if (!_exitButton) {
-    Vec2 buttonPos(origin.x + margin + buttonWidth/2,
-                   origin.y + visibleSize.height - margin - buttonHeight/2);
-    
+    Vec2 buttonPos(origin.x + margin + buttonWidth / 2,
+                   origin.y + visibleSize.height - margin - buttonHeight / 2);
+
     // 创建橙色圆角背景
-    auto bgDrawNode = createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
-    bgDrawNode->setPosition(Vec2(buttonPos.x - buttonWidth/2, buttonPos.y - buttonHeight/2));
+    auto bgDrawNode =
+        createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
+    bgDrawNode->setPosition(
+        Vec2(buttonPos.x - buttonWidth / 2, buttonPos.y - buttonHeight / 2));
     this->addChild(bgDrawNode, 199);
-    
+
     _exitButton = ui::Button::create();
     _exitButton->setTitleText("退出");
     _exitButton->setTitleFontSize(20);
@@ -937,8 +963,10 @@ void AttackScene::createAttackButtons() {
   if (!_countdownLabel) {
     _countdownLabel = Label::createWithSystemFont("", "Arial", 24);
     _countdownLabel->setColor(Color3B::YELLOW);
-    _countdownLabel->setPosition(Vec2(origin.x + visibleSize.width - margin - buttonWidth/2,
-                                      origin.y + visibleSize.height - margin - buttonHeight/2 - (buttonHeight + buttonSpacing) * 2));
+    _countdownLabel->setPosition(
+        Vec2(origin.x + visibleSize.width - margin - buttonWidth / 2,
+             origin.y + visibleSize.height - margin - buttonHeight / 2 -
+                 (buttonHeight + buttonSpacing) * 2));
     _countdownLabel->setString(formatTime(ATTACK_DURATION));
     this->addChild(_countdownLabel, 200);
   }
@@ -1012,8 +1040,7 @@ void AttackScene::endAttack() {
     std::string timeStr = timeStream.str();
 
     // recordPath需要加上时间
-    std::string recordPath =
-        "Resources/record/" + cleanName + "_" + timeStr + ".json";
+    std::string recordPath = "record/" + cleanName + "_" + timeStr + ".json";
     // 保存记录文件
     if (_recordManager->endAttackAndSave(recordPath)) {
       CCLOG("AttackScene: Record saved to %s", recordPath.c_str());
@@ -1028,6 +1055,24 @@ void AttackScene::endAttack() {
   // 重置状态
   _isAttackStarted = false;
   _countdownSeconds = ATTACK_DURATION;
+
+  // [修复] 停止所有士兵和法术的行动
+  for (auto soldier : _placedSoldiers) {
+    if (soldier) {
+      // 停止更新，使其冻结在原地
+      soldier->unscheduleUpdate();
+      // 可选：播放待机动画或移除
+    }
+  }
+
+  // 停止所有法术效果
+  for (auto spell : _activeSpells) {
+    if (spell) {
+      spell->unscheduleUpdate();
+      spell->removeFromParent();  // 法术通常是瞬时或持续效果，结束后应移除
+    }
+  }
+  _activeSpells.clear();
 
   // 更新按钮状态
   if (_startAttackButton) {
@@ -1162,9 +1207,10 @@ void AttackScene::updateRecordSummary(const std::string& recordName,
   rapidjson::Document doc;
   bool fileExists = false;
 
+  // 使用 PathUtils 获取真实路径 (用于读取)
+  std::string fullPath = PathUtils::getRealFilePath(summaryPath, false);
+
   // 尝试读取现有文件（如果存在）
-  // 先尝试通过 fullPathForFilename 读取
-  std::string fullPath = fileUtils->fullPathForFilename(summaryPath);
   if (!fullPath.empty() && fileUtils->isFileExist(fullPath)) {
     std::string content = fileUtils->getStringFromFile(fullPath);
     if (!content.empty()) {
@@ -1173,10 +1219,6 @@ void AttackScene::updateRecordSummary(const std::string& recordName,
         fileExists = true;
       }
     }
-  } else {
-    CCLOG("AttackScene: Failed to read record summary from %s",
-          summaryPath.c_str());
-    return;
   }
 
   // 如果文件不存在或解析失败，创建新文档
@@ -1187,11 +1229,19 @@ void AttackScene::updateRecordSummary(const std::string& recordName,
   rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
 
   // 获取或创建 records 数组
-  rapidjson::Value recordsArray;
+  rapidjson::Value* recordsArray = nullptr;
   if (doc.HasMember("records") && doc["records"].IsArray()) {
-    recordsArray = doc["records"];
+    recordsArray = &doc["records"];
   } else {
-    recordsArray.SetArray();
+    // 如果不存在，创建一个新的数组并添加到文档中
+    // 注意：如果存在但不是数组，这里没有处理移除，直接覆盖可能会有问题，
+    // 但通常 summary.json 格式是固定的。为了安全，可以先移除。
+    if (doc.HasMember("records")) {
+      doc.RemoveMember("records");
+    }
+    rapidjson::Value newArray(rapidjson::kArrayType);
+    doc.AddMember("records", newArray, allocator);
+    recordsArray = &doc["records"];
   }
 
   // 添加新记录（每次进攻都创建新记录，不更新旧记录）
@@ -1217,10 +1267,8 @@ void AttackScene::updateRecordSummary(const std::string& recordName,
   timeValue.SetString(timeStr.c_str(), allocator);
   recordObj.AddMember("time", timeValue, allocator);
 
-  recordsArray.PushBack(recordObj, allocator);
-
-  // 更新文档中的 records 数组
-  doc["records"] = recordsArray;
+  // 将新记录添加到数组中
+  recordsArray->PushBack(recordObj, allocator);
 
   // 将 JSON 转换为字符串
   rapidjson::StringBuffer buffer;
@@ -1228,30 +1276,11 @@ void AttackScene::updateRecordSummary(const std::string& recordName,
   doc.Accept(writer);
   std::string jsonString = buffer.GetString();
 
-  // 写入文件，使用与 RecordManager 相同的方式
-  std::string writePath = fullPath;
-
-  // 将路径中的反斜杠转换为正斜杠（跨平台兼容）
-  std::replace(writePath.begin(), writePath.end(), '\\', '/');
+  // 使用 PathUtils 获取真实写入路径
+  std::string writePath = PathUtils::getRealFilePath(summaryPath, true);
 
   // 确保目录存在
-  size_t pos = writePath.find_last_of("/\\");
-  if (pos != std::string::npos) {
-    std::string dir = writePath.substr(0, pos);
-    // 创建目录（如果不存在）
-#ifdef _WIN32
-    // Windows下使用_mkdir，如果目录不存在则创建
-    if (_access(dir.c_str(), 0) != 0) {
-      _mkdir(dir.c_str());
-    }
-#else
-    // Linux/Mac下使用mkdir
-    struct stat info;
-    if (stat(dir.c_str(), &info) != 0) {
-      mkdir(dir.c_str(), 0755);
-    }
-#endif
-  }
+  PathUtils::ensureDirectoryExists(writePath);
 
   // 写入文件
   std::ofstream outFile(writePath, std::ios::out | std::ios::trunc);

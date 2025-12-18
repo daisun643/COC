@@ -322,12 +322,17 @@ void BasicScene::onMouseMove(Event* event) {
     Vec2 nearestPos;
     if (GridUtils::findNearestGrassVertex(targetAnchorPos, _p00, row, col,
                                           nearestPos)) {
+      // 如果建筑占用的网格数是奇数（如3x3），其中心应该在网格中心
+      // 需要进行偏移修正，使其对齐到网格线
+      if (_draggingBuilding->getGridCount() % 2 != 0) {
+        nearestPos.x += _deltaX;
+      }
+
       // 临时设置位置到吸附点（拖动时显示预览）
       _draggingBuilding->setPosition(nearestPos);
 
       // 临时更新中心坐标（用于预览）
-      _draggingBuilding->setCenterX(
-          nearestPos.x + _deltaX * _draggingBuilding->getGridCount());
+      _draggingBuilding->setCenterX(nearestPos.x);
       _draggingBuilding->setCenterY(nearestPos.y);
 
       // 关键：更新网格坐标，以便进行重叠检测
@@ -336,8 +341,7 @@ void BasicScene::onMouseMove(Event* event) {
     } else {
       // 如果找不到有效网格点，使用原始位置
       _draggingBuilding->setPosition(targetAnchorPos);
-      _draggingBuilding->setCenterX(
-          targetAnchorPos.x + _deltaX * _draggingBuilding->getGridCount());
+      _draggingBuilding->setCenterX(targetAnchorPos.x);
       _draggingBuilding->setCenterY(targetAnchorPos.y);
     }
   } else if (_isDragging) {
@@ -367,8 +371,16 @@ void BasicScene::onMouseUp(Event* event) {
       Vec2 nearestPos;
       if (GridUtils::findNearestGrassVertex(targetAnchorPos, _p00, row, col,
                                             nearestPos)) {
-        _draggingBuilding->setCenterX(
-            nearestPos.x + _deltaX * _draggingBuilding->getGridCount());
+        // 如果建筑占用的网格数是奇数（如3x3），其中心应该在网格中心
+        // 需要进行偏移修正，使其对齐到网格线
+        if (_draggingBuilding->getGridCount() % 2 != 0) {
+          nearestPos.x += _deltaX;
+        }
+
+        // 显式设置位置，确保对齐
+        _draggingBuilding->setPosition(nearestPos);
+
+        _draggingBuilding->setCenterX(nearestPos.x);
         _draggingBuilding->setCenterY(nearestPos.y);
         _draggingBuilding->setRow(row);
         _draggingBuilding->setCol(col);
@@ -377,15 +389,23 @@ void BasicScene::onMouseUp(Event* event) {
           // 如果无效，恢复到之前的位置
           _draggingBuilding->setPosition(_buildingStartPos);
           // 恢复原来的网格坐标（重要！否则逻辑位置会错乱）
-          // 这里比较麻烦，因为我们没有保存原来的 row/col。
-          // 但 _buildingStartPos 对应的应该是原来的 row/col。
-          // 简单起见，我们假设 _buildingStartPos 是正确的。
-          // 实际上，如果恢复位置，下次点击时会重新计算 row/col。
-          // 但为了数据一致性，最好重新计算一下 startPos 的 row/col。
+          // 如果建筑是奇数尺寸，_buildingStartPos 包含了 deltaX 的偏移
+          // screenToGrid 会因此计算出非整数的 row/col (偏移 0.5)
+          // 所以我们需要先移除这个偏移，再计算网格坐标
+          Vec2 originalPos = _buildingStartPos;
+          if (_draggingBuilding->getGridCount() % 2 != 0) {
+            originalPos.x -= _deltaX;
+          }
+
           float startRow, startCol;
-          GridUtils::screenToGrid(_buildingStartPos, _p00, startRow, startCol);
+          GridUtils::screenToGrid(originalPos, _p00, startRow, startCol);
           _draggingBuilding->setRow(startRow);
           _draggingBuilding->setCol(startCol);
+        } else {
+          // 移动成功且有效，保存地图
+          if (_buildingManager) {
+            _buildingManager->saveBuildingMap();
+          }
         }
       } else {
         // 找不到有效网格点，恢复到之前的位置

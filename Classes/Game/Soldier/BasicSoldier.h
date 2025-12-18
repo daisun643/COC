@@ -88,7 +88,19 @@ class BasicSoldier : public Sprite {
   CC_SYNTHESIZE(SoldierCategory, _soldierCategory, SoldierCategory);
   CC_SYNTHESIZE(float, _centerX, CenterX);
   CC_SYNTHESIZE(float, _centerY, CenterY);
+
+  // 寻路相关
+  std::vector<Vec2> _pathQueue;
+  int _currentPathIndex;
+  std::function<bool(int, int)> _gridStatusCallback;
+
   CC_SYNTHESIZE(Building*, _target, Target);
+  CC_SYNTHESIZE(Vec2, _p00, P00);  // 地图原点
+
+  /**
+   * 设置网格状态回调
+   */
+  void setGridStatusCallback(std::function<bool(int, int)> callback);
 
   /**
    * 受到伤害
@@ -128,6 +140,13 @@ class BasicSoldier : public Sprite {
    * @return 是否在范围内
    */
   bool isInRange(const Vec2& targetPos) const;
+
+  /**
+   * 检查建筑是否在攻击范围内（考虑建筑体积）
+   * @param target 目标建筑
+   * @return 是否在范围内
+   */
+  bool isInRange(Building* target) const;
 
   /**
    * 计算到目标位置的距离

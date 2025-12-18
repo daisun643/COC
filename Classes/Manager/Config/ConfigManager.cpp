@@ -3,6 +3,8 @@
 #include <fstream>
 #include <sstream>
 
+#include "Utils/PathUtils.h"
+
 USING_NS_CC;
 
 ConfigManager* ConfigManager::_instance = nullptr;
@@ -81,9 +83,15 @@ bool ConfigManager::init() {
 
 bool ConfigManager::loadJsonFromFile(const std::string& filePath,
                                      rapidjson::Document& doc) {
-  // 使用cocos2d-x的FileUtils读取文件
+  // 使用 PathUtils 获取真实路径，确保在开发模式下读取源码目录的配置
+  // 这样修改配置文件后无需重新复制资源即可生效
+  std::string fullPath = PathUtils::getRealFilePath(filePath, false);
   FileUtils* fileUtils = FileUtils::getInstance();
-  std::string fullPath = fileUtils->fullPathForFilename(filePath);
+
+  if (fullPath.empty() || !fileUtils->isFileExist(fullPath)) {
+    // 如果 PathUtils 没找到（比如非 Windows 平台），回退到默认查找
+    fullPath = fileUtils->fullPathForFilename(filePath);
+  }
 
   if (fullPath.empty()) {
     CCLOG("Config file not found: %s", filePath.c_str());
@@ -209,6 +217,19 @@ bool ConfigManager::loadConstantConfig() {
     _constantConfig.glowDelay = doc["GlowDelay"].GetFloat();
   }
 
+  // 解析初始资源
+  if (doc.HasMember("InitialGold") && doc["InitialGold"].IsInt()) {
+    _constantConfig.initialGold = doc["InitialGold"].GetInt();
+  } else {
+    _constantConfig.initialGold = 5000;  // 默认值
+  }
+
+  if (doc.HasMember("InitialElixir") && doc["InitialElixir"].IsInt()) {
+    _constantConfig.initialElixir = doc["InitialElixir"].GetInt();
+  } else {
+    _constantConfig.initialElixir = 500;  // 默认值
+  }
+
   return true;
 }
 
@@ -255,6 +276,14 @@ bool ConfigManager::loadBuildingConfig() {
           if (lvlVal.HasMember("maxHP"))
             levelConfig.maxHP = lvlVal["maxHP"].GetFloat();
 
+          // 解析升级消耗和时间配置
+          if (lvlVal.HasMember("upgradeCost"))
+            levelConfig.upgradeCost = lvlVal["upgradeCost"].GetInt();
+          if (lvlVal.HasMember("upgradeCostType"))
+            levelConfig.upgradeCostType = lvlVal["upgradeCostType"].GetString();
+          if (lvlVal.HasMember("buildTime"))
+            levelConfig.buildTime = lvlVal["buildTime"].GetFloat();
+
           // Defense
           if (lvlVal.HasMember("damage"))
             levelConfig.damage = lvlVal["damage"].GetInt();
@@ -296,6 +325,14 @@ ConfigManager::BuildingConfig ConfigManager::getBuildingConfig(
   }
   CCLOG("Warning: Config for building '%s' not found.", name.c_str());
   return BuildingConfig();
+}
+
+std::vector<std::string> ConfigManager::getAllBuildingNames() const {
+  std::vector<std::string> names;
+  for (const auto& pair : _buildingConfigs) {
+    names.push_back(pair.first);
+  }
+  return names;
 }
 
 bool ConfigManager::loadSoldierConfig() {

@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include "Manager/Config/ConfigManager.h"
+#include "Manager/PlayerManager.h"
 
 Building::Building()
     : _buildingType(BuildingType::TOWN_HALL),
@@ -20,11 +21,16 @@ Building::Building()
       _anchorNode(nullptr),
       _glowAction(nullptr),
       _glowColor(1.0f, 1.0f, 0.0f, 0.6f),
-      _errorLayer(nullptr),
       _maxHP(1000.0f),
       _currentHP(1000.0f),
       _hpBarBackground(nullptr),
-      _hpBarForeground(nullptr) {}
+      _hpBarForeground(nullptr),
+      _state(State::NORMAL),
+      _upgradeTotalTime(0.0f),
+      _upgradeTimer(0.0f),
+      _progressBar(nullptr),
+      _progressBarBg(nullptr),
+      _timeLabel(nullptr) {}
 
 Building::~Building() {
   // 注意：在Cocos2d-x中，父节点销毁时会自动清理所有子节点
@@ -36,6 +42,8 @@ Building::~Building() {
   if (_hpBarForeground && _hpBarForeground->getParent()) {
     _hpBarForeground->removeFromParent();
   }
+  // 清理UI指针
+  removeUpgradeUI();
   // 将指针置空，避免悬空指针
   _hpBarBackground = nullptr;
   _hpBarForeground = nullptr;
@@ -76,14 +84,7 @@ bool Building::init(const std::string& imagePath, BuildingType type,
   // 创建光晕效果节点（初始隐藏）
   _glowNode = DrawNode::create();
   _glowNode->setVisible(false);
-  this->addChild(_glowNode, -1);  // 放在建筑后面
-
-  // 创建错误遮罩层（红色半透明，初始隐藏）
-  _errorLayer = LayerColor::create(Color4B(255, 0, 0, 128));
-  _errorLayer->setContentSize(this->getContentSize());
-  _errorLayer->setPosition(Vec2::ZERO);
-  _errorLayer->setVisible(false);
-  this->addChild(_errorLayer, 5);  // 放在内容之上，标签之下
+  this->addChild(_glowNode, 6);  // 放在建筑前面，防止被大建筑遮挡
 
   // 创建锚点标记节点（红点）
   _anchorNode = DrawNode::create();
@@ -101,7 +102,37 @@ bool Building::init(const std::string& imagePath, BuildingType type,
   this->addChild(_hpBarForeground, 11);
   updateHPBar();
 
+  // 开启update调度，用于处理倒计时
+  this->scheduleUpdate();
+
   return true;
+}
+
+// 实现 update 函数
+void Building::update(float dt) {
+  // 只有在升级状态下才更新
+  if (_state == State::UPGRADING) {
+    _upgradeTimer -= dt;
+
+    // 更新进度条百分比
+    if (_progressBar && _upgradeTotalTime > 0) {
+      float percent = 100.0f * (1.0f - (_upgradeTimer / _upgradeTotalTime));
+      _progressBar->setPercentage(percent);
+    }
+
+    // 更新倒计时文字
+    if (_timeLabel) {
+      // 向上取整，避免显示 0s 时其实还有 0.5s
+      int seconds = static_cast<int>(ceil(_upgradeTimer));
+      if (seconds < 0) seconds = 0;
+      _timeLabel->setString(StringUtils::format("%ds", seconds));
+    }
+
+    // 倒计时结束逻辑
+    if (_upgradeTimer <= 0.0f) {
+      completeUpgrade();
+    }
+  }
 }
 
 void Building::createDefaultAppearance() {
@@ -222,16 +253,26 @@ void Building::updateGlowDrawing() {
   float deltaX = constantConfig.deltaX;
   float deltaY = constantConfig.deltaY;
 
+  // 获取当前缩放比例
+  float scaleX = this->getScaleX();
+  float scaleY = this->getScaleY();
+  // 防止除以零
+  if (scaleX == 0.0f) scaleX = 1.0f;
+  if (scaleY == 0.0f) scaleY = 1.0f;
+
   // 绘制光晕边框（使用黄色半透明）
-  float glowWidth = 3.0f;  // 光晕宽度
+  // 线宽也需要反向缩放，以保持视觉一致性
+  float glowWidth = 3.0f / ((scaleX + scaleY) / 2.0f);
 
   int gridCount = _gridCount;  // 使用getter方法获取宽度
   Vec2 center(this->getContentSize().width * _anchorRatioX,
               this->getContentSize().height * _anchorRatioY);
-  Vec2 top = center + Vec2(0, gridCount * deltaY);
-  Vec2 right = center + Vec2(gridCount * deltaX, 0);
-  Vec2 bottom = center + Vec2(0, -gridCount * deltaY);
-  Vec2 left = center + Vec2(-gridCount * deltaX, 0);
+
+  // 坐标偏移量需要反向缩放，以抵消节点的缩放影响，确保光晕大小与地图网格一致
+  Vec2 top = center + Vec2(0, gridCount * deltaY / scaleY);
+  Vec2 right = center + Vec2(gridCount * deltaX / scaleX, 0);
+  Vec2 bottom = center + Vec2(0, -gridCount * deltaY / scaleY);
+  Vec2 left = center + Vec2(-gridCount * deltaX / scaleX, 0);
   // Vec2 top(_gridCount * deltaX, 2 * _gridCount * deltaY);
   // Vec2 right(2 * _gridCount * deltaX, _gridCount * deltaY);
   // Vec2 bottom(_gridCount * deltaX, 0);
@@ -247,15 +288,9 @@ void Building::setPlacementValid(bool isValid) {
   if (isValid) {
     // 有效：黄色光晕，正常颜色
     _glowColor = Color4F(1.0f, 1.0f, 0.0f, 0.6f);
-    if (_errorLayer) {
-      _errorLayer->setVisible(false);
-    }
   } else {
-    // 无效：红色光晕，红色叠加
+    // 无效：红色光晕
     _glowColor = Color4F(1.0f, 0.0f, 0.0f, 0.8f);
-    if (_errorLayer) {
-      _errorLayer->setVisible(true);
-    }
   }
   // 立即更新光晕
   updateGlowDrawing();
@@ -297,12 +332,97 @@ bool Building::inDiamond(const Vec2& pos) const {
   return manhattanDist <= _gridCount;
 }
 
-// 建筑升级：包含重新设置纹理和刷新血量
+// 修改 upgrade 入口函数
 void Building::upgrade() {
   if (_level >= _maxLevel) {
     CCLOG("Building %s reached max level %d", _buildingName.c_str(), _maxLevel);
     return;
   }
+
+  if (_state == State::UPGRADING) {
+    return;
+  }
+
+  // 1. 获取下一等级的配置，查看消耗
+  // 注意：我们升级是为了去下一级，所以应该读取 _level + 1 的消耗配置
+  auto nextLevelConfig = ConfigManager::getInstance()->getBuildingConfig(
+      _buildingName, _level + 1);
+
+  int cost = nextLevelConfig.upgradeCost;
+  std::string costType = nextLevelConfig.upgradeCostType;
+  // 如果配置文件里没有配 upgradeCostType，默认可以用金币
+  if (costType.empty()) costType = "Gold";
+
+  // 2. 检查并扣除资源
+  bool success = false;
+  if (costType == "Gold") {
+    success = PlayerManager::getInstance()->consumeGold(cost);
+  } else if (costType == "Elixir") {
+    success = PlayerManager::getInstance()->consumeElixir(cost);
+  } else {
+    // 如果类型未知（例如宝石），默认成功或者自行处理
+    success = true;
+  }
+
+  if (!success) {
+    CCLOG("Not enough %s to upgrade! Need %d", costType.c_str(), cost);
+
+    // 这里可以弹出一个 "资源不足" 的提示 Label
+    auto failLabel = Label::createWithSystemFont("资源不足!", "Arial", 32);
+    failLabel->setColor(Color3B::RED);
+    failLabel->setPosition(
+        Vec2(getContentSize().width / 2, getContentSize().height + 120));
+    this->addChild(failLabel, 100);
+    auto seq = Sequence::create(MoveBy::create(1.0f, Vec2(0, 50)),
+                                RemoveSelf::create(), nullptr);
+    failLabel->runAction(seq);
+
+    return;  // 资源不足，终止升级
+  }
+
+  // 3. 资源扣除成功，开始升级流程
+
+  // 弹出提示词：“消耗 xx 金币”
+  // 建议使用中文提示，或者根据 costType 转换
+  std::string costName = (costType == "Gold") ? "金币" : "圣水";
+  std::string hintText =
+      StringUtils::format("消耗 %d %s", cost, costName.c_str());
+
+  auto hintLabel = Label::createWithSystemFont(hintText, "Arial", 28);
+  // 金色或亮色字体
+  hintLabel->setColor(Color3B(255, 215, 0));
+  hintLabel->enableOutline(Color4B::BLACK, 2);
+  hintLabel->setPosition(Vec2(getContentSize().width / 2,
+                              getContentSize().height + 100));  // 在建筑上方
+  this->addChild(hintLabel, 100);
+
+  // 提示动画：向上飘动并淡出
+  auto moveUp = MoveBy::create(1.5f, Vec2(0, 80));
+  auto fadeOut = FadeOut::create(1.5f);
+  auto spawn = Spawn::create(moveUp, fadeOut, nullptr);
+  auto sequence = Sequence::create(spawn, RemoveSelf::create(), nullptr);
+  hintLabel->runAction(sequence);
+
+  // 4. 正常切换状态并开始倒计时
+  _state = State::UPGRADING;
+
+  // 使用配置中的建造时间，如果没配则默认10秒
+  float configTime = nextLevelConfig.buildTime;
+  if (configTime <= 0) configTime = 10.0f;
+
+  _upgradeTotalTime = configTime;
+  _upgradeTimer = _upgradeTotalTime;
+
+  createUpgradeUI();
+
+  CCLOG("Started upgrading %s. Time: %.1f. Consumed: %d %s",
+        _buildingName.c_str(), _upgradeTotalTime, cost, costType.c_str());
+}
+
+// 新增：完成升级的实际逻辑（原 upgrade 函数内容）
+void Building::completeUpgrade() {
+  _state = State::NORMAL;
+  removeUpgradeUI();
 
   _level++;
 
@@ -311,54 +431,139 @@ void Building::upgrade() {
       ConfigManager::getInstance()->getBuildingConfig(_buildingName, _level);
 
   if (!config.image.empty()) {
-    // 使用 TextureCache 获取纹理，确保资源存在
-    auto texture = Director::getInstance()->getTextureCache()->addImage(config.image);
+    auto texture =
+        Director::getInstance()->getTextureCache()->addImage(config.image);
     if (texture) {
-        // 切换纹理
-        this->setTexture(texture);
-        // 设置纹理矩形（这对 Sprite 显示完整图片很重要）
-        this->setTextureRect(Rect(0, 0, texture->getContentSize().width, texture->getContentSize().height));
-        // [修改 2] 显式更新 ContentSize，因为新等级图片大小可能不同
-        this->setContentSize(texture->getContentSize());
-    } else {
-        CCLOG("Failed to load image for upgrade: %s", config.image.c_str());
+      this->setTexture(texture);
+      this->setTextureRect(Rect(0, 0, texture->getContentSize().width,
+                                texture->getContentSize().height));
+      this->setContentSize(texture->getContentSize());
     }
   }
 
-  // 由于 ContentSize 可能改变，需要刷新依赖尺寸的子节点位置
-
-  // 1. 刷新信息标签位置
   if (_infoLabel) {
     _infoLabel->setPosition(Vec2(this->getContentSize().width / 2,
                                  this->getContentSize().height + 20));
   }
 
-  // 2. 刷新选中光晕（Glow），因为光晕中心依赖于 ContentSize 和 anchor
   updateGlowDrawing();
 
-  // 3. 刷新调试锚点显示
   if (_anchorNode) {
-      _anchorNode->clear();
-      float width = this->getContentSize().width;
-      float height = this->getContentSize().height;
-      _anchorNode->drawDot(Vec2(_anchorRatioX * width, _anchorRatioY * height), 5.0f,
-                       Color4F(1.0f, 0.0f, 0.0f, 1.0f));
-  }
-  
-  // 4. 刷新错误遮罩大小
-  if (_errorLayer) {
-      _errorLayer->setContentSize(this->getContentSize());
+    _anchorNode->clear();
+    float width = this->getContentSize().width;
+    float height = this->getContentSize().height;
+    _anchorNode->drawDot(Vec2(_anchorRatioX * width, _anchorRatioY * height),
+                         5.0f, Color4F(1.0f, 0.0f, 0.0f, 1.0f));
   }
 
-  // 更新血量
   _maxHP = config.maxHP;
-  // 升级通常会将血量回满
   _currentHP = _maxHP;
-
-  // 5. 刷新血条（updateHPBar 内部会使用新的 ContentSize 重新计算位置）
   updateHPBar();
 
-  CCLOG("Upgraded %s to level %d. Image: %s", _buildingName.c_str(), _level, config.image.c_str());
+  CCLOG("Upgraded %s to level %d COMPLETED.", _buildingName.c_str(), _level);
+}
+
+// 新增：取消升级
+void Building::cancelUpgrade() {
+  if (_state == State::UPGRADING) {
+    _state = State::NORMAL;
+    _upgradeTimer = 0.0f;
+    removeUpgradeUI();
+    CCLOG("Upgrade cancelled for %s", _buildingName.c_str());
+    // 注意：这里未实现退款逻辑，如需退款可在 PlayerManager 添加
+    // addGold/addElixir
+  }
+}
+
+// 新增：立即完成
+void Building::finishUpgradeImmediately() {
+  if (_state != State::UPGRADING) return;
+
+  int gemCost = 1;  // 每次立即完成消耗1个宝石
+  if (PlayerManager::getInstance()->consumeGems(gemCost)) {
+    CCLOG("Instant finish used. Consumed %d gem.", gemCost);
+    completeUpgrade();
+  } else {
+    CCLOG("Not enough gems to finish immediately!");
+    // 这里可以弹出提示 "宝石不足"
+  }
+}
+
+// UI 创建与销毁辅助函数
+void Building::createUpgradeUI() {
+  if (_progressBar) return;
+
+  Size size = this->getContentSize();
+
+  // 1. 创建背景（底框）
+  // 使用 Bar.png 作为容器/背景
+  _progressBarBg = Sprite::create("images/ui/Bar.png");
+  if (_progressBarBg) {
+    _progressBarBg->setColor(Color3B::GRAY);  // 稍微变暗作为背景
+    _progressBarBg->setPosition(Vec2(size.width / 2, size.height + 50));
+    _progressBarBg->setScale(0.8f);
+    this->addChild(_progressBarBg, 20);
+  }
+
+  // 2. 创建进度条（填充物）
+  // 使用 Yellow.png，这通常是一张实心的黄色图片
+  // 这样当它作为 ProgressTimer 时，就能看到明显的黄色条在增长
+  auto barSprite = Sprite::create("images/ui/Yellow.png");
+  if (barSprite) {
+    // 如果 Yellow.png 只是一个小方块，我们需要把它拉伸到和背景条一样大
+    if (_progressBarBg) {
+      Size bgSize = _progressBarBg->getContentSize();
+      Size yellowSize = barSprite->getContentSize();
+      // 这里我们手动补偿一点点宽度
+      float scaleX = (bgSize.width / yellowSize.width) * 1.5f;
+      // 计算缩放比例，让黄色图片适配背景框的大小
+      barSprite->setScaleX(bgSize.width / yellowSize.width);
+      barSprite->setScaleY(bgSize.height / yellowSize.height);
+    }
+
+    _progressBar = ProgressTimer::create(barSprite);
+    _progressBar->setType(ProgressTimer::Type::BAR);
+    _progressBar->setMidpoint(Vec2(0, 0.5));     // 从左边开始
+    _progressBar->setBarChangeRate(Vec2(1, 0));  // 水平增长
+    _progressBar->setPercentage(0);              // 初始状态为 0% (空)
+
+    // 位置与背景重合
+    _progressBar->setPosition(Vec2(size.width / 2, size.height + 50));
+    // 整体缩放跟随背景
+    // (注意：如果上面已经对barSprite做过拉伸，这里的setScale会叠加)
+    // 简单起见，这里设置为与背景相同的整体缩放
+
+    this->addChild(_progressBar, 21);
+  }
+
+  // 3. 倒计时文字
+  // 创建大字体的倒计时
+  int initialSeconds = static_cast<int>(ceil(_upgradeTotalTime));
+  // 字体大小改为 25 (原为 16)，确保看清楚
+  _timeLabel = Label::createWithSystemFont(
+      StringUtils::format("%ds", initialSeconds), "Arial", 25);
+  _timeLabel->setPosition(
+      Vec2(size.width / 2, size.height + 80));  // 文字放在进度条上方
+  // 增加黑色描边，宽度为 2，增加对比度
+  _timeLabel->enableOutline(Color4B::BLACK, 2);
+  // 设为明亮的颜色，如黄色或白色
+  _timeLabel->setColor(Color3B::WHITE);
+  this->addChild(_timeLabel, 22);
+}
+
+void Building::removeUpgradeUI() {
+  if (_progressBar) {
+    _progressBar->removeFromParent();
+    _progressBar = nullptr;
+  }
+  if (_progressBarBg) {
+    _progressBarBg->removeFromParent();
+    _progressBarBg = nullptr;
+  }
+  if (_timeLabel) {
+    _timeLabel->removeFromParent();
+    _timeLabel = nullptr;
+  }
 }
 
 void Building::updateHPBar() {
@@ -444,9 +649,13 @@ void Building::takeDamage(float damage) {
   }
   updateHPBar();
 
-  // 如果HP为0，隐藏建筑
+  // 如果HP为0，隐藏建筑并移除
   if (_currentHP <= 0) {
+    if (_onDeathCallback) {
+      _onDeathCallback(this);
+    }
     this->setVisible(false);
+    this->removeFromParent();
   }
 }
 

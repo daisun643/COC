@@ -7,11 +7,13 @@
 #include "Container/Scene/SenceHelper.h"
 #include "Game/Building/AllBuildings.h"
 #include "Game/Building/BarracksBuilding.h"
+#include "Game/Building/BuildingFactory.h"
 #include "Game/Building/DefenseBuilding.h"
 #include "Game/Building/PlaceholderBuilding.h"
 #include "Game/Building/ResourceBuilding.h"
 #include "Game/Building/StorageBuilding.h"
 #include "Game/Building/TownHall.h"
+#include "Game/Building/Wall.h"
 #include "Manager/Config/ConfigManager.h"
 
 Scene* GameScene::createScene(const std::string& jsonFilePath) {
@@ -143,6 +145,10 @@ bool GameScene::init(const std::string& jsonFilePath) {
     // 调用建筑的升级方法，这将触发 Building::upgrade()
     // 从而加载新配置并切换图片
     b->upgrade();
+
+    if (_buildingManager) {
+      _buildingManager->saveBuildingMap();
+    }
 
     // 升级成功后，隐藏操作菜单
     _buildingMenuLayer->hideOptions();
@@ -313,9 +319,7 @@ void GameScene::onMouseUp(Event* event) {
       if (configManager) {
         auto constantConfig = configManager->getConstantConfig();
         float deltaX = constantConfig.deltaX;
-        _placementBuilding->setCenterX(_placementPreviewAnchor.x +
-                                       deltaX *
-                                           _placementBuilding->getGridCount());
+        _placementBuilding->setCenterX(_placementPreviewAnchor.x);
       } else {
         _placementBuilding->setCenterX(_placementPreviewAnchor.x);
       }
@@ -340,6 +344,12 @@ void GameScene::onMouseUp(Event* event) {
         _buildingManager->registerBuilding(_placementBuilding);
         // 隐藏新建筑的血条（GameScene 中不显示血条）
         _placementBuilding->setHealthBarVisible(false);
+
+        // [修复] 强制保存一次，确保商店购买的建筑立即写入文件
+        // 虽然 registerBuilding
+        // 内部也会尝试保存，但为了保险起见，这里显式调用一次
+        _buildingManager->saveBuildingMap();
+        CCLOG("GameScene: Building placed and saved.");
       }
 
       _selectedBuilding = _placementBuilding;
@@ -429,125 +439,85 @@ std::vector<ShopItem> GameScene::buildShopCatalog() const {
   std::vector<ShopItem> items;
 
   auto configManager = ConfigManager::getInstance();
-  if (configManager) {
-    auto townHallConfig = configManager->getBuildingConfig("TownHall");
-    ShopItem townHall;
-    townHall.id = "TownHall";
-    townHall.displayName = "大本营";
-    townHall.description = "村庄的核心建筑，解锁更多功能";
-    townHall.costGold = 1000;
-    townHall.costElixir = 0;
-    townHall.defaultLevel = townHallConfig.defaultLevel;
-    townHall.category = BuildingType::TOWN_HALL;
-    townHall.imagePath = townHallConfig.image;
-    townHall.placeholderColor = Color4B(139, 69, 19, 255);
-    townHall.gridCount = townHallConfig.gridCount;
-    townHall.anchorRatioX = townHallConfig.anchorRatioX;
-    townHall.anchorRatioY = townHallConfig.anchorRatioY;
-    townHall.imageScale = townHallConfig.imageScale;
-    items.push_back(townHall);
+  if (!configManager) {
+    return items;
+  }
 
-    auto goldMineConfig = configManager->getBuildingConfig("GoldMine");
-    ShopItem goldMine;
-    goldMine.id = "GoldMine";
-    goldMine.displayName = "金矿";
-    goldMine.description = "持续生产金币的基础建筑";
-    goldMine.costGold = 300;
-    goldMine.costElixir = 0;
-    goldMine.defaultLevel = 1;
-    goldMine.category = BuildingType::RESOURCE;
-    goldMine.imagePath = goldMineConfig.image;
-    goldMine.placeholderColor = Color4B(212, 175, 55, 255);
-    goldMine.gridCount = goldMineConfig.gridCount;
-    goldMine.anchorRatioX = goldMineConfig.anchorRatioX;
-    goldMine.anchorRatioY = goldMineConfig.anchorRatioY;
-    goldMine.imageScale = goldMineConfig.imageScale;
-    items.push_back(goldMine);
+  std::vector<std::string> buildingNames = configManager->getAllBuildingNames();
 
-    auto elixirPumpConfig = configManager->getBuildingConfig("ElixirPump");
-    ShopItem elixirPump;
-    elixirPump.id = "ElixirPump";
-    elixirPump.displayName = "圣水采集器";
-    elixirPump.description = "产出圣水的基础设施";
-    elixirPump.costGold = 0;
-    elixirPump.costElixir = 350;
-    elixirPump.defaultLevel = 1;
-    elixirPump.category = BuildingType::RESOURCE;
-    elixirPump.imagePath = elixirPumpConfig.image;
-    elixirPump.placeholderColor = Color4B(140, 90, 200, 255);
-    elixirPump.gridCount = elixirPumpConfig.gridCount;
-    elixirPump.anchorRatioX = elixirPumpConfig.anchorRatioX;
-    elixirPump.anchorRatioY = elixirPumpConfig.anchorRatioY;
-    elixirPump.imageScale = elixirPumpConfig.imageScale;
-    items.push_back(elixirPump);
+  // 定义建筑的显示名称、描述和造价（这些信息目前不在 building.json
+  // 中，暂时硬编码映射） 理想情况下，这些信息也应该移入 building.json
+  struct BuildingMeta {
+    std::string displayName;
+    std::string description;
+    int costGold;
+    int costElixir;
+    Color4B placeholderColor;
+  };
 
-    auto cannonConfig = configManager->getBuildingConfig("Cannon");
-    ShopItem cannon;
-    cannon.id = "Cannon";
-    cannon.displayName = "加农炮";
-    cannon.description = "基础防御建筑，守护村庄安全";
-    cannon.costGold = 800;
-    cannon.costElixir = 200;
-    cannon.defaultLevel = 1;
-    cannon.category = BuildingType::DEFENSE;
-    cannon.imagePath = cannonConfig.image;
-    cannon.placeholderColor = Color4B(120, 120, 120, 255);
-    cannon.gridCount = cannonConfig.gridCount;
-    cannon.anchorRatioX = cannonConfig.anchorRatioX;
-    cannon.anchorRatioY = cannonConfig.anchorRatioY;
-    cannon.imageScale = cannonConfig.imageScale;
-    items.push_back(cannon);
+  std::map<std::string, BuildingMeta> metaMap = {
+      {"TownHall",
+       {"大本营", "村庄的核心建筑，解锁更多功能", 1000, 0,
+        Color4B(139, 69, 19, 255)}},
+      {"GoldMine",
+       {"金矿", "持续生产金币的基础建筑", 0, 300, Color4B(212, 175, 55, 255)}},
+      {"ElixirPump",
+       {"圣水采集器", "产出圣水的基础设施", 350, 0,
+        Color4B(140, 90, 200, 255)}},
+      {"Cannon",
+       {"加农炮", "基础防御建筑，守护村庄安全", 800, 200,
+        Color4B(120, 120, 120, 255)}},
+      {"ArcherTower",
+       {"箭塔", "远程防御建筑，可攻击空中和地面目标", 1000, 0,
+        Color4B(100, 100, 100, 255)}},
+      {"GoldStorage",
+       {"储金罐", "储存大量金币", 0, 500, Color4B(255, 215, 0, 255)}},
+      {"ElixirBottle",
+       {"圣水瓶", "储存大量圣水", 500, 0, Color4B(186, 85, 211, 255)}},
+      {"Barracks", {"兵营", "训练军队的地方", 200, 0, Color4B(139, 0, 0, 255)}},
+      {"Wall", {"城墙", "阻挡敌人进攻", 50, 0, Color4B(200, 200, 200, 255)}}};
 
-    auto archerTowerConfig = configManager->getBuildingConfig("ArcherTower");
-    ShopItem archerTower;
-    archerTower.id = "ArcherTower";
-    archerTower.displayName = "箭塔";
-    archerTower.description = "远程防御建筑，可攻击空中和地面目标";
-    archerTower.costGold = 1000;
-    archerTower.costElixir = 0;
-    archerTower.defaultLevel = 1;
-    archerTower.category = BuildingType::DEFENSE;
-    archerTower.imagePath = archerTowerConfig.image;
-    archerTower.placeholderColor = Color4B(100, 100, 100, 255);
-    archerTower.gridCount = archerTowerConfig.gridCount;
-    archerTower.anchorRatioX = archerTowerConfig.anchorRatioX;
-    archerTower.anchorRatioY = archerTowerConfig.anchorRatioY;
-    archerTower.imageScale = archerTowerConfig.imageScale;
-    items.push_back(archerTower);
+  for (const auto& name : buildingNames) {
+    // 跳过没有元数据的建筑（或者使用默认值）
+    if (metaMap.find(name) == metaMap.end()) {
+      continue;
+    }
 
-    auto goldStorageConfig = configManager->getBuildingConfig("GoldStorage");
-    ShopItem goldStorage;
-    goldStorage.id = "GoldStorage";
-    goldStorage.displayName = "储金罐";
-    goldStorage.description = "储存大量金币";
-    goldStorage.costGold = 500;
-    goldStorage.costElixir = 0;
-    goldStorage.defaultLevel = 1;
-    goldStorage.category = BuildingType::STORAGE;
-    goldStorage.imagePath = goldStorageConfig.image;
-    goldStorage.placeholderColor = Color4B(255, 215, 0, 255);
-    goldStorage.gridCount = goldStorageConfig.gridCount;
-    goldStorage.anchorRatioX = goldStorageConfig.anchorRatioX;
-    goldStorage.anchorRatioY = goldStorageConfig.anchorRatioY;
-    goldStorage.imageScale = goldStorageConfig.imageScale;
-    items.push_back(goldStorage);
+    auto config = configManager->getBuildingConfig(name);
+    const auto& meta = metaMap[name];
 
-    auto barracksConfig = configManager->getBuildingConfig("Barracks");
-    ShopItem barracks;
-    barracks.id = "Barracks";
-    barracks.displayName = "兵营";
-    barracks.description = "训练军队的地方";
-    barracks.costGold = 200;
-    barracks.costElixir = 0;
-    barracks.defaultLevel = 1;
-    barracks.category = BuildingType::BARRACKS;
-    barracks.imagePath = barracksConfig.image;
-    barracks.placeholderColor = Color4B(139, 0, 0, 255);
-    barracks.gridCount = barracksConfig.gridCount;
-    barracks.anchorRatioX = barracksConfig.anchorRatioX;
-    barracks.anchorRatioY = barracksConfig.anchorRatioY;
-    barracks.imageScale = barracksConfig.imageScale;
-    items.push_back(barracks);
+    ShopItem item;
+    item.id = name;
+    item.displayName = meta.displayName;
+    item.description = meta.description;
+    item.costGold = meta.costGold;
+    item.costElixir = meta.costElixir;
+    item.defaultLevel = 1;  // 默认建造等级为1
+
+    // 映射类型字符串到枚举
+    if (config.type == "TOWN_HALL")
+      item.category = BuildingType::TOWN_HALL;
+    else if (config.type == "DEFENSE")
+      item.category = BuildingType::DEFENSE;
+    else if (config.type == "RESOURCE")
+      item.category = BuildingType::RESOURCE;
+    else if (config.type == "STORAGE")
+      item.category = BuildingType::STORAGE;
+    else if (config.type == "BARRACKS")
+      item.category = BuildingType::BARRACKS;
+    else if (config.type == "WALL")
+      item.category = BuildingType::WALL;
+    else
+      continue;  // 未知类型跳过
+
+    item.imagePath = config.image;
+    item.placeholderColor = meta.placeholderColor;
+    item.gridCount = config.gridCount;
+    item.anchorRatioX = config.anchorRatioX;
+    item.anchorRatioY = config.anchorRatioY;
+    item.imageScale = config.imageScale;
+
+    items.push_back(item);
   }
 
   return items;
@@ -680,23 +650,7 @@ void GameScene::cancelPlacementMode(bool refundResources) {
 }
 
 Building* GameScene::createBuildingForItem(const ShopItem& item) {
-  switch (item.category) {
-    case BuildingType::TOWN_HALL:
-      return TownHall::create(item.defaultLevel);
-    case BuildingType::RESOURCE:
-      return ResourceBuilding::create(item.defaultLevel, item.id);
-    case BuildingType::DEFENSE:
-      return DefenseBuilding::create(item.defaultLevel, item.id);
-    case BuildingType::STORAGE:
-      return StorageBuilding::create(item.defaultLevel, item.id);
-    case BuildingType::BARRACKS:
-      return BarracksBuilding::create(item.defaultLevel, item.id);
-    default:
-      return PlaceholderBuilding::create(
-          item.displayName, item.category, item.placeholderColor,
-          item.defaultLevel, item.gridCount, item.anchorRatioX,
-          item.anchorRatioY, item.imageScale);
-  }
+  return BuildingFactory::getInstance()->createBuilding(item);
 }
 
 void GameScene::showPlacementHint(const std::string& text) {
@@ -730,10 +684,15 @@ void GameScene::updatePlacementPreview(const Vec2& worldPos) {
       deltaX = configManager->getConstantConfig().deltaX;
     }
 
+    // 如果建筑占用的网格数是奇数（如3x3），其中心应该在网格中心
+    // 需要进行偏移修正，使其对齐到网格线
+    if (_placementBuilding->getGridCount() % 2 != 0) {
+      nearestPos.x += deltaX;
+    }
+
     _placementBuilding->setPosition(nearestPos);
     if (deltaX > 0.0f) {
-      _placementBuilding->setCenterX(
-          nearestPos.x + deltaX * _placementBuilding->getGridCount());
+      _placementBuilding->setCenterX(nearestPos.x);
     } else {
       _placementBuilding->setCenterX(nearestPos.x);
     }

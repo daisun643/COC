@@ -20,6 +20,8 @@ class TownHall : public Building {
   bool init(int level, std::string imagePath, int gridCount, float anchorRatioX,
             float anchorRatioY, float imageScale);
 
+  CC_SYNTHESIZE(int, _capacity, Capacity);
+
  protected:
   TownHall();
   virtual ~TownHall();

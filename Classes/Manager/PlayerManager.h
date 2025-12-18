@@ -1,8 +1,9 @@
 #ifndef __PLAYER_MANAGER_H__
 #define __PLAYER_MANAGER_H__
 
-#include "cocos2d.h"
 #include <functional>
+
+#include "cocos2d.h"
 
 class PlayerManager {
  public:
@@ -14,6 +15,7 @@ class PlayerManager {
   // Getter
   int getGold() const { return _gold; }
   int getElixir() const { return _elixir; }
+  int getGems() const { return _gems; }
   int getMaxGold() const { return _maxGold; }
   int getMaxElixir() const { return _maxElixir; }
   int getGoldProduction() const { return _goldProduction; }
@@ -22,6 +24,7 @@ class PlayerManager {
   // Setter / Modifiers
   void setGold(int amount);
   void setElixir(int amount);
+  void setGems(int amount) { _gems = amount; }
   void setMaxGold(int amount) { _maxGold = amount; }
   void setMaxElixir(int amount) { _maxElixir = amount; }
   void setGoldProduction(int amount) { _goldProduction = amount; }
@@ -29,9 +32,11 @@ class PlayerManager {
 
   void addGold(int amount);
   void addElixir(int amount);
+  void addGems(int amount);
 
   bool consumeGold(int amount);
   bool consumeElixir(int amount);
+  bool consumeGems(int amount);
 
   // 新增保存和加载方法
   void saveUserData();
@@ -40,14 +45,19 @@ class PlayerManager {
   // 设置自动保存回调函数
   void setAutoSaveCallback(const std::function<void()>& callback);
 
+  bool isNewGame() const { return _isNewGame; }
+  void setIsNewGame(bool isNew) { _isNewGame = isNew; }
+
  private:
   PlayerManager();
   ~PlayerManager();
 
   static PlayerManager* _instance;
 
+  bool _isNewGame;
   int _gold;
   int _elixir;
+  int _gems;
   int _maxGold;
   int _maxElixir;
   int _goldProduction;

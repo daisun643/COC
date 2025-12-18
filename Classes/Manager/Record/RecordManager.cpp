@@ -4,6 +4,8 @@
 #include <fstream>
 #include <sstream>
 
+#include "Utils/PathUtils.h"
+
 #ifdef _WIN32
 #include <direct.h>
 #include <io.h>
@@ -143,14 +145,13 @@ bool RecordManager::endAttackAndSave(const std::string& filePath) {
   doc.Accept(writer);
 
   std::string jsonString = buffer.GetString();
+  // 使用 PathUtils 获取真实写入路径
+  std::string fullPath = PathUtils::getRealFilePath(filePath, true);
 
-  // 获取完整文件路径
-  // 使用相对路径，直接写入到项目目录下的Resources/record/dev.json
-  std::string fullPath = filePath;
+  // [新增] 确保目录存在
+  PathUtils::ensureDirectoryExists(fullPath);
 
-  // 将路径中的反斜杠转换为正斜杠（跨平台兼容）
-  std::replace(fullPath.begin(), fullPath.end(), '\\', '/');
-
+  // 确保目录存在 (PathUtils 返回的是文件路径，我们需要父目录)
   // 确保目录存在
   size_t pos = fullPath.find_last_of("/\\");
   if (pos != std::string::npos) {

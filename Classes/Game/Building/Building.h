@@ -1,6 +1,8 @@
 #ifndef __BUILDING_H__
 #define __BUILDING_H__
 
+#include <functional>
+
 #include "cocos2d.h"
 
 USING_NS_CC;
@@ -23,6 +25,23 @@ enum class BuildingType {
  */
 class Building : public Sprite {
  public:
+  // 定义建筑状态枚举
+  enum class State {
+    NORMAL,     // 正常状态
+    UPGRADING,  // 升级施工中
+    MOVING      // 移动中（预留）
+  };
+  /**
+   * 设置死亡回调
+   */
+  void setOnDeathCallback(std::function<void(Building*)> callback) {
+    _onDeathCallback = callback;
+  }
+
+ protected:
+  std::function<void(Building*)> _onDeathCallback;
+
+ public:
   // 拖动相关属性
   bool _isDragging;  // 是否正在拖动
   Vec2 _dragOffset;  // 拖动时的偏移量
@@ -40,6 +59,14 @@ class Building : public Sprite {
    * 增加等级，刷新外观和通用属性，子类应重写此方法以更新特有属性
    */
   virtual void upgrade();
+
+  // 状态查询与控制方法
+  bool isUpgrading() const { return _state == State::UPGRADING; }
+  void cancelUpgrade();             // 取消升级
+  void finishUpgradeImmediately();  // 立即完成（消耗宝石）
+
+  // 重写 update 方法以处理倒计时
+  virtual void update(float dt) override;
 
   // 建筑属性
   CC_SYNTHESIZE(BuildingType, _buildingType, BuildingType);
@@ -100,7 +127,21 @@ class Building : public Sprite {
   DrawNode* _anchorNode;
   Action* _glowAction;
   Color4F _glowColor;
-  LayerColor* _errorLayer;
+
+  // 升级施工相关成员变量
+  State _state;             // 当前状态
+  float _upgradeTotalTime;  // 升级总时间
+  float _upgradeTimer;      // 当前剩余时间
+
+  // UI 组件
+  ProgressTimer* _progressBar;  // 进度条
+  Sprite* _progressBarBg;       // 进度条背景
+  Label* _timeLabel;            // 倒计时文字
+
+  // 内部辅助方法
+  void createUpgradeUI();          // 创建升级进度条UI
+  void removeUpgradeUI();          // 移除升级进度条UI
+  virtual void completeUpgrade();  // 实际执行升级完成逻辑（改变外观、属性）
 
   virtual void createDefaultAppearance();
   void updateGlowDrawing();

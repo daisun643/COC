@@ -3,6 +3,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 #include "Game/Soldier/BasicSoldier.h"
 #include "Game/Spell/BasicSpell.h"
@@ -49,6 +50,8 @@ class ConfigManager {
     float deltaX;                // 网格间距X
     float deltaY;                // 网格间距Y
     float glowDelay;             // 光晕明暗交替间隔
+    int initialGold;             // 初始金币
+    int initialElixir;           // 初始圣水
   };
 
   /**
@@ -65,6 +68,11 @@ class ConfigManager {
     int defaultLevel = 1;
     int maxLevel = 10;
     float imageScale = 1.0f;
+
+    // 升级消耗相关配置
+    int upgradeCost = 0;             // 升级消耗数量
+    std::string upgradeCostType = "Gold"; // 升级消耗类型 ("Gold" 或 "Elixir")
+    float buildTime = 5.0f;          // 升级/建造时间 (秒)
 
     // 防御属性 (Defense)
     float attackRange = 0.0f;
@@ -131,6 +139,11 @@ class ConfigManager {
    */
   BuildingConfig getBuildingConfig(const std::string& name,
                                    int level = 1) const;
+
+  /**
+   * 获取所有建筑的名称列表
+   */
+  std::vector<std::string> getAllBuildingNames() const;
 
   /**
    * 获取士兵配置

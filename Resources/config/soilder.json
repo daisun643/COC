@@ -6,29 +6,29 @@
         "1": {
             "PanelImage": "images/soldier/panel/barbarian.png",
             "MoveImage": "images/soldier/live/barbarian/1.png",
-            "Attack": 10,
-            "Health": 100,
+            "Attack": 20,
+            "Health": 110,
             "MoveSpeed": 100,
             "AttackSpeed": 100,
-            "AttackRange": 100
+            "AttackRange": 40
         },
         "2": {
             "PanelImage": "images/soldier/panel/barbarian.png",
             "MoveImage": "images/soldier/live/barbarian/1.png",
-            "Attack": 10,
-            "Health": 100,
+            "Attack": 24,
+            "Health": 130,
             "MoveSpeed": 100,
             "AttackSpeed": 100,
-            "AttackRange": 100
+            "AttackRange": 40
         },
         "3": {
             "PanelImage": "images/soldier/panel/barbarian.png",
             "MoveImage": "images/soldier/live/barbarian/1.png",
-            "Attack": 10,
-            "Health": 100,
+            "Attack": 28,
+            "Health": 160,
             "MoveSpeed": 100,
             "AttackSpeed": 100,
-            "AttackRange": 100
+            "AttackRange": 40
         }
     },
     "archer": {
@@ -37,8 +37,8 @@
         "1": {
             "PanelImage": "images/soldier/panel/archer.png",
             "MoveImage": "images/soldier/live/archer/1.png",
-            "Attack": 10,
-            "Health": 100,
+            "Attack": 15,
+            "Health": 60,
             "MoveSpeed": 100,
             "AttackSpeed": 100,
             "AttackRange": 200
@@ -46,8 +46,8 @@
         "2": {
             "PanelImage": "images/soldier/panel/archer.png",
             "MoveImage": "images/soldier/live/archer/1.png",
-            "Attack": 10,
-            "Health": 100,
+            "Attack": 18,
+            "Health": 70,
             "MoveSpeed": 100,
             "AttackSpeed": 100,
             "AttackRange": 200
@@ -55,8 +55,8 @@
         "3": {
             "PanelImage": "images/soldier/panel/archer.png",
             "MoveImage": "images/soldier/live/archer/1.png",
-            "Attack": 10,
-            "Health": 100,
+            "Attack": 22,
+            "Health": 85,
             "MoveSpeed": 100,
             "AttackSpeed": 100,
             "AttackRange": 200
@@ -68,29 +68,29 @@
         "1": {
             "PanelImage": "images/soldier/panel/giant.png",
             "MoveImage": "images/soldier/live/giant/1.png",
-            "Attack": 10,
-            "Health": 100,
-            "MoveSpeed": 100,
+            "Attack": 25,
+            "Health": 500,
+            "MoveSpeed": 80,
             "AttackSpeed": 100,
-            "AttackRange": 100
+            "AttackRange": 40
         },
         "2": {
             "PanelImage": "images/soldier/panel/giant.png",
             "MoveImage": "images/soldier/live/giant/1.png",
-            "Attack": 10,
-            "Health": 100,
-            "MoveSpeed": 100,
+            "Attack": 30,
+            "Health": 650,
+            "MoveSpeed": 80,
             "AttackSpeed": 100,
-            "AttackRange": 100
+            "AttackRange": 40
         },
         "3": {
             "PanelImage": "images/soldier/panel/giant.png",
             "MoveImage": "images/soldier/live/giant/1.png",
-            "Attack": 10,
-            "Health": 100,
-            "MoveSpeed": 100,
+            "Attack": 38,
+            "Health": 850,
+            "MoveSpeed": 80,
             "AttackSpeed": 100,
-            "AttackRange": 100
+            "AttackRange": 40
         }
     },
     "bomber": {
@@ -99,29 +99,29 @@
         "1": {
             "PanelImage": "images/soldier/panel/bomber.png",
             "MoveImage": "images/soldier/live/bomber/1.png",
-            "Attack": 100,
-            "Health": 100,
+            "Attack": 250,
+            "Health": 40,
             "MoveSpeed": 100,
             "AttackSpeed": 100,
-            "AttackRange": 10
+            "AttackRange": 40
         },
         "2": {
             "PanelImage": "images/soldier/panel/bomber.png",
             "MoveImage": "images/soldier/live/bomber/1.png",
-            "Attack": 100,
-            "Health": 100,
+            "Attack": 350,
+            "Health": 50,
             "MoveSpeed": 100,
             "AttackSpeed": 100,
-            "AttackRange": 10
+            "AttackRange": 40
         },
         "3": {
             "PanelImage": "images/soldier/panel/bomber.png",
             "MoveImage": "images/soldier/live/bomber/1.png",
-            "Attack": 100,
-            "Health": 100,
+            "Attack": 500,
+            "Health": 65,
             "MoveSpeed": 100,
             "AttackSpeed": 100,
-            "AttackRange": 10
+            "AttackRange": 40
         }
     }
 }

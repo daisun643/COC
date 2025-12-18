@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Container/Scene/AttackScence/AttackScene.h"
+#include "Utils/PathUtils.h"
 #include "json/document.h"
 #include "platform/CCFileUtils.h"
 
@@ -174,7 +175,8 @@ void AttackLayer::showSinglePlayerTab() {
 
   rapidjson::Document doc;
   std::string summaryPath = "level/summary.json";
-  std::string fullPath = fileUtils->fullPathForFilename(summaryPath);
+  // 使用 PathUtils 获取真实路径
+  std::string fullPath = PathUtils::getRealFilePath(summaryPath, false);
 
   if (!fullPath.empty() && fileUtils->isFileExist(fullPath)) {
     std::string content = fileUtils->getStringFromFile(fullPath);

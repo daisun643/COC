@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Container/Scene/Record/RecordScene.h"
+#include "Utils/PathUtils.h"
 #include "json/document.h"
 #include "platform/CCFileUtils.h"
 
@@ -123,7 +124,9 @@ void ReplayLayer::buildUI() {
 
   rapidjson::Document doc;
   std::string summaryPath = "record/summary.json";
-  std::string fullPath = fileUtils->fullPathForFilename(summaryPath);
+  // 使用 PathUtils 获取真实路径，确保读取的是最新写入的文件（特别是在 Windows
+  // 开发环境下）
+  std::string fullPath = PathUtils::getRealFilePath(summaryPath, false);
 
   if (!fullPath.empty() && fileUtils->isFileExist(fullPath)) {
     std::string content = fileUtils->getStringFromFile(fullPath);

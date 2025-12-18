@@ -9,6 +9,7 @@
 #include "Game/Spell/HealSpell.h"
 #include "Game/Spell/LightningSpell.h"
 #include "Game/Spell/RageSpell.h"
+#include "Utils/PathUtils.h"
 #include "json/document.h"
 #include "platform/CCFileUtils.h"
 #include "ui/CocosGUI.h"
@@ -48,6 +49,7 @@ bool RecordScene::init(const std::string& mapFilePath,
   _isPaused = false;
   _currentTime = 0.0f;
   _currentRecordIndex = 0;
+  _totalDuration = 0;
   _playbackSpeed = 1.0f;
   _playButton = nullptr;
   _pauseButton = nullptr;
@@ -77,7 +79,9 @@ bool RecordScene::init(const std::string& mapFilePath,
 
 bool RecordScene::loadRecordFile(const std::string& filePath) {
   FileUtils* fileUtils = FileUtils::getInstance();
-  std::string fullPath = filePath;
+
+  // 使用 PathUtils 获取真实路径，确保能读取到刚刚生成的记录文件
+  std::string fullPath = PathUtils::getRealFilePath(filePath, false);
 
   // 将路径中的反斜杠转换为正斜杠
   std::replace(fullPath.begin(), fullPath.end(), '\\', '/');
@@ -155,6 +159,20 @@ bool RecordScene::loadRecordFile(const std::string& filePath) {
     }
   }
 
+  // 读取元数据
+  if (doc.HasMember("metadata") && doc["metadata"].IsObject()) {
+    const rapidjson::Value& metadata = doc["metadata"];
+    if (metadata.HasMember("duration") && metadata["duration"].IsInt()) {
+      _totalDuration = metadata["duration"].GetInt();
+    }
+  }
+
+  // 如果没有读取到时长，尝试从最后一条记录推断（作为保底）
+  if (_totalDuration == 0 && !_records.empty()) {
+    // 假设最后一条记录后还有至少10秒
+    _totalDuration = _records.back().timestamp + 10;
+  }
+
   // 按时间戳排序
   std::sort(_records.begin(), _records.end(),
             [](const PlacementRecord& a, const PlacementRecord& b) {
@@ -168,37 +186,35 @@ bool RecordScene::loadRecordFile(const std::string& filePath) {
 }
 
 // 辅助函数：创建橙色圆角背景
-static DrawNode* createOrangeRoundedBackground(const Size& size, float radius = 8.0f) {
+static DrawNode* createOrangeRoundedBackground(const Size& size,
+                                               float radius = 8.0f) {
   auto drawNode = DrawNode::create();
   // 橙色背景 (255, 165, 0)
-  Color4F orangeColor(255.0f/255.0f, 165.0f/255.0f, 0.0f/255.0f, 1.0f);
-  
+  Color4F orangeColor(255.0f / 255.0f, 165.0f / 255.0f, 0.0f / 255.0f, 1.0f);
+
   float width = size.width;
   float height = size.height;
-  
+
   // 绘制圆角矩形（通过绘制多个部分来模拟圆角）
   // 绘制中心矩形
-  drawNode->drawSolidRect(
-    Vec2(radius, radius),
-    Vec2(width - radius, height - radius),
-    orangeColor);
-  
+  drawNode->drawSolidRect(Vec2(radius, radius),
+                          Vec2(width - radius, height - radius), orangeColor);
+
   // 绘制四个圆角
   drawNode->drawSolidCircle(Vec2(radius, radius), radius, 0, 20, orangeColor);
-  drawNode->drawSolidCircle(Vec2(width - radius, radius), radius, 0, 20, orangeColor);
-  drawNode->drawSolidCircle(Vec2(radius, height - radius), radius, 0, 20, orangeColor);
-  drawNode->drawSolidCircle(Vec2(width - radius, height - radius), radius, 0, 20, orangeColor);
-  
+  drawNode->drawSolidCircle(Vec2(width - radius, radius), radius, 0, 20,
+                            orangeColor);
+  drawNode->drawSolidCircle(Vec2(radius, height - radius), radius, 0, 20,
+                            orangeColor);
+  drawNode->drawSolidCircle(Vec2(width - radius, height - radius), radius, 0,
+                            20, orangeColor);
+
   // 绘制连接圆角的矩形
-  drawNode->drawSolidRect(
-    Vec2(radius, 0),
-    Vec2(width - radius, height),
-    orangeColor);
-  drawNode->drawSolidRect(
-    Vec2(0, radius),
-    Vec2(width, height - radius),
-    orangeColor);
-  
+  drawNode->drawSolidRect(Vec2(radius, 0), Vec2(width - radius, height),
+                          orangeColor);
+  drawNode->drawSolidRect(Vec2(0, radius), Vec2(width, height - radius),
+                          orangeColor);
+
   return drawNode;
 }
 
@@ -214,14 +230,16 @@ void RecordScene::createPlaybackButtons() {
   const float radius = 8.0f;
 
   // 创建播放按钮（左上角，水平排列）
-  Vec2 playButtonPos(origin.x + margin + buttonWidth/2,
-                     origin.y + visibleSize.height - margin - buttonHeight/2);
-  
+  Vec2 playButtonPos(origin.x + margin + buttonWidth / 2,
+                     origin.y + visibleSize.height - margin - buttonHeight / 2);
+
   // 创建橙色圆角背景
-  auto playBgDrawNode = createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
-  playBgDrawNode->setPosition(Vec2(playButtonPos.x - buttonWidth/2, playButtonPos.y - buttonHeight/2));
+  auto playBgDrawNode =
+      createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
+  playBgDrawNode->setPosition(Vec2(playButtonPos.x - buttonWidth / 2,
+                                   playButtonPos.y - buttonHeight / 2));
   this->addChild(playBgDrawNode, 199);
-  
+
   _playButton = ui::Button::create();
   _playButton->setTitleText("播放");
   _playButton->setTitleFontSize(20);
@@ -236,14 +254,17 @@ void RecordScene::createPlaybackButtons() {
   this->addChild(_playButton, 200);
 
   // 创建暂停按钮（在播放按钮右侧）
-  Vec2 pauseButtonPos(origin.x + margin + buttonWidth/2 + buttonWidth + buttonSpacing,
-                      origin.y + visibleSize.height - margin - buttonHeight/2);
-  
+  Vec2 pauseButtonPos(
+      origin.x + margin + buttonWidth / 2 + buttonWidth + buttonSpacing,
+      origin.y + visibleSize.height - margin - buttonHeight / 2);
+
   // 创建橙色圆角背景
-  auto pauseBgDrawNode = createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
-  pauseBgDrawNode->setPosition(Vec2(pauseButtonPos.x - buttonWidth/2, pauseButtonPos.y - buttonHeight/2));
+  auto pauseBgDrawNode =
+      createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
+  pauseBgDrawNode->setPosition(Vec2(pauseButtonPos.x - buttonWidth / 2,
+                                    pauseButtonPos.y - buttonHeight / 2));
   this->addChild(pauseBgDrawNode, 199);
-  
+
   _pauseButton = ui::Button::create();
   _pauseButton->setTitleText("暂停");
   _pauseButton->setTitleFontSize(20);
@@ -270,14 +291,17 @@ void RecordScene::createPlaybackButtons() {
   this->addChild(_pauseButton, 200);
 
   // 创建停止按钮（在暂停按钮右侧）
-  Vec2 stopButtonPos(origin.x + margin + buttonWidth/2 + (buttonWidth + buttonSpacing) * 2,
-                     origin.y + visibleSize.height - margin - buttonHeight/2);
-  
+  Vec2 stopButtonPos(
+      origin.x + margin + buttonWidth / 2 + (buttonWidth + buttonSpacing) * 2,
+      origin.y + visibleSize.height - margin - buttonHeight / 2);
+
   // 创建橙色圆角背景
-  auto stopBgDrawNode = createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
-  stopBgDrawNode->setPosition(Vec2(stopButtonPos.x - buttonWidth/2, stopButtonPos.y - buttonHeight/2));
+  auto stopBgDrawNode =
+      createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
+  stopBgDrawNode->setPosition(Vec2(stopButtonPos.x - buttonWidth / 2,
+                                   stopButtonPos.y - buttonHeight / 2));
   this->addChild(stopBgDrawNode, 199);
-  
+
   _stopButton = ui::Button::create();
   _stopButton->setTitleText("停止");
   _stopButton->setTitleFontSize(20);
@@ -294,18 +318,15 @@ void RecordScene::createPlaybackButtons() {
   _timeLabel = Label::createWithSystemFont("00:00 / 00:00", "Arial", 20);
   _timeLabel->setColor(Color3B::WHITE);
   _timeLabel->setPosition(
-      Vec2(origin.x + margin + buttonWidth/2 + (buttonWidth + buttonSpacing) * 3 + 50,
-           origin.y + visibleSize.height - margin - buttonHeight/2));
+      Vec2(origin.x + margin + buttonWidth / 2 +
+               (buttonWidth + buttonSpacing) * 3 + 50,
+           origin.y + visibleSize.height - margin - buttonHeight / 2));
   this->addChild(_timeLabel, 200);
 
   // 更新时间显示
-  int maxTime = 0;
-  if (!_records.empty()) {
-    maxTime = _records.back().timestamp;
-  }
   char buffer[32];
-  snprintf(buffer, sizeof(buffer), "00:00 / %02d:%02d", maxTime / 60,
-           maxTime % 60);
+  snprintf(buffer, sizeof(buffer), "00:00 / %02d:%02d", _totalDuration / 60,
+           _totalDuration % 60);
   _timeLabel->setString(buffer);
 }
 
@@ -405,13 +426,9 @@ void RecordScene::stopPlayback() {
 
   // 更新时间显示
   if (_timeLabel) {
-    int maxTime = 0;
-    if (!_records.empty()) {
-      maxTime = _records.back().timestamp;
-    }
     char buffer[32];
-    snprintf(buffer, sizeof(buffer), "00:00 / %02d:%02d", maxTime / 60,
-             maxTime % 60);
+    snprintf(buffer, sizeof(buffer), "00:00 / %02d:%02d", _totalDuration / 60,
+             _totalDuration % 60);
     _timeLabel->setString(buffer);
   }
 
@@ -444,26 +461,19 @@ void RecordScene::updatePlayback(float dt) {
 
   // 更新时间显示
   if (_timeLabel) {
-    int maxTime = 0;
-    if (!_records.empty()) {
-      maxTime = _records.back().timestamp;
-    }
     char buffer[32];
     snprintf(buffer, sizeof(buffer), "%02d:%02d / %02d:%02d",
              static_cast<int>(_currentTime) / 60,
-             static_cast<int>(_currentTime) % 60, maxTime / 60, maxTime % 60);
+             static_cast<int>(_currentTime) % 60, _totalDuration / 60,
+             _totalDuration % 60);
     _timeLabel->setString(buffer);
   }
 
   // 检查是否播放完成
-  if (_currentRecordIndex >= _records.size()) {
-    int maxTime = 0;
-    if (!_records.empty()) {
-      maxTime = _records.back().timestamp;
-    }
-    if (_currentTime >= maxTime) {
-      stopPlayback();
-    }
+  // 只有当所有记录都已执行，且时间超过总时长时才停止
+  if (_currentRecordIndex >= _records.size() &&
+      _currentTime >= _totalDuration) {
+    stopPlayback();
   }
 }
 
@@ -501,6 +511,26 @@ void RecordScene::createSoldierFromRecord(const PlacementRecord& record) {
       }
       return buildings;
     });
+
+    // [修复] 设置网格状态回调，确保寻路算法能正确感知障碍物
+    soldier->setGridStatusCallback([this](int row, int col) -> bool {
+      // 检查是否越界
+      if (row < 0 || row >= _gridSize || col < 0 || col >= _gridSize) {
+        return false;
+      }
+      // 检查是否有建筑占据
+      if (_buildingManager) {
+        Building* building = _buildingManager->getBuildingAtGrid(row, col);
+        if (building && building->isAlive()) {
+          // 建筑占据不可通行（除非是城墙且攻击者是炸弹人，这部分逻辑在BasicSoldier内部处理）
+          return false;
+        }
+      }
+      return true;  // 默认可通行
+    });
+
+    // [修复] 设置原点坐标，用于坐标转换
+    soldier->setP00(_p00);
 
     CCLOG("RecordScene: Created soldier %s Lv%d at (%.1f, %.1f) @ %ds",
           record.category.c_str(), record.level, record.x, record.y,
@@ -695,15 +725,17 @@ void RecordScene::createExitButton() {
     const float buttonHeight = 40.0f;
     const float margin = 20.0f;
     const float radius = 8.0f;
-    
-    Vec2 buttonPos(origin.x + visibleSize.width - margin - buttonWidth/2,
-                   origin.y + visibleSize.height - margin - buttonHeight/2);
-    
+
+    Vec2 buttonPos(origin.x + visibleSize.width - margin - buttonWidth / 2,
+                   origin.y + visibleSize.height - margin - buttonHeight / 2);
+
     // 创建橙色圆角背景
-    auto bgDrawNode = createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
-    bgDrawNode->setPosition(Vec2(buttonPos.x - buttonWidth/2, buttonPos.y - buttonHeight/2));
+    auto bgDrawNode =
+        createOrangeRoundedBackground(Size(buttonWidth, buttonHeight), radius);
+    bgDrawNode->setPosition(
+        Vec2(buttonPos.x - buttonWidth / 2, buttonPos.y - buttonHeight / 2));
     this->addChild(bgDrawNode, 199);
-    
+
     _exitButton = ui::Button::create();
     _exitButton->setTitleText("退出");
     _exitButton->setTitleFontSize(20);
