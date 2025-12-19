@@ -22,9 +22,9 @@ class PathFinder {
    * @param isWalkable 回调函数，判断指定网格是否可通行
    * @return 路径点列表（屏幕坐标），如果找不到路径返回空列表
    */
-  static std::vector<Vec2> findPath(const Vec2& startPos, const Vec2& endPos,
-                                    const Vec2& p00,
-                                    std::function<bool(int, int)> isWalkable);
+  static std::vector<Vec2> findPath(
+      const Vec2& startPos, const Vec2& endPos, const Vec2& p00,
+      const std::function<bool(int, int)>& isWalkable, int precision = 2);
 };
 
 #endif  // __PATH_FINDER_H__

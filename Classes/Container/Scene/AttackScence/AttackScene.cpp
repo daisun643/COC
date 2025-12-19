@@ -531,8 +531,13 @@ void AttackScene::placeSoldier(const Vec2& worldPos, const TroopItem& item) {
       createStatusBar();
     }
 
+    // 如果进攻尚未开始，则自动开始
+    if (!_isAttackStarted) {
+      startAttack();
+    }
+
     // 记录兵种布置
-    if (_recordManager && _isAttackStarted) {
+    if (_recordManager) {
       int timestamp = _recordManager->getCurrentTimestamp();
       _recordManager->recordTroopPlacement(item.soldierType, item.level,
                                            worldPos.x, worldPos.y, timestamp);
@@ -618,8 +623,13 @@ void AttackScene::castSpell(const Vec2& worldPos, const SpellItem& item) {
         createStatusBar();
       }
 
+      // 如果进攻尚未开始，则自动开始
+      if (!_isAttackStarted) {
+        startAttack();
+      }
+
       // 记录法术布置
-      if (_recordManager && _isAttackStarted) {
+      if (_recordManager) {
         int timestamp = _recordManager->getCurrentTimestamp();
         _recordManager->recordSpellPlacement(item.spellType, worldPos.x,
                                              worldPos.y, timestamp);
@@ -1067,6 +1077,24 @@ void AttackScene::endAttack() {
   _isAttackStarted = false;
   _countdownSeconds = ATTACK_DURATION;
 
+  // [修复] 停止所有士兵和法术的行动
+  for (auto soldier : _placedSoldiers) {
+    if (soldier) {
+      // 停止更新，使其冻结在原地
+      soldier->unscheduleUpdate();
+      // 可选：播放待机动画或移除
+    }
+  }
+
+  // 停止所有法术效果
+  for (auto spell : _activeSpells) {
+    if (spell) {
+      spell->unscheduleUpdate();
+      spell->removeFromParent();  // 法术通常是瞬时或持续效果，结束后应移除
+    }
+  }
+  _activeSpells.clear();
+
   // 更新按钮状态
   if (_startAttackButton) {
     _startAttackButton->setEnabled(true);
@@ -1244,11 +1272,19 @@ void AttackScene::updateRecordSummary(const std::string& recordName,
   rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
 
   // 获取或创建 records 数组
-  rapidjson::Value recordsArray;
+  rapidjson::Value* recordsArray = nullptr;
   if (doc.HasMember("records") && doc["records"].IsArray()) {
-    recordsArray = doc["records"];
+    recordsArray = &doc["records"];
   } else {
-    recordsArray.SetArray();
+    // 如果不存在，创建一个新的数组并添加到文档中
+    // 注意：如果存在但不是数组，这里没有处理移除，直接覆盖可能会有问题，
+    // 但通常 summary.json 格式是固定的。为了安全，可以先移除。
+    if (doc.HasMember("records")) {
+      doc.RemoveMember("records");
+    }
+    rapidjson::Value newArray(rapidjson::kArrayType);
+    doc.AddMember("records", newArray, allocator);
+    recordsArray = &doc["records"];
   }
 
   // 添加新记录（每次进攻都创建新记录，不更新旧记录）
@@ -1274,10 +1310,8 @@ void AttackScene::updateRecordSummary(const std::string& recordName,
   timeValue.SetString(timeStr.c_str(), allocator);
   recordObj.AddMember("time", timeValue, allocator);
 
-  recordsArray.PushBack(recordObj, allocator);
-
-  // 更新文档中的 records 数组
-  doc["records"] = recordsArray;
+  // 将新记录添加到数组中
+  recordsArray->PushBack(recordObj, allocator);
 
   // 将 JSON 转换为字符串
   rapidjson::StringBuffer buffer;

@@ -395,6 +395,29 @@ Building* BuildingManager::getBuildingAtPosition(const Vec2& pos) const {
   return nullptr;
 }
 
+Building* BuildingManager::getBuildingAtGrid(int row, int col) const {
+  for (Building* building : _buildings) {
+    if (building && building->isAlive()) {
+      // 建筑中心坐标
+      float bRow = building->getRow();
+      float bCol = building->getCol();
+      int gridSize = building->getGridCount();
+
+      // 建筑占据的范围是从 center - size/2 到 center + size/2
+      float halfSize = gridSize / 2.0f;
+
+      // 检查点 (row, col) 是否在建筑范围内
+      // 注意：这里使用简单的矩形范围检查，因为网格坐标系本身是正交的（虽然渲染是菱形）
+      // 建筑占据的网格是 [bRow - halfSize, bRow + halfSize)
+      if (row >= bRow - halfSize && row < bRow + halfSize &&
+          col >= bCol - halfSize && col < bCol + halfSize) {
+        return building;
+      }
+    }
+  }
+  return nullptr;
+}
+
 void BuildingManager::addBuildingsToLayer(Layer* layer) {
   if (!layer) {
     return;
@@ -435,6 +458,17 @@ void BuildingManager::registerBuilding(Building* building) {
 
   building->retain();
   _buildings.push_back(building);
+
+  // 设置死亡回调
+  building->setOnDeathCallback([this](Building* b) {
+    // 建筑被摧毁时，更新网格状态为可通行
+    this->updateGridState(static_cast<int>(b->getRow()),
+                          static_cast<int>(b->getCol()), b->getGridCount(),
+                          false);
+    // 注意：这里不立即移除建筑，避免迭代器失效或悬空指针
+    // 建筑对象会被保留在 _buildings 中直到场景销毁
+    // 但 isAlive() 会返回 false，所以逻辑上已经死亡
+  });
 
   // 更新网格状态
   updateGridState(static_cast<int>(building->getRow()),

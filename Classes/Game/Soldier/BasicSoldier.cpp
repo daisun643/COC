@@ -1,6 +1,7 @@
 #include "BasicSoldier.h"
 
 #include <cmath>
+#include <set>
 #include <string>
 
 #include "Game/Soldier/Archer.h"
@@ -8,6 +9,7 @@
 #include "Game/Soldier/Bomber.h"
 #include "Game/Soldier/Gaint.h"
 #include "Manager/Config/ConfigManager.h"
+#include "Utils/GridUtils.h"
 #include "Utils/PathFinder.h"
 
 BasicSoldier::BasicSoldier()
@@ -270,7 +272,7 @@ void BasicSoldier::updateState(float delta) {
         std::vector<Building*> buildings = _buildingFinderCallback();
         if (findTarget(buildings)) {
           // 找到目标，状态会在findTarget中设置
-          if (_target && isInRange(_target->getPosition())) {
+          if (_target && isInRange(_target)) {
             _state = SoldierState::ATTACKING;
           } else if (_target) {
             _state = SoldierState::MOVING;
@@ -288,12 +290,11 @@ void BasicSoldier::updateState(float delta) {
       // 攻击状态：攻击目标
       if (_target && _target->isVisible() && _target->isAlive()) {
         // 检查目标是否还在范围内
-        Vec2 targetPos = _target->getPosition();
-        if (isInRange(targetPos)) {
+        if (isInRange(_target)) {
           attackTarget(delta);
         } else {
           // 目标超出范围，移动到目标位置
-          setTargetPosition(targetPos);
+          setTargetPosition(_target->getPosition());
           _state = SoldierState::MOVING;
         }
       } else {
@@ -325,13 +326,16 @@ void BasicSoldier::moveToTarget(float delta) {
     if (!_pathQueue.empty() && _currentPathIndex < _pathQueue.size() - 1) {
       _currentPathIndex++;
       _targetPosition = _pathQueue[_currentPathIndex];
+
+      // [优化] 立即更新方向和距离，在本帧继续移动，避免停顿
+      direction = _targetPosition - currentPos;
+      distance = direction.length();
+    } else {
+      _targetPosition = Vec2::ZERO;
+      _state = SoldierState::IDLE;
+      _pathQueue.clear();
       return;
     }
-
-    _targetPosition = Vec2::ZERO;
-    _state = SoldierState::IDLE;
-    _pathQueue.clear();
-    return;
   }
 
   // 标准化方向向量
@@ -347,10 +351,29 @@ void BasicSoldier::moveToTarget(float delta) {
   Vec2 newPos = currentPos + direction * moveDistance;
   this->setPosition(newPos);
 
+  // 特殊逻辑：炸弹人移动过程中如果遇到任何墙壁，都应该攻击
+  // 这样可以避免炸弹人绕过面前的墙去攻击远处的墙，或者因为目标选择问题而忽略身边的墙
+  if (_attackType == AttackType::WALL && _buildingFinderCallback) {
+    std::vector<Building*> buildings = _buildingFinderCallback();
+    for (Building* b : buildings) {
+      if (b && b->isVisible() && b->isAlive() &&
+          b->getBuildingType() == BuildingType::WALL) {
+        // 检查是否在攻击范围内
+        if (isInRange(b)) {
+          // 发现射程内的墙壁，立即切换目标并攻击
+          _target = b;
+          _state = SoldierState::ATTACKING;
+          _targetPosition = Vec2::ZERO;
+          _pathQueue.clear();
+          return;
+        }
+      }
+    }
+  }
+
   // 如果正在移动向目标，检查是否进入攻击范围
   if (_target && _target->isVisible() && _target->isAlive()) {
-    Vec2 targetPos = _target->getPosition();
-    if (isInRange(targetPos)) {
+    if (isInRange(_target)) {
       _state = SoldierState::ATTACKING;
       _targetPosition = Vec2::ZERO;
       _pathQueue.clear();
@@ -433,13 +456,18 @@ bool BasicSoldier::findTarget(const std::vector<Building*>& buildings) {
     return false;
   }
 
-  Building* bestPreferredTarget = nullptr;  // 优先目标
-  Building* bestAnyTarget = nullptr;        // 任意目标
+  Building* bestPreferredTarget = nullptr;  // 1. 优先目标
   float bestPreferredDistance = FLT_MAX;
-  float bestAnyDistance = FLT_MAX;
+
+  Building* bestFallbackTarget = nullptr;  // 2. 备选目标（非墙）
+  float bestFallbackDistance = FLT_MAX;
+
+  Building* bestWallTarget = nullptr;  // 3. 最后的选择（墙）
+  float bestWallDistance = FLT_MAX;
+
   Vec2 myPos = this->getPosition();
 
-  // 根据攻击类型选择目标
+  // 遍历所有建筑进行筛选
   for (Building* building : buildings) {
     if (!building || !building->isVisible() || !building->isAlive()) {
       continue;
@@ -448,14 +476,13 @@ bool BasicSoldier::findTarget(const std::vector<Building*>& buildings) {
     BuildingType buildingType = building->getBuildingType();
     Vec2 buildingPos = building->getPosition();
     float distance = getDistanceTo(buildingPos);
+    bool isWall = (buildingType == BuildingType::WALL);
 
-    // 根据攻击类型判断是否是优先目标
+    // 判断是否是优先目标
     bool isPreferred = false;
     switch (_attackType) {
       case AttackType::ANY:
-        if (buildingType != BuildingType::WALL) {
-          isPreferred = true;
-        }
+        if (!isWall) isPreferred = true;
         break;
       case AttackType::DEFENSE:
         isPreferred = (buildingType == BuildingType::DEFENSE);
@@ -467,35 +494,51 @@ bool BasicSoldier::findTarget(const std::vector<Building*>& buildings) {
         isPreferred = (buildingType == BuildingType::TOWN_HALL);
         break;
       case AttackType::WALL:
-        isPreferred = (buildingType == BuildingType::WALL);
+        isPreferred = isWall;
         break;
     }
 
+    // 1. 更新优先目标
     if (isPreferred) {
-      // 优先目标：选择最近的
-      if (!bestPreferredTarget || distance < bestPreferredDistance) {
+      if (distance < bestPreferredDistance) {
         bestPreferredTarget = building;
         bestPreferredDistance = distance;
       }
+    }
+
+    // 2. 更新备选目标（非墙）
+    // 注意：即使是优先目标也可能被记录在这里，但这不影响，因为我们最终会优先选择
+    // bestPreferredTarget 关键在于当 isPreferred 为 false
+    // 时（例如巨人没有防御塔可打），我们需要区分是打资源（Fallback）还是打墙（Wall）
+    if (!isWall) {
+      if (distance < bestFallbackDistance) {
+        bestFallbackTarget = building;
+        bestFallbackDistance = distance;
+      }
     } else {
-      // 非优先目标：作为备选
-      if (!bestAnyTarget || distance < bestAnyDistance) {
-        bestAnyTarget = building;
-        bestAnyDistance = distance;
+      // 3. 更新墙目标
+      if (distance < bestWallDistance) {
+        bestWallTarget = building;
+        bestWallDistance = distance;
       }
     }
   }
 
-  // 优先选择符合偏好的目标，如果没有则选择任意目标
-  Building* finalTarget =
-      bestPreferredTarget ? bestPreferredTarget : bestAnyTarget;
+  // 决策优先级：优先目标 > 非墙备选 > 墙
+  Building* finalTarget = bestPreferredTarget;
+  if (!finalTarget) {
+    finalTarget = bestFallbackTarget;
+  }
+  if (!finalTarget) {
+    finalTarget = bestWallTarget;
+  }
 
   if (finalTarget) {
     _target = finalTarget;
     Vec2 targetPos = finalTarget->getPosition();
 
     // 如果目标在攻击范围内，直接攻击
-    if (isInRange(targetPos)) {
+    if (isInRange(finalTarget)) {
       _state = SoldierState::ATTACKING;
       _targetPosition = Vec2::ZERO;  // 清除移动目标
       _pathQueue.clear();
@@ -506,9 +549,51 @@ bool BasicSoldier::findTarget(const std::vector<Building*>& buildings) {
       // 只有陆军需要寻路，且必须有网格回调和原点信息
       if (_soldierCategory == SoldierCategory::LAND && _gridStatusCallback &&
           !_p00.equals(Vec2::ZERO)) {
+        // 自定义可行走判断逻辑
+        std::function<bool(int, int)> isWalkable = _gridStatusCallback;
+
+        // 如果是炸弹人（攻击墙壁），则允许穿过墙壁（即墙壁视为可行走）
+        if (_attackType == AttackType::WALL) {
+          // 构建墙壁坐标集合，用于快速查找
+          std::set<std::pair<int, int>> wallCoords;
+          for (Building* b : buildings) {
+            if (b && b->isVisible() && b->isAlive() &&
+                b->getBuildingType() == BuildingType::WALL) {
+              // 直接使用建筑存储的网格坐标，避免坐标转换误差
+              wallCoords.insert({(int)b->getRow(), (int)b->getCol()});
+            }
+          }
+
+          isWalkable = [this, wallCoords](int r, int c) -> bool {
+            // 如果原本可行走，直接返回true
+            if (_gridStatusCallback(r, c)) return true;
+
+            // 如果不可行走，检查是否是墙壁
+            if (wallCoords.count({r, c})) {
+              return true;  // 炸弹人可以把墙壁视为通路（目标）
+            }
+            return false;
+          };
+        }
+
         _pathQueue = PathFinder::findPath(this->getPosition(), targetPos, _p00,
-                                          _gridStatusCallback);
+                                          isWalkable, 8);
         if (!_pathQueue.empty()) {
+          // [优化] 如果目标是建筑，且路径终点在建筑边缘，
+          // 则追加一个向建筑中心偏移的点，确保士兵能走进攻击范围
+          if (finalTarget) {
+            Vec2 lastPoint = _pathQueue.back();
+            Vec2 targetCenter = finalTarget->getPosition();
+            Vec2 dir = targetCenter - lastPoint;
+            // 如果距离中心还有一段距离（说明在边缘），则向内移动
+            if (dir.length() > 10.0f) {
+              dir.normalize();
+              // 向内移动约0.5个格子（20像素），确保进入isInRange的判定区
+              Vec2 insidePoint = lastPoint + dir * 20.0f;
+              _pathQueue.push_back(insidePoint);
+            }
+          }
+
           _currentPathIndex = 0;
           setTargetPosition(_pathQueue[_currentPathIndex]);
           pathFound = true;
@@ -541,7 +626,7 @@ bool BasicSoldier::findTarget(const std::vector<Building*>& buildings) {
           if (_soldierCategory == SoldierCategory::LAND &&
               _gridStatusCallback && !_p00.equals(Vec2::ZERO)) {
             _pathQueue = PathFinder::findPath(this->getPosition(), targetPos,
-                                              _p00, _gridStatusCallback);
+                                              _p00, _gridStatusCallback, 4);
             if (!_pathQueue.empty()) {
               _currentPathIndex = 0;
               setTargetPosition(_pathQueue[_currentPathIndex]);
@@ -567,6 +652,52 @@ bool BasicSoldier::findTarget(const std::vector<Building*>& buildings) {
 bool BasicSoldier::isInRange(const Vec2& targetPos) const {
   float distance = getDistanceTo(targetPos);
   return distance <= _attackRange;
+}
+
+bool BasicSoldier::isInRange(Building* target) const {
+  if (!target) return false;
+
+  // 获取建筑的网格范围
+  float bRow = target->getRow();
+  float bCol = target->getCol();
+  float halfSize = target->getGridCount() / 2.0f;
+
+  // 获取士兵的网格坐标
+  float myRow, myCol;
+  if (!GridUtils::screenToGrid(this->getPosition(), _p00, myRow, myCol)) {
+    // 如果无法转换坐标，回退到简单的距离判断
+    return isInRange(target->getPosition());
+  }
+
+  // 计算建筑在网格上的边界
+  // 收缩边界，让士兵必须走进一点才能攻击
+  // 注意：对于1x1的建筑（如墙），shrink不能太大，否则会导致判定框消失或反转
+  // 同时也必须保证 (GridSize/2 + shrink) * GridPixel <= AttackRange +
+  // GridPixel/2 假设 GridPixel=40, AttackRange=40.
+  // 士兵在相邻格中心距离边缘20px. 如果 shrink=0.3 (12px), 总距离=32px <= 40px.
+  // 安全. 如果 shrink=0.6 (24px), 总距离=44px > 40px. 不可达!
+  float shrink = 0.3f;
+  // 确保 shrink 不会超过建筑一半大小
+  shrink = std::min(shrink, halfSize - 0.1f);
+
+  float minRow = bRow - halfSize + shrink;
+  float maxRow = bRow + halfSize - shrink;
+  float minCol = bCol - halfSize + shrink;
+  float maxCol = bCol + halfSize - shrink;
+
+  // 找到网格上距离士兵最近的建筑边缘点（Clamping）
+  float closestRow = std::max(minRow, std::min(myRow, maxRow));
+  float closestCol = std::max(minCol, std::min(myCol, maxCol));
+
+  // 将该最近点转换为屏幕坐标
+  Vec2 closestPos = GridUtils::gridToScene(closestRow, closestCol, _p00);
+
+  // 计算士兵当前位置到该最近点的屏幕像素距离
+  float distPixels = this->getPosition().distance(closestPos);
+
+  // 判定是否在攻击范围内
+  // 使用精确的屏幕距离判定，不再给予过大的宽容度
+  return distPixels <= _attackRange;
 }
 
 float BasicSoldier::getDistanceTo(const Vec2& pos) const {

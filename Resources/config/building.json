@@ -43,7 +43,7 @@
         "1": {
             "image": "images/buildings/cannon.png",
             "attackRange": 7.0,
-            "damage": 50,
+            "damage": 35,
             "attackSpeed": 1.2,
             "health": 400,
             "upgradeCost": 250,
@@ -53,7 +53,7 @@
         "2": {
             "image": "images/buildings/cannon2.png",
             "attackRange": 7.5,
-            "damage": 65,
+            "damage": 45,
             "attackSpeed": 1.1,
             "health": 550,
             "upgradeCost": 1000,
@@ -63,7 +63,7 @@
         "3": {
             "image": "images/buildings/cannon3.png",
             "attackRange": 8.0,
-            "damage": 85,
+            "damage": 60,
             "attackSpeed": 1.0,
             "health": 750,
             "upgradeCost": 2500,
@@ -83,7 +83,7 @@
         "1": {
             "image": "images/buildings/archer_tower.png",
             "attackRange": 10.0,
-            "damage": 35,
+            "damage": 18,
             "attackSpeed": 0.8,
             "health": 380,
             "upgradeCost": 500,
@@ -93,7 +93,7 @@
         "2": {
             "image": "images/buildings/archer_tower2.png",
             "attackRange": 10.5,
-            "damage": 45,
+            "damage": 22,
             "attackSpeed": 0.8,
             "health": 480,
             "upgradeCost": 1500,
@@ -103,7 +103,7 @@
         "3": {
             "image": "images/buildings/archer_tower3.png",
             "attackRange": 11.0,
-            "damage": 58,
+            "damage": 30,
             "attackSpeed": 0.7,
             "health": 600,
             "upgradeCost": 4000,
@@ -297,9 +297,9 @@
         "GridSize": 1,
         "AnchorRatio": [
             0.5,
-            0.5
+            0.4
         ],
-        "imageScale": 1.0,
+        "imageScale": 0.8,
         "maxLevel": 3,
         "1": {
             "image": "images/buildings/wall/1.png",

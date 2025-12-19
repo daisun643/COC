@@ -44,6 +44,14 @@ class BuildingManager {
   Building* getBuildingAtPosition(const Vec2& pos) const;
 
   /**
+   * 获取指定网格上的建筑
+   * @param row 行坐标
+   * @param col 列坐标
+   * @return 建筑指针，如果没有则返回nullptr
+   */
+  Building* getBuildingAtGrid(int row, int col) const;
+
+  /**
    * 添加建筑到场景
    * @param layer 要添加到的图层
    */
