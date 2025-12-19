@@ -17,6 +17,9 @@ public:
     // 重写升级方法
     virtual void upgrade() override;
 
+    // 重写 updateHPBar，使炸弹不显示血条
+    virtual void updateHPBar() override;
+
     // 陷阱属性
     CC_SYNTHESIZE(float, _triggerRange, TriggerRange); // 触发范围
     CC_SYNTHESIZE(int, _damage, Damage);               // 爆炸伤害

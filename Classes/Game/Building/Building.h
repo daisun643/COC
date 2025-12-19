@@ -149,7 +149,7 @@ class Building : public Sprite {
   /**
    * 更新生命值条显示（内部方法）
    */
-  void updateHPBar();
+  virtual void updateHPBar();
 
   DrawNode* _hpBarBackground;  // 生命值条背景
   DrawNode* _hpBarForeground;  // 生命值条前景

@@ -131,7 +131,7 @@
             "PanelImage": "images/soldier/panel/dragon.png",
             "MoveImage": "images/soldier/live/dragon/1.png",
             "Attack": 140,
-            "Health": 1900,
+            "Health": 60,
             "MoveSpeed": 120,
             "AttackSpeed": 150,
             "AttackRange": 60
@@ -140,7 +140,7 @@
             "PanelImage": "images/soldier/panel/dragon.png",
             "MoveImage": "images/soldier/live/dragon/1.png",
             "Attack": 160,
-            "Health": 2100,
+            "Health": 70,
             "MoveSpeed": 120,
             "AttackSpeed": 150,
             "AttackRange": 150
@@ -149,7 +149,7 @@
             "PanelImage": "images/soldier/panel/dragon.png",
             "MoveImage": "images/soldier/live/dragon/1.png",
             "Attack": 180,
-            "Health": 2300,
+            "Health": 85,
             "MoveSpeed": 120,
             "AttackSpeed": 150,
             "AttackRange": 150
