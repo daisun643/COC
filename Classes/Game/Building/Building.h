@@ -28,12 +28,6 @@ class Building : public Sprite {
  public:
   // 定义建筑状态枚举
   enum class State {
-<<<<<<< HEAD
-      NORMAL,     // 正常状态
-      UPGRADING,  // 升级施工中
-      MOVING      // 移动中（预留）
-  };
-=======
     NORMAL,     // 正常状态
     UPGRADING,  // 升级施工中
     MOVING      // 移动中（预留）
@@ -49,7 +43,6 @@ class Building : public Sprite {
   std::function<void(Building*)> _onDeathCallback;
 
  public:
->>>>>>> 7028f2efb79d33485a981c11ac21cb6d43f78aaa
   // 拖动相关属性
   bool _isDragging;  // 是否正在拖动
   Vec2 _dragOffset;  // 拖动时的偏移量
@@ -72,11 +65,6 @@ class Building : public Sprite {
   bool isUpgrading() const { return _state == State::UPGRADING; }
   void cancelUpgrade();             // 取消升级
   void finishUpgradeImmediately();  // 立即完成（消耗宝石）
-<<<<<<< HEAD
-  
-=======
-
->>>>>>> 7028f2efb79d33485a981c11ac21cb6d43f78aaa
   // 重写 update 方法以处理倒计时
   virtual void update(float dt) override;
 

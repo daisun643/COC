@@ -335,7 +335,7 @@ bool Building::inDiamond(const Vec2& pos) const {
   return manhattanDist <= _gridCount;
 }
 
-// 修改 upgrade 入口函数
+// 升级入口函数：检查资源、扣费、启动倒计时
 void Building::upgrade() {
   if (_level >= _maxLevel) {
     CCLOG("Building %s reached max level %d", _buildingName.c_str(), _maxLevel);
@@ -346,12 +346,7 @@ void Building::upgrade() {
       return; 
   }
 
-  if (_state == State::UPGRADING) {
-    return;
-  }
-
   // 1. 获取下一等级的配置，查看消耗
-  // 注意：我们升级是为了去下一级，所以应该读取 _level + 1 的消耗配置
   auto nextLevelConfig = ConfigManager::getInstance()->getBuildingConfig(
       _buildingName, _level + 1);
 
@@ -390,7 +385,6 @@ void Building::upgrade() {
   // 3. 资源扣除成功，开始升级流程
 
   // 弹出提示词：“消耗 xx 金币”
-  // 建议使用中文提示，或者根据 costType 转换
   std::string costName = (costType == "Gold") ? "金币" : "圣水";
   std::string hintText =
       StringUtils::format("消耗 %d %s", cost, costName.c_str());
@@ -426,82 +420,14 @@ void Building::upgrade() {
         _buildingName.c_str(), _upgradeTotalTime, cost, costType.c_str());
 }
 
-// 新增：完成升级的实际逻辑（原 upgrade 函数内容）
-void Building::completeUpgrade() {
-  _state = State::NORMAL;
-  removeUpgradeUI();
-
-  _level++;
-
-  // 2. 检查并扣除资源
-  bool success = false;
-  if (costType == "Gold") {
-      success = PlayerManager::getInstance()->consumeGold(cost);
-  } else if (costType == "Elixir") {
-      success = PlayerManager::getInstance()->consumeElixir(cost);
-  } else {
-      // 如果类型未知（例如宝石），默认成功或者自行处理
-      success = true; 
-  }
-
-  if (!success) {
-      CCLOG("Not enough %s to upgrade! Need %d", costType.c_str(), cost);
-      
-      // 这里可以弹出一个 "资源不足" 的提示 Label
-      auto failLabel = Label::createWithSystemFont("资源不足!", "Arial", 32);
-      failLabel->setColor(Color3B::RED);
-      failLabel->setPosition(Vec2(getContentSize().width / 2, getContentSize().height + 120));
-      this->addChild(failLabel, 100);
-      auto seq = Sequence::create(MoveBy::create(1.0f, Vec2(0, 50)), RemoveSelf::create(), nullptr);
-      failLabel->runAction(seq);
-      
-      return; // 资源不足，终止升级
-  }
-
-  // 3. 资源扣除成功，开始升级流程
-  
-  // 弹出提示词：“消耗 xx 金币”
-  // 建议使用中文提示，或者根据 costType 转换
-  std::string costName = (costType == "Gold") ? "金币" : "圣水";
-  std::string hintText = StringUtils::format("消耗 %d %s", cost, costName.c_str());
-  
-  auto hintLabel = Label::createWithSystemFont(hintText, "Arial", 28);
-  // 金色或亮色字体
-  hintLabel->setColor(Color3B(255, 215, 0)); 
-  hintLabel->enableOutline(Color4B::BLACK, 2);
-  hintLabel->setPosition(Vec2(getContentSize().width / 2, getContentSize().height + 100)); // 在建筑上方
-  this->addChild(hintLabel, 100);
-
-  // 提示动画：向上飘动并淡出
-  auto moveUp = MoveBy::create(1.5f, Vec2(0, 80));
-  auto fadeOut = FadeOut::create(1.5f);
-  auto spawn = Spawn::create(moveUp, fadeOut, nullptr);
-  auto sequence = Sequence::create(spawn, RemoveSelf::create(), nullptr);
-  hintLabel->runAction(sequence);
-
-  // 4. 正常切换状态并开始倒计时
-  _state = State::UPGRADING;
-  
-  // 使用配置中的建造时间，如果没配则默认10秒
-  float configTime = nextLevelConfig.buildTime;
-  if (configTime <= 0) configTime = 10.0f;
-  
-  _upgradeTotalTime = configTime; 
-  _upgradeTimer = _upgradeTotalTime;
-
-  createUpgradeUI();
-  
-  CCLOG("Started upgrading %s. Time: %.1f. Consumed: %d %s", _buildingName.c_str(), _upgradeTotalTime, cost, costType.c_str());
-}
-
-// 新增：完成升级的实际逻辑（原 upgrade 函数内容）
+// 升级完成逻辑（倒计时结束时调用）
 void Building::completeUpgrade() {
     _state = State::NORMAL;
     removeUpgradeUI();
 
     _level++;
 
-    // 使用新的 ConfigManager 接口
+    // 使用 ConfigManager 获取新等级的配置（主要为了更新贴图）
     auto config =
         ConfigManager::getInstance()->getBuildingConfig(_buildingName, _level);
 
@@ -538,19 +464,19 @@ void Building::completeUpgrade() {
   CCLOG("Upgraded %s to level %d COMPLETED.", _buildingName.c_str(), _level);
 }
 
-// 新增：取消升级
+// 取消升级
 void Building::cancelUpgrade() {
   if (_state == State::UPGRADING) {
     _state = State::NORMAL;
     _upgradeTimer = 0.0f;
     removeUpgradeUI();
     CCLOG("Upgrade cancelled for %s", _buildingName.c_str());
-    // 注意：这里未实现退款逻辑，如需退款可在 PlayerManager 添加
-    // addGold/addElixir
+    // 注意：这里未实现退款逻辑，如需退款可在 PlayerManager 添加 addGold/addElixir
   }
 }
 
-// 新增：立即完成
+
+// 立即完成（使用宝石）
 void Building::finishUpgradeImmediately() {
   if (_state != State::UPGRADING) return;
 
