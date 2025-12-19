@@ -334,7 +334,7 @@
         "maxLevel": 3,
         "1": {
             "image": "images/buildings/bomb.png", 
-            "damage": 100,
+            "damage": 70,
             "attackRange": 3.0,
             "health": 100,
             "upgradeCost": 500,
@@ -343,7 +343,7 @@
         },
         "2": {
             "image": "images/buildings/bomb2.png",
-            "damage": 150,
+            "damage": 100,
             "attackRange": 3.5,
             "health": 150,
             "upgradeCost": 1000,
@@ -352,7 +352,7 @@
         },
         "3": {
             "image": "images/buildings/bomb3.png",
-            "damage": 250,
+            "damage": 200,
             "attackRange": 4.0,
             "health": 200,
             "upgradeCost": 2000,
