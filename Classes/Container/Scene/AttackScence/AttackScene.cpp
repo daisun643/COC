@@ -54,6 +54,10 @@ Scene* AttackScene::createScene(const std::string& levelFilePath,
 }
 
 bool AttackScene::init(const std::string& jsonFilePath) {
+  // 防止敌人的地图数据（可能没有金库或金库等级低）覆盖了玩家真实的资源上限
+  // 在加载地图前，锁定资源上限更新
+  PlayerManager::getInstance()->setAllowUpdateMaxLimit(false);
+
   // 先调用父类的初始化，传入文件路径
   if (!BasicScene::init(jsonFilePath)) {
     return false;
@@ -1344,6 +1348,8 @@ void AttackScene::exitScene() {
   if (_isAttackStarted) {
     endAttack();
   }
+  // 退出时恢复允许更新
+  PlayerManager::getInstance()->setAllowUpdateMaxLimit(true);
 
   // 从场景管理器获取原来的 GameScene
   auto sceneHelper = SceneHelper::getInstance();
