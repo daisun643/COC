@@ -32,7 +32,8 @@ enum class SoldierType {
   BARBARIAN,  // 野蛮人
   ARCHER,     // 弓箭手
   GIANT,      // 巨人
-  BOMBER      // 炸弹人
+  BOMBER,      // 炸弹人
+  DRAGON      // 飞龙
 };
 // TODO 大本营删除
 /**

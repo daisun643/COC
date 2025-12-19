@@ -8,6 +8,7 @@
 #include "Game/Soldier/Barbarian.h"
 #include "Game/Soldier/Bomber.h"
 #include "Game/Soldier/Gaint.h"
+#include "Game/Soldier/Dragon.h"
 #include "Manager/Config/ConfigManager.h"
 #include "Utils/GridUtils.h"
 #include "Utils/PathFinder.h"
@@ -76,6 +77,9 @@ BasicSoldier* BasicSoldier::create(SoldierType soldierType, int level) {
     case SoldierType::BOMBER:
       soldier = Bomber::create(level);
       break;
+    case SoldierType::DRAGON: 
+      soldier = Dragon::create(level);
+      break;
     default:
       CCLOG("BasicSoldier::create: Unknown soldier type: %d",
             static_cast<int>(soldierType));
@@ -122,6 +126,9 @@ bool BasicSoldier::init(SoldierType soldierType, int level) {
       break;
     case SoldierType::BOMBER:
       soldierTypeKey = "bomber";
+      break;
+    case SoldierType::DRAGON: 
+      soldierTypeKey = "dragon";
       break;
     default:
       CCLOG("BasicSoldier::init: Unknown soldier type: %d",
@@ -226,6 +233,9 @@ void BasicSoldier::createDefaultAppearance() {
       break;
     case SoldierType::BOMBER:
       color = Color4B(0, 255, 0, 255);  // 绿色
+      break;
+    case SoldierType::DRAGON:
+      color = Color4B(148, 0, 211, 255);  // 紫色
       break;
     default:
       color = Color4B(255, 255, 255, 255);
