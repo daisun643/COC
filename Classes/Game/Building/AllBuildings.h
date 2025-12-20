@@ -8,5 +8,7 @@
 #include "ResourceBuilding.h"
 #include "StorageBuilding.h"
 #include "TownHall.h"
+#include "TrapBuilding.h" 
+#include "Wall.h"
 
 #endif  // __ALL_BUILDINGS_H__

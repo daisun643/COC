@@ -17,6 +17,7 @@
 #include "Game/Building/StorageBuilding.h"
 #include "Game/Building/TownHall.h"
 #include "Game/Building/Wall.h"
+#include "Game/Building/TrapBuilding.h"
 #include "Manager/Config/ConfigManager.h"
 #include "Manager/PlayerManager.h"
 #include "Utils/PathUtils.h"
@@ -333,7 +334,9 @@ Building* BuildingManager::createBuilding(const std::string& buildingName,
     building = BarracksBuilding::create(level, buildingName);
   } else if (type == "WALL") {
     building = Wall::create(level, buildingName);
-  } else {
+  } else if (type == "TRAP") { 
+    building = TrapBuilding::create(level, buildingName);
+  }else {
     CCLOG("Unknown building type '%s' for building '%s'", type.c_str(),
           buildingName.c_str());
     return nullptr;

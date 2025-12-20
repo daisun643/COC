@@ -157,6 +157,9 @@ void Building::createDefaultAppearance() {
     case BuildingType::WALL:
       color = Color4B(128, 128, 128, 255);  // 灰色
       break;
+    case BuildingType::TRAP:
+      color = Color4B(60, 60, 60, 200);     // 深灰半透明
+      break;
   }
 
   // 创建彩色矩形作为默认外观
@@ -332,19 +335,18 @@ bool Building::inDiamond(const Vec2& pos) const {
   return manhattanDist <= _gridCount;
 }
 
-// 修改 upgrade 入口函数
+// 升级入口函数：检查资源、扣费、启动倒计时
 void Building::upgrade() {
   if (_level >= _maxLevel) {
     CCLOG("Building %s reached max level %d", _buildingName.c_str(), _maxLevel);
     return;
   }
-
+  
   if (_state == State::UPGRADING) {
-    return;
+      return; 
   }
 
   // 1. 获取下一等级的配置，查看消耗
-  // 注意：我们升级是为了去下一级，所以应该读取 _level + 1 的消耗配置
   auto nextLevelConfig = ConfigManager::getInstance()->getBuildingConfig(
       _buildingName, _level + 1);
 
@@ -383,7 +385,6 @@ void Building::upgrade() {
   // 3. 资源扣除成功，开始升级流程
 
   // 弹出提示词：“消耗 xx 金币”
-  // 建议使用中文提示，或者根据 costType 转换
   std::string costName = (costType == "Gold") ? "金币" : "圣水";
   std::string hintText =
       StringUtils::format("消耗 %d %s", cost, costName.c_str());
@@ -419,27 +420,27 @@ void Building::upgrade() {
         _buildingName.c_str(), _upgradeTotalTime, cost, costType.c_str());
 }
 
-// 新增：完成升级的实际逻辑（原 upgrade 函数内容）
+// 升级完成逻辑（倒计时结束时调用）
 void Building::completeUpgrade() {
-  _state = State::NORMAL;
-  removeUpgradeUI();
+    _state = State::NORMAL;
+    removeUpgradeUI();
 
-  _level++;
+    _level++;
 
-  // 使用新的 ConfigManager 接口
-  auto config =
-      ConfigManager::getInstance()->getBuildingConfig(_buildingName, _level);
+    // 使用 ConfigManager 获取新等级的配置（主要为了更新贴图）
+    auto config =
+        ConfigManager::getInstance()->getBuildingConfig(_buildingName, _level);
 
-  if (!config.image.empty()) {
-    auto texture =
-        Director::getInstance()->getTextureCache()->addImage(config.image);
-    if (texture) {
-      this->setTexture(texture);
-      this->setTextureRect(Rect(0, 0, texture->getContentSize().width,
-                                texture->getContentSize().height));
-      this->setContentSize(texture->getContentSize());
+    if (!config.image.empty()) {
+        auto texture =
+            Director::getInstance()->getTextureCache()->addImage(config.image);
+        if (texture) {
+            this->setTexture(texture);
+            this->setTextureRect(Rect(0, 0, texture->getContentSize().width,
+                texture->getContentSize().height));
+            this->setContentSize(texture->getContentSize());
+        }
     }
-  }
 
   if (_infoLabel) {
     _infoLabel->setPosition(Vec2(this->getContentSize().width / 2,
@@ -463,19 +464,19 @@ void Building::completeUpgrade() {
   CCLOG("Upgraded %s to level %d COMPLETED.", _buildingName.c_str(), _level);
 }
 
-// 新增：取消升级
+// 取消升级
 void Building::cancelUpgrade() {
   if (_state == State::UPGRADING) {
     _state = State::NORMAL;
     _upgradeTimer = 0.0f;
     removeUpgradeUI();
     CCLOG("Upgrade cancelled for %s", _buildingName.c_str());
-    // 注意：这里未实现退款逻辑，如需退款可在 PlayerManager 添加
-    // addGold/addElixir
+    // 注意：这里未实现退款逻辑，如需退款可在 PlayerManager 添加 addGold/addElixir
   }
 }
 
-// 新增：立即完成
+
+// 立即完成（使用宝石）
 void Building::finishUpgradeImmediately() {
   if (_state != State::UPGRADING) return;
 

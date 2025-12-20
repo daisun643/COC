@@ -41,6 +41,11 @@ BuildingFactory::BuildingFactory() {
   registerType(BuildingType::WALL, [](const ShopItem& item) {
     return Wall::create(item.defaultLevel, item.id);
   });
+
+  // 炸弹
+  registerType(BuildingType::TRAP, [](const ShopItem& item) {
+    return TrapBuilding::create(item.defaultLevel, item.id);
+  });
 }
 
 void BuildingFactory::registerType(BuildingType type, Creator creator) {

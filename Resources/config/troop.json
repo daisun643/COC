@@ -20,6 +20,11 @@
             "Category": "bomber",
             "Level": 1,
             "Count": 10
+        },
+        {
+            "Category": "dragon", 
+            "Level": 1,
+            "Count": 3
         }
     ],
     "spell": [

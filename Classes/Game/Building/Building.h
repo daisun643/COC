@@ -16,7 +16,8 @@ enum class BuildingType {
   RESOURCE,   // 资源建筑
   STORAGE,    // 储存建筑
   BARRACKS,   // 兵营
-  WALL        // 城墙
+  WALL,        // 城墙
+  TRAP        // 陷阱
 };
 
 /**
@@ -64,7 +65,6 @@ class Building : public Sprite {
   bool isUpgrading() const { return _state == State::UPGRADING; }
   void cancelUpgrade();             // 取消升级
   void finishUpgradeImmediately();  // 立即完成（消耗宝石）
-
   // 重写 update 方法以处理倒计时
   virtual void update(float dt) override;
 
@@ -149,7 +149,7 @@ class Building : public Sprite {
   /**
    * 更新生命值条显示（内部方法）
    */
-  void updateHPBar();
+  virtual void updateHPBar();
 
   DrawNode* _hpBarBackground;  // 生命值条背景
   DrawNode* _hpBarForeground;  // 生命值条前景

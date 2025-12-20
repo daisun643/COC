@@ -25,8 +25,13 @@ class PlayerManager {
   void setGold(int amount);
   void setElixir(int amount);
   void setGems(int amount) { _gems = amount; }
-  void setMaxGold(int amount) { _maxGold = amount; }
-  void setMaxElixir(int amount) { _maxElixir = amount; }
+  // 只有在允许更新时（即在主城时）才更新上限，防止进攻时被敌人的空上限覆盖
+  void setMaxGold(int amount) { 
+      if (_allowUpdateMaxLimit) _maxGold = amount; 
+  }
+  void setMaxElixir(int amount) { 
+      if (_allowUpdateMaxLimit) _maxElixir = amount; 
+  }
   void setGoldProduction(int amount) { _goldProduction = amount; }
   void setElixirProduction(int amount) { _elixirProduction = amount; }
 
@@ -48,6 +53,9 @@ class PlayerManager {
   bool isNewGame() const { return _isNewGame; }
   void setIsNewGame(bool isNew) { _isNewGame = isNew; }
 
+  // 设置是否允许更新资源上限
+  void setAllowUpdateMaxLimit(bool allow) { _allowUpdateMaxLimit = allow; }
+
  private:
   PlayerManager();
   ~PlayerManager();
@@ -62,6 +70,8 @@ class PlayerManager {
   int _maxElixir;
   int _goldProduction;
   int _elixirProduction;
+  // 控制标志位
+  bool _allowUpdateMaxLimit;
 
   // 自动保存回调
   std::function<void()> _autoSaveCallback;

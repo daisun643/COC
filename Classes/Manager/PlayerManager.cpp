@@ -42,6 +42,7 @@ PlayerManager::PlayerManager()
       _maxElixir(0),
       _goldProduction(0),
       _elixirProduction(0),
+      _allowUpdateMaxLimit(true),
       _autoSaveCallback(nullptr) {}
 
 PlayerManager::~PlayerManager() {

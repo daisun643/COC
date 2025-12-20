@@ -322,5 +322,42 @@
             "upgradeCostType": "Gold",
             "buildTime": 0
         }
+    },
+    "Bomb": {
+        "type": "TRAP",
+        "GridSize": 2,
+        "AnchorRatio": [
+            0.5,
+            0.5
+        ],
+        "imageScale": 1.0,
+        "maxLevel": 3,
+        "1": {
+            "image": "images/buildings/bomb.png", 
+            "damage": 70,
+            "attackRange": 3.0,
+            "health": 100,
+            "upgradeCost": 500,
+            "upgradeCostType": "Gold",
+            "buildTime": 5
+        },
+        "2": {
+            "image": "images/buildings/bomb2.png",
+            "damage": 100,
+            "attackRange": 3.5,
+            "health": 150,
+            "upgradeCost": 1000,
+            "upgradeCostType": "Gold",
+            "buildTime": 15
+        },
+        "3": {
+            "image": "images/buildings/bomb3.png",
+            "damage": 200,
+            "attackRange": 4.0,
+            "health": 200,
+            "upgradeCost": 2000,
+            "upgradeCostType": "Gold",
+            "buildTime": 30
+        }
     }
 }

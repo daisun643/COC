@@ -146,21 +146,26 @@ bool GameScene::init(const std::string& jsonFilePath) {
     // 从而加载新配置并切换图片
     b->upgrade();
 
-    if (_buildingManager) {
-      _buildingManager->saveBuildingMap();
-    }
+    // 关键修复：检查建筑是否真正进入了升级状态
+    // 如果 upgrade() 因为资源不足或满级而提前返回，状态将保持 NORMAL
+    // 只有状态变为 UPGRADING，才视为升级操作成功
+    if (b->isUpgrading()) {
+        if (_buildingManager) {
+          _buildingManager->saveBuildingMap();
+        }
 
-    // 升级成功后，隐藏操作菜单
-    _buildingMenuLayer->hideOptions();
+        // 升级成功后，隐藏操作菜单
+        _buildingMenuLayer->hideOptions();
 
-    // 显示提示信息
-    showPlacementHint("升级成功！");
-    if (_placementHintLabel) {
-      _placementHintLabel->stopAllActions();
-      _placementHintLabel->setVisible(true);
-      auto delay = DelayTime::create(1.5f);
-      auto clear = CallFunc::create([this]() { showPlacementHint(""); });
-      _placementHintLabel->runAction(Sequence::create(delay, clear, nullptr));
+        // 显示提示信息 (现在只有真正成功时才会显示)
+        showPlacementHint("升级成功！");
+        if (_placementHintLabel) {
+          _placementHintLabel->stopAllActions();
+          _placementHintLabel->setVisible(true);
+          auto delay = DelayTime::create(1.5f);
+          auto clear = CallFunc::create([this]() { showPlacementHint(""); });
+          _placementHintLabel->runAction(Sequence::create(delay, clear, nullptr));
+        }
     }
   });
   _buildingMenuLayer->setOnCollectCallback([this](Building* b) {
@@ -475,7 +480,8 @@ std::vector<ShopItem> GameScene::buildShopCatalog() const {
       {"ElixirBottle",
        {"圣水瓶", "储存大量圣水", 500, 0, Color4B(186, 85, 211, 255)}},
       {"Barracks", {"兵营", "训练军队的地方", 200, 0, Color4B(139, 0, 0, 255)}},
-      {"Wall", {"城墙", "阻挡敌人进攻", 50, 0, Color4B(200, 200, 200, 255)}}};
+      {"Wall", {"城墙", "阻挡敌人进攻", 50, 0, Color4B(200, 200, 200, 255)}},
+      {"Bomb", {"隐形炸弹", "给粗心的敌人一个惊喜！", 200, 0, Color4B(50, 50, 50, 255)}}};
 
   for (const auto& name : buildingNames) {
     // 跳过没有元数据的建筑（或者使用默认值）
@@ -507,6 +513,8 @@ std::vector<ShopItem> GameScene::buildShopCatalog() const {
       item.category = BuildingType::BARRACKS;
     else if (config.type == "WALL")
       item.category = BuildingType::WALL;
+    else if (config.type == "TRAP") 
+      item.category = BuildingType::TRAP;
     else
       continue;  // 未知类型跳过
 
