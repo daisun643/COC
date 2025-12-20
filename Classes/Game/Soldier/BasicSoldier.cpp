@@ -7,8 +7,8 @@
 #include "Game/Soldier/Archer.h"
 #include "Game/Soldier/Barbarian.h"
 #include "Game/Soldier/Bomber.h"
-#include "Game/Soldier/Gaint.h"
 #include "Game/Soldier/Dragon.h"
+#include "Game/Soldier/Gaint.h"
 #include "Manager/Config/ConfigManager.h"
 #include "Utils/GridUtils.h"
 #include "Utils/PathFinder.h"
@@ -77,7 +77,7 @@ BasicSoldier* BasicSoldier::create(SoldierType soldierType, int level) {
     case SoldierType::BOMBER:
       soldier = Bomber::create(level);
       break;
-    case SoldierType::DRAGON: 
+    case SoldierType::DRAGON:
       soldier = Dragon::create(level);
       break;
     default:
@@ -127,7 +127,7 @@ bool BasicSoldier::init(SoldierType soldierType, int level) {
     case SoldierType::BOMBER:
       soldierTypeKey = "bomber";
       break;
-    case SoldierType::DRAGON: 
+    case SoldierType::DRAGON:
       soldierTypeKey = "dragon";
       break;
     default:
@@ -608,6 +608,11 @@ bool BasicSoldier::findTarget(const std::vector<Building*>& buildings) {
           setTargetPosition(_pathQueue[_currentPathIndex]);
           pathFound = true;
         }
+      } else if (_soldierCategory == SoldierCategory::AIR) {
+        // 空军单位（如飞龙）无视地形，直接飞向目标
+        // 不需要寻路，直接设置目标位置
+        setTargetPosition(targetPos);
+        pathFound = true;
       }
 
       if (!pathFound) {
