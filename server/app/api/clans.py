@@ -7,6 +7,7 @@ from app.utils.Clans import (
     get_clan_owner,
     join_clan,
     leave_clan,
+    disband_clan,
     search_clans_by_name,
     get_clan_chat_messages,
     send_clan_chat_message
@@ -138,13 +139,13 @@ def members():
         "members": members
     }), 200 if success else 404
 
-
+# 我需要返回的是拥有者的id
 @clans_bp.route('/clans/owner', methods=['GET'])
 def owner():
     """
     获取部落所有者接口
     GET 参数: clan_id (部落ID)
-    返回: JSON 格式 {"success": bool, "message": str, "owner_name": str or None}
+    返回: JSON 格式 {"success": bool, "message": str, "owner_id": int or None}
     """
     clan_id = request.args.get('clan_id')
     
@@ -153,16 +154,16 @@ def owner():
         return jsonify({
             "success": False,
             "message": "部落ID不能为空",
-            "owner_name": None
+            "owner_id": None
         }), 400
     
     # 调用获取所有者逻辑
-    success, message, owner_name = get_clan_owner(clan_id)
+    success, message, owner_id = get_clan_owner(clan_id)
     
     return jsonify({
         "success": success,
         "message": message,
-        "owner_name": owner_name
+        "owner_id": owner_id
     }), 200 if success else 404
 
 
@@ -193,6 +194,40 @@ def join():
     
     # 调用加入逻辑
     success, message = join_clan(clan_id, user_id)
+    
+    return jsonify({
+        "success": success,
+        "message": message
+    }), 200 if success else 400
+
+# 增加解散功能
+@clans_bp.route('/clans/disband', methods=['GET'])
+def disband():
+    """
+    解散部落接口（只有所有者可以解散）
+    GET 参数: clan_id (部落ID), user_id (用户ID)
+    返回: JSON 格式 {"success": bool, "message": str}
+    """
+    clan_id = request.args.get('clan_id')
+    user_id = request.args.get('user_id')
+    
+    # 参数验证
+    if not clan_id or not user_id:
+        return jsonify({
+            "success": False,
+            "message": "部落ID和用户ID不能为空"
+        }), 400
+    
+    try:
+        user_id = int(user_id)
+    except ValueError:
+        return jsonify({
+            "success": False,
+            "message": "用户ID必须是数字"
+        }), 400
+    
+    # 调用解散逻辑
+    success, message = disband_clan(clan_id, user_id)
     
     return jsonify({
         "success": success,

@@ -80,14 +80,6 @@ bool GameScene::init(const std::string& jsonFilePath) {
     auto attackLayer = AttackLayer::create();
     if (attackLayer) {
       attackLayer->setName("AttackLayerUI");
-      attackLayer->setOnSearchOpponentCallback([]() {
-        CCLOG("Search Opponent Clicked!");
-        // TODO: Implement search logic
-      });
-      attackLayer->setOnLevelSelectedCallback([](int levelId) {
-        CCLOG("Level %d Selected!", levelId);
-        // TODO: Implement level loading
-      });
       this->addChild(attackLayer, 200);
     }
   });

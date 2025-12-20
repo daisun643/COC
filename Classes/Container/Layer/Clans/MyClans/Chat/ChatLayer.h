@@ -17,6 +17,8 @@
  * 消息列表使用时间降序排序
  * 消息列表使用消息发送者的用户名作为消息发送者
  */
+
+//  TODO 需要定时更新消息列表
 class ChatLayer : public cocos2d::Layer {
  public:
   static ChatLayer* create();

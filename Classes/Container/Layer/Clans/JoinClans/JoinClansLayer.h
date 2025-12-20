@@ -23,6 +23,8 @@ class JoinClansLayer : public cocos2d::Layer {
   cocos2d::ui::Widget* createClanItem(const struct ClanInfo& clan);
   void updateTabSelection(bool isOverview);
   void onJoinClanClick(const struct ClanInfo& clan);
+  void onCreateClanClick();  // 创建部落按钮点击
+  void showCreateClanDialog();  // 显示创建部落对话框
 
   // UI Elements
   cocos2d::Layer* _contentArea;
@@ -34,6 +36,10 @@ class JoinClansLayer : public cocos2d::Layer {
   cocos2d::ui::Button* _searchConfirmButton;
   cocos2d::ui::ScrollView* _scrollView;
   cocos2d::Layer* _listContainer;
+  
+  // 创建部落相关
+  cocos2d::Label* _createClanLabel;
+  cocos2d::DrawNode* _createClanBg;
   
   // State
   bool _isOverviewSelected;

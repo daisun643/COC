@@ -156,27 +156,22 @@ def get_clan_members(clan_id):
 
 def get_clan_owner(clan_id):
     """
-    获取部落所有者（用户名）
+    获取部落所有者ID
     参数: clan_id (部落ID)
-    返回: (success: bool, message: str, owner_name: str or None)
+    返回: (success: bool, message: str, owner_id: int or None)
     """
-    from app.utils.User import load_users
-    
     clans_data = load_clans()
     
     if clan_id not in clans_data:
         return False, "部落不存在", None
     
     owner_id = clans_data[clan_id].get("owner")
-    # 确保 owner_id 是整数类型以便比较
+    # 确保 owner_id 是整数类型
     if isinstance(owner_id, str) and owner_id.isdigit():
         owner_id = int(owner_id)
     
-    # 加载用户数据以获取用户名
-    users_data = load_users()
-    for user in users_data.get("users", []):
-        if user.get("id") == owner_id:
-            return True, "获取成功", user.get("name")
+    if owner_id:
+        return True, "获取成功", owner_id
     
     return False, "所有者不存在", None
 
@@ -247,6 +242,44 @@ def leave_clan(clan_id, user_id):
     save_clans(clans_data)
     
     return True, "退出部落成功"
+
+
+def disband_clan(clan_id, user_id):
+    """
+    解散部落（只有所有者可以解散）
+    参数: clan_id (部落ID), user_id (用户ID)
+    返回: (success: bool, message: str)
+    """
+    clans_data = load_clans()
+    
+    if clan_id not in clans_data:
+        return False, "部落不存在"
+    
+    clan = clans_data[clan_id]
+    owner_id = clan.get("owner")
+    
+    # 处理整数和字符串类型
+    if isinstance(owner_id, str) and owner_id.isdigit():
+        owner_id = int(owner_id)
+    if isinstance(user_id, str) and user_id.isdigit():
+        user_id = int(user_id)
+    
+    # 检查是否是所有者
+    if owner_id != user_id:
+        return False, "只有所有者可以解散部落"
+    
+    # 删除部落数据
+    del clans_data[clan_id]
+    save_clans(clans_data)
+    
+    # 删除相关的聊天记录
+    chat_data = load_chat()
+    clan_id_str = str(clan_id)
+    if clan_id_str in chat_data:
+        del chat_data[clan_id_str]
+        save_chat(chat_data)
+    
+    return True, "解散部落成功"
 
 
 def load_chat():

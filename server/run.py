@@ -1,6 +1,8 @@
 from flask import Flask
 from app.api.auth import auth_bp
 from app.api.clans import clans_bp
+from app.api.map import map_bp
+from app.api.oppenet import oppenet_bp
 
 app = Flask(__name__)
 
@@ -8,6 +10,10 @@ app = Flask(__name__)
 app.register_blueprint(auth_bp, url_prefix='/api')
 # 注册部落相关的蓝图
 app.register_blueprint(clans_bp, url_prefix='/api')
+# 注册地图相关的蓝图
+app.register_blueprint(map_bp, url_prefix='/api')
+# 注册对手相关的蓝图
+app.register_blueprint(oppenet_bp, url_prefix='/api')
 
 @app.route('/')
 def hello():

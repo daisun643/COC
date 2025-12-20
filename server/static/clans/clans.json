@@ -1,13 +1,4 @@
 {
-    "1": {
-        "name": "test-clans1",
-        "owner": 1,
-        "members": [
-            1,
-            2,
-            3
-        ]
-    },
     "2": {
         "name": "test-clans2",
         "owner": 2,
@@ -41,6 +32,13 @@
             5,
             6,
             7
+        ]
+    },
+    "6": {
+        "name": "qweewq",
+        "owner": 1,
+        "members": [
+            1
         ]
     }
 }

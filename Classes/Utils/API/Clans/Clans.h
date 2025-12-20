@@ -65,6 +65,22 @@ class Clans {
   typedef std::function<void(bool success, const std::string& message)> JoinClanCallback;
 
   /**
+   * 创建部落回调函数类型
+   * @param success 是否成功
+   * @param message 消息
+   * @param clan_id 创建的部落ID
+   */
+  typedef std::function<void(bool success, const std::string& message, const std::string& clan_id)> CreateClanCallback;
+
+  /**
+   * 创建部落
+   * @param name 部落名称
+   * @param owner_id 所有者用户ID
+   * @param callback 结果回调函数
+   */
+  static void createClan(const std::string& name, int owner_id, CreateClanCallback callback);
+
+  /**
    * 加入部落
    * @param clan_id 部落ID
    * @param user_id 用户ID
@@ -132,6 +148,37 @@ class Clans {
    */
   static void sendClanChatMessage(const std::string& clan_id, int user_id, 
                                    const std::string& content, SendChatMessageCallback callback);
+
+  /**
+   * 获取部落所有者回调函数类型
+   * @param success 是否成功
+   * @param message 消息
+   * @param owner_id 所有者用户ID
+   */
+  typedef std::function<void(bool success, const std::string& message, int owner_id)> GetClanOwnerCallback;
+
+  /**
+   * 获取部落所有者
+   * @param clan_id 部落ID
+   * @param callback 结果回调函数
+   */
+  static void getClanOwner(const std::string& clan_id, GetClanOwnerCallback callback);
+
+  /**
+   * 离开部落
+   * @param clan_id 部落ID
+   * @param user_id 用户ID
+   * @param callback 结果回调函数
+   */
+  static void leaveClan(const std::string& clan_id, int user_id, JoinClanCallback callback);
+
+  /**
+   * 解散部落
+   * @param clan_id 部落ID
+   * @param user_id 用户ID
+   * @param callback 结果回调函数
+   */
+  static void disbandClan(const std::string& clan_id, int user_id, JoinClanCallback callback);
 };
 
 #endif  // __CLANS_H__
