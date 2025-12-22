@@ -1,44 +1,14 @@
 {
-    "2": {
-        "name": "test-clans2",
-        "owner": 2,
-        "members": [
-            2,
-            3,
-            4
-        ]
-    },
-    "3": {
-        "name": "test-clans3",
-        "owner": 3,
-        "members": [
-            3,
-            4,
-            5
-        ]
-    },
-    "4": {
-        "name": "test-clans4",
-        "owner": 4,
-        "members": [
-            4,
-            5
-        ]
-    },
-    "5": {
-        "name": "test-clans5",
-        "owner": 5,
-        "members": [
-            5,
-            6,
-            7
-        ]
-    },
-    "6": {
-        "name": "qweewq",
-        "owner": 1,
-        "members": [
-            1
-        ]
+    "new-clans-id": 2,
+    "clans": {
+        "1": {
+            "name": "test-clan1",
+            "owner": 1,
+            "members": [
+                1,
+                2,
+                3
+            ]
+        }
     }
 }

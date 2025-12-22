@@ -76,3 +76,32 @@ def login_user(id, password):
     
     return False, "用户不存在", None
 
+def set_clanid(user_id, clain_id):
+    """设置用户的 clan_id。
+
+    返回: (success: bool, message: str)
+    """
+    users_data = load_users()
+    for user in users_data.get("users", []):
+        try:
+            if int(user.get("id", 0)) == int(user_id):
+                user["clan_id"] = clain_id
+                save_users(users_data)
+                return True, "clan_id 已设置"
+        except (TypeError, ValueError):
+            continue
+    return False, "用户不存在"
+
+def get_clainid(user_id):
+    """获取用户的 clan_id。
+
+    返回: (success: bool, message: str, clan_id or None)
+    """
+    users_data = load_users()
+    for user in users_data.get("users", []):
+        try:
+            if int(user.get("id", 0)) == int(user_id):
+                return True, "获取成功", user.get("clan_id")
+        except (TypeError, ValueError):
+            continue
+    return False, "用户不存在", None

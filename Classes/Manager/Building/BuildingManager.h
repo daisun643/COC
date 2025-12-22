@@ -82,6 +82,23 @@ class BuildingManager {
    */
   void saveBuildingMap();
 
+  /*
+  * 计算建筑被摧毁情况
+  * @param int& stars: 星级
+  * @param float& ratio: 摧毁比例
+  * @return bool: 是否成功
+  * @note ratio计算方法:  ratio = 被摧毁的建筑数量 / 总建筑数量
+  * @note 星级计算方法:  ratio>=50% && TownHall未被摧毁，则星级为1;
+                        ratio>=50%&&TownHall被摧毁，星级2;
+                        ratio<50% && TownHall未被摧毁，星级为0;
+                        ratio<50%&&TownHall被摧毁，星级为1。
+  */
+  bool getBuildingResult(int& stars, float& ratio, bool& win);
+  int getStars() { return _stars; };
+  float getRatio() { return _ratio; };
+  bool getWin() { return _win; };
+
+  void updateClansWar(const std::string& clans_id, const std::string& map_id);
   /**
    * 析构函数
    */
@@ -142,6 +159,9 @@ class BuildingManager {
   float _deltaY;                      // Y方向间距
   int _gridSize;                      // 网格大小
   std::string _jsonFilePath;          // JSON配置文件路径
+  int _stars;                         // 取得的星星数
+  float _ratio;                       // 摧毁的比例
+  bool _win;                          // 是否获胜
 };
 
 #endif  // __BUILDING_MANAGER_H__

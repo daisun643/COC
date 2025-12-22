@@ -5,6 +5,7 @@
 #include "Container/Layer/AttackLayer.h"
 #include "Container/Layer/Clans/ClansLayer.h"
 #include "Container/Layer/ReplayLayer.h"
+#include "Container/Scene/Authentication/AuthScene.h"
 #include "Container/Scene/SenceHelper.h"
 #include "Game/Building/AllBuildings.h"
 #include "Game/Building/BarracksBuilding.h"
@@ -100,6 +101,15 @@ bool GameScene::init(const std::string& jsonFilePath) {
     }
   });
 
+  _uiLayer->setOnExitClickCallback([]() {
+    Profile* profile = Profile::getInstance();
+    profile->setIsLogin(false);
+    profile->setClansId(-1);
+    auto director = Director::getInstance();
+    auto startScene = AuthScene::createScene();
+    director->replaceScene(startScene);
+  });
+
   _uiLayer->setOnMapEditClickCallback([this]() { this->enterMapEditMode(); });
 
   // 初始化 GameScene 特有的放置模式相关变量
@@ -136,8 +146,8 @@ bool GameScene::init(const std::string& jsonFilePath) {
   // 创建用户信息标签（左上角显示id和用户名）
   auto profile = Profile::getInstance();
   if (profile) {
-    std::string userInfo = "ID: " + std::to_string(profile->getId()) + 
-                          "  " + profile->getName();
+    std::string userInfo =
+        "ID: " + std::to_string(profile->getId()) + "  " + profile->getName();
     _userInfoLabel = Label::createWithSystemFont(userInfo, "Arial", 18);
     if (_userInfoLabel) {
       _userInfoLabel->setColor(Color3B::WHITE);

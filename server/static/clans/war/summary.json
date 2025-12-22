@@ -1,0 +1,7 @@
+{
+    "new-war-id": 2,
+    "clans-id": {
+        "start-time": "xxxx-xx-xx xx:xx",
+        "war-id": "war-id,存储地图在 history/{war-id}/"
+    }
+}

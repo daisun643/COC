@@ -1,7 +1,8 @@
 #include "MyClansLayer.h"
 
-#include "Member/MemberLayer.h"
 #include "Chat/ChatLayer.h"
+#include "ClansWar/ClansWarLayer.h"
+#include "Member/MemberLayer.h"
 #include "Utils/API/Clans/Clans.h"
 #include "Utils/Profile/Profile.h"
 #include "ui/CocosGUI.h"
@@ -21,13 +22,16 @@ Label* createLabel(const std::string& text, int fontSize,
 }
 
 // 创建圆角背景的 DrawNode
-DrawNode* createRoundedBackground(const Size& size, float radius = 8.0f, bool isSelected = false) {
+DrawNode* createRoundedBackground(const Size& size, float radius = 8.0f,
+                                  bool isSelected = false) {
   auto drawNode = DrawNode::create();
   Color4F grayColor;
   if (isSelected) {
-    grayColor = Color4F(100.0f / 255.0f, 100.0f / 255.0f, 100.0f / 255.0f, 1.0f);
+    grayColor =
+        Color4F(100.0f / 255.0f, 100.0f / 255.0f, 100.0f / 255.0f, 1.0f);
   } else {
-    grayColor = Color4F(128.0f / 255.0f, 128.0f / 255.0f, 128.0f / 255.0f, 1.0f);
+    grayColor =
+        Color4F(128.0f / 255.0f, 128.0f / 255.0f, 128.0f / 255.0f, 1.0f);
   }
 
   float width = size.width;
@@ -112,9 +116,11 @@ void MyClansLayer::buildUI() {
   // "成员" 按钮
   float memberCenterX = startX + buttonWidth / 2.0f;
   float memberCenterY = topY - buttonHeight / 2.0f;
-  _memberBg = createRoundedBackground(Size(buttonWidth, buttonHeight), radius, false);
+  _memberBg =
+      createRoundedBackground(Size(buttonWidth, buttonHeight), radius, false);
   _memberBg->setAnchorPoint(Vec2::ANCHOR_MIDDLE);
-  _memberBg->setPosition(Vec2(memberCenterX - buttonWidth / 2.0f, memberCenterY - buttonHeight / 2.0f));
+  _memberBg->setPosition(Vec2(memberCenterX - buttonWidth / 2.0f,
+                              memberCenterY - buttonHeight / 2.0f));
   _contentArea->addChild(_memberBg, 0);
 
   _memberLabel = createLabel("成员", 28);
@@ -124,12 +130,14 @@ void MyClansLayer::buildUI() {
   // 为"成员"按钮添加触摸事件
   auto memberListener = EventListenerTouchOneByOne::create();
   memberListener->setSwallowTouches(true);
-  memberListener->onTouchBegan = [this, memberCenterX, memberCenterY, buttonWidth, buttonHeight](Touch* touch, Event* event) {
+  memberListener->onTouchBegan = [this, memberCenterX, memberCenterY,
+                                  buttonWidth,
+                                  buttonHeight](Touch* touch, Event* event) {
     Vec2 location = touch->getLocation();
     Vec2 contentPos = _contentArea->convertToNodeSpace(location);
-    Rect memberRect(memberCenterX - buttonWidth / 2.0f, 
-                    memberCenterY - buttonHeight / 2.0f, 
-                    buttonWidth, buttonHeight);
+    Rect memberRect(memberCenterX - buttonWidth / 2.0f,
+                    memberCenterY - buttonHeight / 2.0f, buttonWidth,
+                    buttonHeight);
     if (memberRect.containsPoint(contentPos)) {
       return true;
     }
@@ -138,26 +146,53 @@ void MyClansLayer::buildUI() {
   memberListener->onTouchEnded = [this](Touch* touch, Event* event) {
     this->showMemberLayer();
   };
-  _eventDispatcher->addEventListenerWithSceneGraphPriority(memberListener, _contentArea);
+  _eventDispatcher->addEventListenerWithSceneGraphPriority(memberListener,
+                                                           _contentArea);
 
   // "部落战" 按钮
   float warCenterX = startX + buttonWidth + spacing + buttonWidth / 2.0f;
   float warCenterY = topY - buttonHeight / 2.0f;
-  _warBg = createRoundedBackground(Size(buttonWidth, buttonHeight), radius, false);
+  _warBg =
+      createRoundedBackground(Size(buttonWidth, buttonHeight), radius, false);
   _warBg->setAnchorPoint(Vec2::ANCHOR_MIDDLE);
-  _warBg->setPosition(Vec2(warCenterX - buttonWidth / 2.0f, warCenterY - buttonHeight / 2.0f));
+  _warBg->setPosition(
+      Vec2(warCenterX - buttonWidth / 2.0f, warCenterY - buttonHeight / 2.0f));
   _contentArea->addChild(_warBg, 0);
 
   _warLabel = createLabel("部落战", 28);
   _warLabel->setPosition(Vec2(warCenterX, warCenterY));
   _contentArea->addChild(_warLabel, 10);
 
+  // 为"部落战"按钮添加触摸事件
+  auto warListener = EventListenerTouchOneByOne::create();
+  warListener->setSwallowTouches(true);
+  warListener->onTouchBegan = [this, warCenterX, warCenterY, buttonWidth,
+                               buttonHeight](Touch* touch, Event* event) {
+    Profile* profile = Profile::getInstance();
+    if (profile && profile->getClansId() == 0) return false;
+    Vec2 location = touch->getLocation();
+    Vec2 contentPos = _contentArea->convertToNodeSpace(location);
+    Rect warRect(warCenterX - buttonWidth / 2.0f,
+                 warCenterY - buttonHeight / 2.0f, buttonWidth, buttonHeight);
+    if (warRect.containsPoint(contentPos)) {
+      return true;
+    }
+    return false;
+  };
+  warListener->onTouchEnded = [this](Touch* touch, Event* event) {
+    this->showWarLayer();
+  };
+  _eventDispatcher->addEventListenerWithSceneGraphPriority(warListener,
+                                                           _contentArea);
+
   // "聊天室" 按钮
   float chatCenterX = startX + 2 * (buttonWidth + spacing) + buttonWidth / 2.0f;
   float chatCenterY = topY - buttonHeight / 2.0f;
-  _chatBg = createRoundedBackground(Size(buttonWidth, buttonHeight), radius, false);
+  _chatBg =
+      createRoundedBackground(Size(buttonWidth, buttonHeight), radius, false);
   _chatBg->setAnchorPoint(Vec2::ANCHOR_MIDDLE);
-  _chatBg->setPosition(Vec2(chatCenterX - buttonWidth / 2.0f, chatCenterY - buttonHeight / 2.0f));
+  _chatBg->setPosition(Vec2(chatCenterX - buttonWidth / 2.0f,
+                            chatCenterY - buttonHeight / 2.0f));
   _contentArea->addChild(_chatBg, 0);
 
   _chatLabel = createLabel("聊天室", 28);
@@ -167,12 +202,12 @@ void MyClansLayer::buildUI() {
   // 为"聊天室"按钮添加触摸事件
   auto chatListener = EventListenerTouchOneByOne::create();
   chatListener->setSwallowTouches(true);
-  chatListener->onTouchBegan = [this, chatCenterX, chatCenterY, buttonWidth, buttonHeight](Touch* touch, Event* event) {
+  chatListener->onTouchBegan = [this, chatCenterX, chatCenterY, buttonWidth,
+                                buttonHeight](Touch* touch, Event* event) {
     Vec2 location = touch->getLocation();
     Vec2 contentPos = _contentArea->convertToNodeSpace(location);
-    Rect chatRect(chatCenterX - buttonWidth / 2.0f, 
-                  chatCenterY - buttonHeight / 2.0f, 
-                  buttonWidth, buttonHeight);
+    Rect chatRect(chatCenterX - buttonWidth / 2.0f,
+                  chatCenterY - buttonHeight / 2.0f, buttonWidth, buttonHeight);
     if (chatRect.containsPoint(contentPos)) {
       return true;
     }
@@ -181,9 +216,10 @@ void MyClansLayer::buildUI() {
   chatListener->onTouchEnded = [this](Touch* touch, Event* event) {
     this->showChatLayer();
   };
-  _eventDispatcher->addEventListenerWithSceneGraphPriority(chatListener, _contentArea);
+  _eventDispatcher->addEventListenerWithSceneGraphPriority(chatListener,
+                                                           _contentArea);
   showMemberLayer();
-  
+
   // 检查是否是所有者并设置操作按钮
   checkOwnerAndSetupActionButton();
 }
@@ -236,10 +272,36 @@ void MyClansLayer::showChatLayer() {
   }
 }
 
+void MyClansLayer::showWarLayer() {
+  if (_selectedTabIndex == 1) {
+    return;  // 已经选中，不需要切换
+  }
+
+  _selectedTabIndex = 1;
+  updateTabSelection(1);
+
+  // 隐藏当前子Layer
+  hideCurrentSubLayer();
+
+  // 创建或显示 ClansWarLayer
+  if (!_clansWarLayer) {
+    _clansWarLayer = ClansWarLayer::create();
+    if (_clansWarLayer) {
+      _contentArea->addChild(_clansWarLayer);
+      _currentSubLayer = _clansWarLayer;
+      _clansWarLayer->refresh();
+    }
+  } else {
+    _clansWarLayer->refresh();
+    _currentSubLayer = _clansWarLayer;
+    _currentSubLayer->setVisible(true);
+  }
+}
+
 void MyClansLayer::hideCurrentSubLayer() {
   if (_currentSubLayer) {
     _currentSubLayer->setVisible(false);
-    _currentSubLayer=nullptr;
+    _currentSubLayer = nullptr;
   }
 }
 
@@ -247,40 +309,43 @@ void MyClansLayer::updateTabSelection(int selectedIndex) {
   float buttonWidth = 140.0f;  // 缩小按钮宽度，与其他按钮保持一致
   float buttonHeight = 50.0f;
   float radius = 8.0f;
-  
+
   // 更新"成员"按钮
   if (_memberBg) {
     Vec2 oldPos = _memberBg->getPosition();
     int oldZOrder = _memberBg->getLocalZOrder();
     _memberBg->removeFromParent();
-    _memberBg = createRoundedBackground(Size(buttonWidth, buttonHeight), radius, selectedIndex == 0);
+    _memberBg = createRoundedBackground(Size(buttonWidth, buttonHeight), radius,
+                                        selectedIndex == 0);
     _memberBg->setAnchorPoint(Vec2::ANCHOR_MIDDLE);
     _memberBg->setPosition(oldPos);
     _contentArea->addChild(_memberBg, oldZOrder);
   }
-  
+
   // 更新"部落战"按钮
   if (_warBg) {
     Vec2 oldPos = _warBg->getPosition();
     int oldZOrder = _warBg->getLocalZOrder();
     _warBg->removeFromParent();
-    _warBg = createRoundedBackground(Size(buttonWidth, buttonHeight), radius, selectedIndex == 1);
+    _warBg = createRoundedBackground(Size(buttonWidth, buttonHeight), radius,
+                                     selectedIndex == 1);
     _warBg->setAnchorPoint(Vec2::ANCHOR_MIDDLE);
     _warBg->setPosition(oldPos);
     _contentArea->addChild(_warBg, oldZOrder);
   }
-  
+
   // 更新"聊天室"按钮
   if (_chatBg) {
     Vec2 oldPos = _chatBg->getPosition();
     int oldZOrder = _chatBg->getLocalZOrder();
     _chatBg->removeFromParent();
-    _chatBg = createRoundedBackground(Size(buttonWidth, buttonHeight), radius, selectedIndex == 2);
+    _chatBg = createRoundedBackground(Size(buttonWidth, buttonHeight), radius,
+                                      selectedIndex == 2);
     _chatBg->setAnchorPoint(Vec2::ANCHOR_MIDDLE);
     _chatBg->setPosition(oldPos);
     _contentArea->addChild(_chatBg, oldZOrder);
   }
-  
+
   // 确保 Label 在背景之上（提高 z-order）
   if (_memberLabel) {
     _memberLabel->setLocalZOrder(10);
@@ -304,17 +369,17 @@ void MyClansLayer::checkOwnerAndSetupActionButton() {
   int userId = profile->getId();
 
   // 调用 API 获取部落所有者
-  Clans::getClanOwner(clanIdStr, [this, userId](
-                                      bool success, const std::string& message,
-                                      int owner_id) {
-    // 这里要进行的id的比对，而不是名字的比对
-    if (success) {
-      _isOwner = (owner_id == userId);
-      setupActionButton();
-    } else {
-      CCLOG("Failed to get clan owner: %s", message.c_str());
-    }
-  });
+  Clans::getClanOwner(
+      clanIdStr,
+      [this, userId](bool success, const std::string& message, int owner_id) {
+        // 这里要进行的id的比对，而不是名字的比对
+        if (success) {
+          _isOwner = (owner_id == userId);
+          setupActionButton();
+        } else {
+          CCLOG("Failed to get clan owner: %s", message.c_str());
+        }
+      });
 }
 
 void MyClansLayer::setupActionButton() {
@@ -342,36 +407,42 @@ void MyClansLayer::setupActionButton() {
   float radius = 8.0f;
 
   // 计算第四个按钮的位置（离开/解散）
-  float actionCenterX = startX + 3 * (buttonWidth + spacing) + buttonWidth / 2.0f;
+  float actionCenterX =
+      startX + 3 * (buttonWidth + spacing) + buttonWidth / 2.0f;
   float actionCenterY = topY - buttonHeight / 2.0f;
 
-  _actionButtonBg = createRoundedBackground(Size(buttonWidth, buttonHeight), radius, false);
+  _actionButtonBg =
+      createRoundedBackground(Size(buttonWidth, buttonHeight), radius, false);
   _actionButtonBg->setAnchorPoint(Vec2::ANCHOR_MIDDLE);
-  _actionButtonBg->setPosition(Vec2(actionCenterX - buttonWidth / 2.0f, actionCenterY - buttonHeight / 2.0f));
+  _actionButtonBg->setPosition(Vec2(actionCenterX - buttonWidth / 2.0f,
+                                    actionCenterY - buttonHeight / 2.0f));
   _contentArea->addChild(_actionButtonBg, 0);
 
   // 根据是否是所有者设置按钮文本
   std::string buttonText = _isOwner ? "解散" : "离开";
-  _actionButtonLabel = createLabel(buttonText, 28);  // 使用与其他按钮相同的字体大小
+  _actionButtonLabel =
+      createLabel(buttonText, 28);  // 使用与其他按钮相同的字体大小
   _actionButtonLabel->setPosition(Vec2(actionCenterX, actionCenterY));
   _contentArea->addChild(_actionButtonLabel, 10);
 
   // 创建一个透明的可触摸 Layer 覆盖在按钮区域上
   _actionButtonTouchLayer = Layer::create();
   _actionButtonTouchLayer->setContentSize(Size(buttonWidth, buttonHeight));
-  _actionButtonTouchLayer->setPosition(Vec2(actionCenterX - buttonWidth / 2.0f, actionCenterY - buttonHeight / 2.0f));
+  _actionButtonTouchLayer->setPosition(Vec2(
+      actionCenterX - buttonWidth / 2.0f, actionCenterY - buttonHeight / 2.0f));
   _actionButtonTouchLayer->setAnchorPoint(Vec2::ANCHOR_BOTTOM_LEFT);
   _contentArea->addChild(_actionButtonTouchLayer, 11);  // 稍微提高优先级
 
   // 添加触摸事件到 touchLayer
   auto listener = EventListenerTouchOneByOne::create();
   listener->setSwallowTouches(true);  // 吞噬触摸事件，防止传递给下层
-  listener->onTouchBegan = [this, actionCenterX, actionCenterY, buttonWidth, buttonHeight](Touch* touch, Event* event) {
+  listener->onTouchBegan = [this, actionCenterX, actionCenterY, buttonWidth,
+                            buttonHeight](Touch* touch, Event* event) {
     Vec2 location = touch->getLocation();
     Vec2 contentPos = _contentArea->convertToNodeSpace(location);
-    Rect buttonRect(actionCenterX - buttonWidth / 2.0f, 
-                    actionCenterY - buttonHeight / 2.0f, 
-                    buttonWidth, buttonHeight);
+    Rect buttonRect(actionCenterX - buttonWidth / 2.0f,
+                    actionCenterY - buttonHeight / 2.0f, buttonWidth,
+                    buttonHeight);
     if (buttonRect.containsPoint(contentPos)) {
       return true;  // 返回 true 表示处理这个触摸事件
     }
@@ -379,26 +450,27 @@ void MyClansLayer::setupActionButton() {
   };
   listener->onTouchEnded = [this](Touch* touch, Event* event) {
     if (_isOwner) {
-      showConfirmDialog("解散部落", "确定要解散部落吗？此操作不可撤销！", [this]() {
-        performLeaveOrDisband(true);
-      });
+      showConfirmDialog("解散部落", "确定要解散部落吗？此操作不可撤销！",
+                        [this]() { performLeaveOrDisband(true); });
     } else {
-      showConfirmDialog("离开部落", "确定要离开部落吗？", [this]() {
-        performLeaveOrDisband(false);
-      });
+      showConfirmDialog("离开部落", "确定要离开部落吗？",
+                        [this]() { performLeaveOrDisband(false); });
     }
   };
   // 添加到 touchLayer，这样触摸事件会被优先处理
-  _eventDispatcher->addEventListenerWithSceneGraphPriority(listener, _actionButtonTouchLayer);
+  _eventDispatcher->addEventListenerWithSceneGraphPriority(
+      listener, _actionButtonTouchLayer);
 }
 
-void MyClansLayer::showConfirmDialog(const std::string& title, const std::string& message,
+void MyClansLayer::showConfirmDialog(const std::string& title,
+                                     const std::string& message,
                                      std::function<void()> onConfirm) {
   auto visibleSize = Director::getInstance()->getVisibleSize();
   Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
   // 创建半透明背景层
-  auto bgLayer = LayerColor::create(Color4B(0, 0, 0, 0), visibleSize.width, visibleSize.height);
+  auto bgLayer = LayerColor::create(Color4B(0, 0, 0, 0), visibleSize.width,
+                                    visibleSize.height);
   bgLayer->setPosition(origin);
   bgLayer->setName("ConfirmDialogBackground");
   this->addChild(bgLayer, 1000);
@@ -406,9 +478,11 @@ void MyClansLayer::showConfirmDialog(const std::string& title, const std::string
   // 创建对话框背景
   float dialogWidth = 400.0f;
   float dialogHeight = 200.0f;
-  auto dialogBg = LayerColor::create(Color4B(50, 50, 50, 255), dialogWidth, dialogHeight);
+  auto dialogBg =
+      LayerColor::create(Color4B(50, 50, 50, 255), dialogWidth, dialogHeight);
   dialogBg->setAnchorPoint(Vec2::ANCHOR_MIDDLE);  // 设置锚点为中心
-  dialogBg->setPosition(Vec2(origin.x + dialogWidth / 2, origin.y + 50) );  // 屏幕中心
+  dialogBg->setPosition(
+      Vec2(origin.x + dialogWidth / 2, origin.y + 50));  // 屏幕中心
   dialogBg->setName("ConfirmDialog");
   this->addChild(dialogBg, 1001);
 
@@ -431,7 +505,8 @@ void MyClansLayer::showConfirmDialog(const std::string& title, const std::string
   float btnHeight = 35.0f;
   float confirmBtnX = dialogWidth / 2.0f - btnWidth - 10.0f;
   float confirmBtnY = 30.0f;
-  auto confirmBtnBg = LayerColor::create(Color4B(100, 150, 100, 255), btnWidth, btnHeight);
+  auto confirmBtnBg =
+      LayerColor::create(Color4B(100, 150, 100, 255), btnWidth, btnHeight);
   confirmBtnBg->setAnchorPoint(Vec2::ANCHOR_BOTTOM_LEFT);  // 设置锚点为左下角
   confirmBtnBg->setPosition(Vec2(confirmBtnX, confirmBtnY));
   auto confirmLabel = createLabel("确定", 18);
@@ -442,7 +517,8 @@ void MyClansLayer::showConfirmDialog(const std::string& title, const std::string
   // 创建取消按钮
   float cancelBtnX = dialogWidth / 2.0f + 10.0f;
   float cancelBtnY = 30.0f;
-  auto cancelBtnBg = LayerColor::create(Color4B(150, 100, 100, 255), btnWidth, btnHeight);
+  auto cancelBtnBg =
+      LayerColor::create(Color4B(150, 100, 100, 255), btnWidth, btnHeight);
   cancelBtnBg->setAnchorPoint(Vec2::ANCHOR_BOTTOM_LEFT);  // 设置锚点为左下角
   cancelBtnBg->setPosition(Vec2(cancelBtnX, cancelBtnY));
   auto cancelLabel = createLabel("取消", 18);
@@ -453,10 +529,10 @@ void MyClansLayer::showConfirmDialog(const std::string& title, const std::string
   // 添加按钮点击事件
   auto listener = EventListenerTouchOneByOne::create();
   listener->setSwallowTouches(true);
-  listener->onTouchBegan = [this, bgLayer, dialogBg, confirmBtnBg, cancelBtnBg, 
-                             confirmBtnX, confirmBtnY, cancelBtnX, cancelBtnY,
-                             btnWidth, btnHeight, onConfirm](
-                               Touch* touch, Event* event) -> bool {
+  listener->onTouchBegan = [this, bgLayer, dialogBg, confirmBtnBg, cancelBtnBg,
+                            confirmBtnX, confirmBtnY, cancelBtnX, cancelBtnY,
+                            btnWidth, btnHeight,
+                            onConfirm](Touch* touch, Event* event) -> bool {
     Vec2 location = touch->getLocation();
     // 将触摸位置转换为相对于 dialogBg 的坐标
     Vec2 dialogLocalPos = dialogBg->convertToNodeSpace(location);
@@ -506,87 +582,87 @@ void MyClansLayer::performLeaveOrDisband(bool isDisband) {
 
   if (isDisband) {
     // 解散部落
-    Clans::disbandClan(clanIdStr, userId, [this](bool success, const std::string& message) {
-      // 进行提示
-      if (success) {
-        CCLOG("Clan disbanded successfully");
-        // 更新用户信息
-        auto profile = Profile::getInstance();
-        if (profile) {
-          profile->setClansId(-1);
-          profile->setClansName("");
-          profile->save();
-        }
-        
-        // 显示成功提示
-        this->setVisible(false);
-        auto successLabel = createLabel("解散成功", 24, Color4B::GREEN);
-        successLabel->setPosition(
-            Vec2(_contentArea->getContentSize().width / 2.0f,
-                 _contentArea->getContentSize().height / 2.0f));
-        this->getParent()->addChild(successLabel, 1000);
-        // 3秒后移除提示并关闭当前层
-        auto delay = DelayTime::create(3.0f);
-        auto remove = CallFunc::create([this, successLabel]() {
-          successLabel->removeFromParent();
+    Clans::disbandClan(
+        clanIdStr, userId, [this](bool success, const std::string& message) {
+          // 进行提示
+          if (success) {
+            CCLOG("Clan disbanded successfully");
+            // 更新用户信息
+            auto profile = Profile::getInstance();
+            if (profile) {
+              profile->setClansId(-1);
+              profile->setClansName("");
+              profile->save();
+            }
+
+            // 显示成功提示
+            this->setVisible(false);
+            auto successLabel = createLabel("解散成功", 24, Color4B::GREEN);
+            successLabel->setPosition(
+                Vec2(_contentArea->getContentSize().width / 2.0f,
+                     _contentArea->getContentSize().height / 2.0f));
+            this->getParent()->addChild(successLabel, 1000);
+            // 3秒后移除提示并关闭当前层
+            auto delay = DelayTime::create(3.0f);
+            auto remove = CallFunc::create(
+                [this, successLabel]() { successLabel->removeFromParent(); });
+            successLabel->runAction(Sequence::create(delay, remove, nullptr));
+          } else {
+            CCLOG("Failed to disband clan: %s", message.c_str());
+            // 显示错误提示
+            auto errorLabel =
+                createLabel("解散失败: " + message, 24, Color4B::RED);
+            errorLabel->setPosition(
+                Vec2(_contentArea->getContentSize().width / 2.0f,
+                     _contentArea->getContentSize().height / 2.0f));
+            this->getParent()->addChild(errorLabel, 1000);
+            // 3秒后移除提示
+            auto delay = DelayTime::create(3.0f);
+            auto remove = CallFunc::create(
+                [errorLabel]() { errorLabel->removeFromParent(); });
+            errorLabel->runAction(Sequence::create(delay, remove, nullptr));
+          }
         });
-        successLabel->runAction(Sequence::create(delay, remove, nullptr));
-      } else {
-        CCLOG("Failed to disband clan: %s", message.c_str());
-        // 显示错误提示
-        auto errorLabel = createLabel("解散失败: " + message, 24, Color4B::RED);
-        errorLabel->setPosition(
-            Vec2(_contentArea->getContentSize().width / 2.0f,
-                 _contentArea->getContentSize().height / 2.0f));
-        this->getParent()->addChild(errorLabel, 1000);
-        // 3秒后移除提示
-        auto delay = DelayTime::create(3.0f);
-        auto remove = CallFunc::create([errorLabel]() {
-          errorLabel->removeFromParent();
-        });
-        errorLabel->runAction(Sequence::create(delay, remove, nullptr));
-      }
-    });
   } else {
     // 离开部落
-    Clans::leaveClan(clanIdStr, userId, [this](bool success, const std::string& message) {
-      if (success) {
-        CCLOG("Left clan successfully");
-        // 更新用户信息
-        auto profile = Profile::getInstance();
-        if (profile) {
-          profile->setClansId(-1);
-          profile->setClansName("");
-          profile->save();
-        }
-        // 显示成功提示
-        this->setVisible(false);
-        auto successLabel = createLabel("离开成功", 24, Color4B::GREEN);
-        successLabel->setPosition(
-            Vec2(_contentArea->getContentSize().width / 2.0f,
-                 _contentArea->getContentSize().height / 2.0f));
-        this->getParent()->addChild(successLabel, 1000);
-        // 3秒后移除提示并关闭当前层
-        auto delay = DelayTime::create(3.0f);
-        auto remove = CallFunc::create([this, successLabel]() {
-          successLabel->removeFromParent();
+    Clans::leaveClan(
+        clanIdStr, userId, [this](bool success, const std::string& message) {
+          if (success) {
+            CCLOG("Left clan successfully");
+            // 更新用户信息
+            auto profile = Profile::getInstance();
+            if (profile) {
+              profile->setClansId(-1);
+              profile->setClansName("");
+              profile->save();
+            }
+            // 显示成功提示
+            this->setVisible(false);
+            auto successLabel = createLabel("离开成功", 24, Color4B::GREEN);
+            successLabel->setPosition(
+                Vec2(_contentArea->getContentSize().width / 2.0f,
+                     _contentArea->getContentSize().height / 2.0f));
+            this->getParent()->addChild(successLabel, 1000);
+            // 3秒后移除提示并关闭当前层
+            auto delay = DelayTime::create(3.0f);
+            auto remove = CallFunc::create(
+                [this, successLabel]() { successLabel->removeFromParent(); });
+            successLabel->runAction(Sequence::create(delay, remove, nullptr));
+          } else {
+            CCLOG("Failed to leave clan: %s", message.c_str());
+            // 显示错误提示
+            auto errorLabel =
+                createLabel("离开失败: " + message, 24, Color4B::RED);
+            errorLabel->setPosition(
+                Vec2(_contentArea->getContentSize().width / 2.0f,
+                     _contentArea->getContentSize().height / 2.0f));
+            this->getParent()->addChild(errorLabel, 1000);
+            // 3秒后移除提示
+            auto delay = DelayTime::create(3.0f);
+            auto remove = CallFunc::create(
+                [errorLabel]() { errorLabel->removeFromParent(); });
+            errorLabel->runAction(Sequence::create(delay, remove, nullptr));
+          }
         });
-        successLabel->runAction(Sequence::create(delay, remove, nullptr));
-      } else {
-        CCLOG("Failed to leave clan: %s", message.c_str());
-        // 显示错误提示
-        auto errorLabel = createLabel("离开失败: " + message, 24, Color4B::RED);
-        errorLabel->setPosition(
-            Vec2(_contentArea->getContentSize().width / 2.0f,
-                 _contentArea->getContentSize().height / 2.0f));
-        this->getParent()->addChild(errorLabel, 1000);
-        // 3秒后移除提示
-        auto delay = DelayTime::create(3.0f);
-        auto remove = CallFunc::create([errorLabel]() {
-          errorLabel->removeFromParent();
-        });
-        errorLabel->runAction(Sequence::create(delay, remove, nullptr));
-      }
-    });
   }
 }

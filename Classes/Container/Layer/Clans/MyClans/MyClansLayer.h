@@ -9,6 +9,7 @@
 // 前向声明
 class MemberLayer;
 class ChatLayer;
+class ClansWarLayer;
 
 class MyClansLayer : public cocos2d::Layer {
  public:
@@ -18,6 +19,7 @@ class MyClansLayer : public cocos2d::Layer {
  private:
   void buildUI();
   void showMemberLayer();
+  void showWarLayer();
   void showChatLayer();
   void hideCurrentSubLayer();
   void updateTabSelection(int selectedIndex);  // 0=成员, 1=部落战, 2=聊天室
@@ -30,6 +32,7 @@ class MyClansLayer : public cocos2d::Layer {
   cocos2d::Layer* _contentArea;
   MemberLayer* _memberLayer;
   ChatLayer* _chatLayer;
+  ClansWarLayer* _clansWarLayer;
   cocos2d::Layer* _currentSubLayer;  // 当前显示的子Layer
   
   // 按钮背景和标签

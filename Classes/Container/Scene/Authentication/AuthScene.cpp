@@ -3,6 +3,8 @@
 #include "Container/Layer/Authentication/LoginLayer.h"
 #include "Container/Layer/Authentication/RegisterLayer.h"
 #include "Container/Scene/GameScene.h"
+#include <Windows.h>
+#include <string>
 
 USING_NS_CC;
 
@@ -52,6 +54,20 @@ void AuthScene::showRegisterLayer() {
   // 注册成功 → 回到登录界面
   registerLayer->setOnRegisterSuccessCallback([this](int user_id) {
     CCLOG("AuthScene: 注册成功，用户ID=%d，返回登录", user_id);
+    auto msg = StringUtils::format("注册成功，用户ID=%d，返回登录", user_id);
+
+    auto utf8ToWstring = [](const std::string& s) -> std::wstring {
+      if (s.empty()) return std::wstring();
+      int size = ::MultiByteToWideChar(CP_UTF8, 0, s.c_str(), (int)s.size(), NULL, 0);
+      std::wstring w; w.resize(size);
+      ::MultiByteToWideChar(CP_UTF8, 0, s.c_str(), (int)s.size(), &w[0], size);
+      return w;
+    };
+
+    std::wstring wmsg = utf8ToWstring(msg);
+    std::wstring wcap = utf8ToWstring("注册成功");
+    MessageBoxW(NULL, wmsg.c_str(), wcap.c_str(), MB_OK);
+
     this->showLoginLayer();
   });
 

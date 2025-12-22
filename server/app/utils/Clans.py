@@ -40,17 +40,15 @@ def create_clan(name, owner_id):
     clans_data = load_clans()
     
     # 检查部落名称是否已存在
-    for clan_id, clan_info in clans_data.items():
-        if clan_info.get("name") == name:
-            return False, "部落名称已存在", None
+    # for clan_id, clan_info in clans_data.items():
+    #     if clan_info.get("name") == name:
+    #         return False, "部落名称已存在", None
     
     # 生成新部落ID
-    if clans_data:
-        # 找到最大的数字ID
-        numeric_ids = [int(k) for k in clans_data.keys() if k.isdigit()]
-        new_id = str(max(numeric_ids) + 1) if numeric_ids else "1"
-    else:
-        new_id = "1"
+    try:
+        new_id = clans_data["new-clans-id"]
+    except:
+        return False, "获取部落id失败", -1
     
     # 创建新部落
     new_clan = {
@@ -58,7 +56,8 @@ def create_clan(name, owner_id):
         "owner": owner_id,
         "members": [owner_id]  # 所有者自动成为成员
     }
-    clans_data[new_id] = new_clan
+    clans_data["clans"][new_id] = new_clan
+    clans_data["new-clans-id"] = clans_data["new-clans-id"] + 1
     save_clans(clans_data)
     
     return True, "创建部落成功", new_id
@@ -71,7 +70,7 @@ def get_all_clans_info():
     """
     clans_data = load_clans()
     info = []
-    for clan_id, clan_info in clans_data.items():
+    for clan_id, clan_info in clans_data["clans"].items():
         info.append({
             "id": str(clan_id),  # 添加部落ID
             "name": clan_info.get("name"),
@@ -90,7 +89,7 @@ def search_clans_by_name(name_keyword):
     info = []
     keyword_lower = name_keyword.lower() if name_keyword else ""
     
-    for clan_id, clan_info in clans_data.items():
+    for clan_id, clan_info in clans_data["clans"].items():
         clan_name = clan_info.get("name", "")
         # 模糊匹配：如果部落名称包含关键词
         if keyword_lower in clan_name.lower():
@@ -110,10 +109,10 @@ def get_clan_info(clan_id):
     """
     clans_data = load_clans()
     
-    if clan_id not in clans_data:
+    if clan_id not in clans_data["clans"]:
         return False, "部落不存在", None
     
-    clan = clans_data[clan_id]
+    clan = clans_data["clans"][clan_id]
     info = {
         "name": clan.get("name"),
         "member_count": len(clan.get("members", []))
@@ -132,10 +131,10 @@ def get_clan_members(clan_id):
     
     clans_data = load_clans()
     
-    if clan_id not in clans_data:
+    if clan_id not in clans_data["clans"]:
         return False, "部落不存在", None
     
-    clan = clans_data[clan_id]
+    clan = clans_data["clans"][clan_id]
     member_ids = clan.get("members", [])
     
     # 加载用户数据以获取用户名
@@ -162,10 +161,10 @@ def get_clan_owner(clan_id):
     """
     clans_data = load_clans()
     
-    if clan_id not in clans_data:
+    if clan_id not in clans_data["clans"]:
         return False, "部落不存在", None
     
-    owner_id = clans_data[clan_id].get("owner")
+    owner_id = clans_data["clans"][clan_id].get("owner")
     # 确保 owner_id 是整数类型
     if isinstance(owner_id, str) and owner_id.isdigit():
         owner_id = int(owner_id)
@@ -184,10 +183,10 @@ def join_clan(clan_id, user_id):
     """
     clans_data = load_clans()
     
-    if clan_id not in clans_data:
+    if clan_id not in clans_data["clans"]:
         return False, "部落不存在"
     
-    clan = clans_data[clan_id]
+    clan = clans_data["clans"][clan_id]
     members = clan.get("members", [])
     
     # 检查用户是否已在部落中（处理整数和字符串类型）
@@ -198,7 +197,7 @@ def join_clan(clan_id, user_id):
     # 添加用户到部落
     members.append(user_id)
     clan["members"] = members
-    clans_data[clan_id] = clan
+    clans_data["clans"][clan_id] = clan
     save_clans(clans_data)
     
     return True, "加入部落成功"
@@ -212,10 +211,10 @@ def leave_clan(clan_id, user_id):
     """
     clans_data = load_clans()
     
-    if clan_id not in clans_data:
+    if clan_id not in clans_data["clans"]:
         return False, "部落不存在"
     
-    clan = clans_data[clan_id]
+    clan = clans_data["clans"][clan_id]
     members = clan.get("members", [])
     
     # 检查是否是所有者
@@ -238,7 +237,7 @@ def leave_clan(clan_id, user_id):
     # 从部落中移除用户
     members.remove(member_to_remove)
     clan["members"] = members
-    clans_data[clan_id] = clan
+    clans_data["clans"][clan_id] = clan
     save_clans(clans_data)
     
     return True, "退出部落成功"
@@ -252,10 +251,10 @@ def disband_clan(clan_id, user_id):
     """
     clans_data = load_clans()
     
-    if clan_id not in clans_data:
+    if clan_id not in clans_data["clans"]:
         return False, "部落不存在"
     
-    clan = clans_data[clan_id]
+    clan = clans_data["clans"][clan_id]
     owner_id = clan.get("owner")
     
     # 处理整数和字符串类型
@@ -269,7 +268,7 @@ def disband_clan(clan_id, user_id):
         return False, "只有所有者可以解散部落"
     
     # 删除部落数据
-    del clans_data[clan_id]
+    del clans_data["clans"][clan_id]
     save_clans(clans_data)
     
     # 删除相关的聊天记录
@@ -315,7 +314,7 @@ def get_clan_chat_messages(clan_id, limit=None):
     
     # 检查部落是否存在
     clans_data = load_clans()
-    if clan_id not in clans_data:
+    if clan_id not in clans_data["clans"]:
         return False, "部落不存在", None, 0
     
     # 获取该部落的聊天消息
@@ -362,11 +361,11 @@ def send_clan_chat_message(clan_id, user_id, content):
     """
     # 检查部落是否存在
     clans_data = load_clans()
-    if clan_id not in clans_data:
+    if clan_id not in clans_data["clans"]:
         return False, "部落不存在"
     
     # 检查用户是否在部落中
-    clan = clans_data[clan_id]
+    clan = clans_data["clans"][clan_id]
     members = clan.get("members", [])
     
     # 处理整数和字符串类型

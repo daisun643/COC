@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from app.utils.User import set_clanid
 from app.utils.Clans import (
     create_clan,
     get_all_clans_info,
@@ -45,7 +46,8 @@ def create():
     
     # 调用创建逻辑
     success, message, clan_id = create_clan(name, owner_id)
-    
+    if success:
+        set_clanid(owner_id, clan_id)
     return jsonify({
         "success": success,
         "message": message,
@@ -194,7 +196,8 @@ def join():
     
     # 调用加入逻辑
     success, message = join_clan(clan_id, user_id)
-    
+    if success:
+        set_clanid(user_id, clain_id)
     return jsonify({
         "success": success,
         "message": message

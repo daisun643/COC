@@ -100,6 +100,14 @@ bool MainUILayer::init() {
                                 if (_onClansClick) _onClansClick();
                               });
 
+  // 退出按钮 (左上角)
+  _exitButton = createButton(
+      "images/ui/Bar.png", 0.8f,
+      Vec2(origin.x + visibleSize.width - 80, origin.y + 310), "退出",
+      Vec2(origin.x + visibleSize.width - 80, origin.y + 280), [this]() {
+        if (_onExitClick) _onExitClick();
+      });
+
   // 开启 update 用于实时刷新资源
   this->scheduleUpdate();
 
@@ -141,4 +149,8 @@ void MainUILayer::setOnMapEditClickCallback(std::function<void()> callback) {
 
 void MainUILayer::setOnClansClickCallback(std::function<void()> callback) {
   _onClansClick = callback;
+}
+
+void MainUILayer::setOnExitClickCallback(std::function<void()> callback) {
+  _onExitClick = callback;
 }

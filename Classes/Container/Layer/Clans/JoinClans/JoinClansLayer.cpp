@@ -8,7 +8,7 @@ USING_NS_CC;
 using namespace cocos2d::ui;
 
 namespace {
-const Color3B COLOR_BUTTON_BG(128, 128, 128);  // 灰色背景
+const Color3B COLOR_BUTTON_BG(128, 128, 128);           // 灰色背景
 const Color3B COLOR_BUTTON_BG_SELECTED(100, 100, 100);  // 选中时的深灰色背景
 const Color3B COLOR_LIST_ITEM_BG(100, 100, 100);
 const std::string FONT_NAME = "Arial";
@@ -21,13 +21,16 @@ Label* createLabel(const std::string& text, int fontSize,
 }
 
 // 创建圆角背景的 DrawNode
-DrawNode* createRoundedBackground(const Size& size, float radius = 8.0f, bool isSelected = false) {
+DrawNode* createRoundedBackground(const Size& size, float radius = 8.0f,
+                                  bool isSelected = false) {
   auto drawNode = DrawNode::create();
   Color4F grayColor;
   if (isSelected) {
-    grayColor = Color4F(100.0f / 255.0f, 100.0f / 255.0f, 100.0f / 255.0f, 1.0f);
+    grayColor =
+        Color4F(100.0f / 255.0f, 100.0f / 255.0f, 100.0f / 255.0f, 1.0f);
   } else {
-    grayColor = Color4F(128.0f / 255.0f, 128.0f / 255.0f, 128.0f / 255.0f, 1.0f);
+    grayColor =
+        Color4F(128.0f / 255.0f, 128.0f / 255.0f, 128.0f / 255.0f, 1.0f);
   }
 
   float width = size.width;
@@ -109,9 +112,11 @@ void JoinClansLayer::buildUI() {
   // "概览" 按钮
   float overviewCenterX = startX + buttonWidth / 2.0f;
   float overviewCenterY = topY - buttonHeight / 2.0f;
-  _overviewBg = createRoundedBackground(Size(buttonWidth, buttonHeight), radius, true);  // 默认选中
+  _overviewBg = createRoundedBackground(Size(buttonWidth, buttonHeight), radius,
+                                        true);  // 默认选中
   _overviewBg->setAnchorPoint(Vec2::ANCHOR_MIDDLE);
-  _overviewBg->setPosition(Vec2(overviewCenterX - buttonWidth / 2.0f, overviewCenterY - buttonHeight / 2.0f));
+  _overviewBg->setPosition(Vec2(overviewCenterX - buttonWidth / 2.0f,
+                                overviewCenterY - buttonHeight / 2.0f));
   _contentArea->addChild(_overviewBg, 0);  // 背景在底层
 
   _overviewLabel = createLabel("概览", 28);
@@ -121,13 +126,15 @@ void JoinClansLayer::buildUI() {
   // 为"概览"添加触摸事件（注册到 contentArea 上，使用世界坐标检测）
   auto overviewListener = EventListenerTouchOneByOne::create();
   overviewListener->setSwallowTouches(true);
-  overviewListener->onTouchBegan = [this, overviewCenterX, overviewCenterY, buttonWidth, buttonHeight](Touch* touch, Event* event) {
+  overviewListener->onTouchBegan = [this, overviewCenterX, overviewCenterY,
+                                    buttonWidth,
+                                    buttonHeight](Touch* touch, Event* event) {
     Vec2 location = touch->getLocation();
     Vec2 contentPos = _contentArea->convertToNodeSpace(location);
     // 检查是否在概览按钮区域内
-    Rect overviewRect(overviewCenterX - buttonWidth / 2.0f, 
-                      overviewCenterY - buttonHeight / 2.0f, 
-                      buttonWidth, buttonHeight);
+    Rect overviewRect(overviewCenterX - buttonWidth / 2.0f,
+                      overviewCenterY - buttonHeight / 2.0f, buttonWidth,
+                      buttonHeight);
     if (overviewRect.containsPoint(contentPos)) {
       return true;
     }
@@ -136,14 +143,17 @@ void JoinClansLayer::buildUI() {
   overviewListener->onTouchEnded = [this](Touch* touch, Event* event) {
     this->onOverviewClick();
   };
-  _eventDispatcher->addEventListenerWithSceneGraphPriority(overviewListener, _contentArea);
+  _eventDispatcher->addEventListenerWithSceneGraphPriority(overviewListener,
+                                                           _contentArea);
 
   // "搜索" 按钮
   float searchCenterX = startX + buttonWidth + spacing + buttonWidth / 2.0f;
   float searchCenterY = topY - buttonHeight / 2.0f;
-  _searchBg = createRoundedBackground(Size(buttonWidth, buttonHeight), radius, false);  // 默认未选中
+  _searchBg = createRoundedBackground(Size(buttonWidth, buttonHeight), radius,
+                                      false);  // 默认未选中
   _searchBg->setAnchorPoint(Vec2::ANCHOR_MIDDLE);
-  _searchBg->setPosition(Vec2(searchCenterX - buttonWidth / 2.0f, searchCenterY - buttonHeight / 2.0f));
+  _searchBg->setPosition(Vec2(searchCenterX - buttonWidth / 2.0f,
+                              searchCenterY - buttonHeight / 2.0f));
   _contentArea->addChild(_searchBg, 0);  // 背景在底层
 
   _searchLabel = createLabel("搜索", 28);
@@ -153,13 +163,15 @@ void JoinClansLayer::buildUI() {
   // 为"搜索"添加触摸事件（注册到 contentArea 上，使用世界坐标检测）
   auto searchListener = EventListenerTouchOneByOne::create();
   searchListener->setSwallowTouches(true);
-  searchListener->onTouchBegan = [this, searchCenterX, searchCenterY, buttonWidth, buttonHeight](Touch* touch, Event* event) {
+  searchListener->onTouchBegan = [this, searchCenterX, searchCenterY,
+                                  buttonWidth,
+                                  buttonHeight](Touch* touch, Event* event) {
     Vec2 location = touch->getLocation();
     Vec2 contentPos = _contentArea->convertToNodeSpace(location);
     // 检查是否在搜索按钮区域内
-    Rect searchRect(searchCenterX - buttonWidth / 2.0f, 
-                    searchCenterY - buttonHeight / 2.0f, 
-                    buttonWidth, buttonHeight);
+    Rect searchRect(searchCenterX - buttonWidth / 2.0f,
+                    searchCenterY - buttonHeight / 2.0f, buttonWidth,
+                    buttonHeight);
     if (searchRect.containsPoint(contentPos)) {
       return true;
     }
@@ -168,56 +180,63 @@ void JoinClansLayer::buildUI() {
   searchListener->onTouchEnded = [this](Touch* touch, Event* event) {
     this->onSearchClick();
   };
-  _eventDispatcher->addEventListenerWithSceneGraphPriority(searchListener, _contentArea);
-  
+  _eventDispatcher->addEventListenerWithSceneGraphPriority(searchListener,
+                                                           _contentArea);
+
   // "创建部落" 按钮（与"概览"和"搜索"并排）
-  float createClanCenterX = startX + 2 * buttonWidth + 2 * spacing + buttonWidth / 2.0f;
+  float createClanCenterX =
+      startX + 2 * buttonWidth + 2 * spacing + buttonWidth / 2.0f;
   float createClanCenterY = topY - buttonHeight / 2.0f;
-  _createClanBg = createRoundedBackground(Size(buttonWidth, buttonHeight), radius, false);
+  _createClanBg =
+      createRoundedBackground(Size(buttonWidth, buttonHeight), radius, false);
   _createClanBg->setAnchorPoint(Vec2::ANCHOR_MIDDLE);
-  _createClanBg->setPosition(Vec2(createClanCenterX - buttonWidth / 2.0f, createClanCenterY - buttonHeight / 2.0f));
+  _createClanBg->setPosition(Vec2(createClanCenterX - buttonWidth / 2.0f,
+                                  createClanCenterY - buttonHeight / 2.0f));
   _contentArea->addChild(_createClanBg, 0);
-  
+
   _createClanLabel = createLabel("创建部落", 28);
   _createClanLabel->setPosition(Vec2(createClanCenterX, createClanCenterY));
   _contentArea->addChild(_createClanLabel, 10);
-  
+
   // 为"创建部落"按钮添加触摸事件
   auto createClanListener = EventListenerTouchOneByOne::create();
   createClanListener->setSwallowTouches(true);
-  createClanListener->onTouchBegan = [this, createClanCenterX, createClanCenterY, buttonWidth, buttonHeight](Touch* touch, Event* event) {
-    Vec2 location = touch->getLocation();
-    Vec2 contentPos = _contentArea->convertToNodeSpace(location);
-    Rect createClanRect(createClanCenterX - buttonWidth / 2.0f, 
-                       createClanCenterY - buttonHeight / 2.0f, 
-                       buttonWidth, buttonHeight);
-    if (createClanRect.containsPoint(contentPos)) {
-      // 要判断 profile->getClanId() == -1 才能创建部落
-      if (Profile::getInstance()->getClansId() != -1) {
-        // 提示用户不能创建部落
-        CCLOG("JoinClansLayer: Already in a clan, cannot create new clan");
-        auto errorLabel = createLabel("已经加入部落，需要先退出当前部落", 24, Color4B::RED);
-        errorLabel->setPosition(
-            Vec2(_contentArea->getContentSize().width / 2.0f,
-                 _contentArea->getContentSize().height / 2.0f));
-        _contentArea->addChild(errorLabel, 1000);
-        // 3秒后移除提示
-        auto delay = DelayTime::create(3.0f);
-        auto remove = CallFunc::create([errorLabel]() {
-          errorLabel->removeFromParent();
-        });
-        errorLabel->runAction(Sequence::create(delay, remove, nullptr));
+  createClanListener->onTouchBegan =
+      [this, createClanCenterX, createClanCenterY, buttonWidth, buttonHeight](
+          Touch* touch, Event* event) {
+        Vec2 location = touch->getLocation();
+        Vec2 contentPos = _contentArea->convertToNodeSpace(location);
+        Rect createClanRect(createClanCenterX - buttonWidth / 2.0f,
+                            createClanCenterY - buttonHeight / 2.0f,
+                            buttonWidth, buttonHeight);
+        if (createClanRect.containsPoint(contentPos)) {
+          // 要判断 profile->getClanId() == -1 才能创建部落
+          if (Profile::getInstance()->getClansId() > 0) {
+            // 提示用户不能创建部落
+            CCLOG("JoinClansLayer: Already in a clan, cannot create new clan");
+            auto errorLabel = createLabel("已经加入部落，需要先退出当前部落",
+                                          24, Color4B::RED);
+            errorLabel->setPosition(
+                Vec2(_contentArea->getContentSize().width / 2.0f,
+                     _contentArea->getContentSize().height / 2.0f));
+            _contentArea->addChild(errorLabel, 1000);
+            // 3秒后移除提示
+            auto delay = DelayTime::create(3.0f);
+            auto remove = CallFunc::create(
+                [errorLabel]() { errorLabel->removeFromParent(); });
+            errorLabel->runAction(Sequence::create(delay, remove, nullptr));
+            return false;
+          }
+          return true;
+        }
         return false;
-      }
-      return true;
-    }
-    return false;
-  };
+      };
   createClanListener->onTouchEnded = [this](Touch* touch, Event* event) {
     this->onCreateClanClick();
   };
-  _eventDispatcher->addEventListenerWithSceneGraphPriority(createClanListener, _contentArea);
-  
+  _eventDispatcher->addEventListenerWithSceneGraphPriority(createClanListener,
+                                                           _contentArea);
+
   // 默认显示概览列表
   showOverviewList();
 }
@@ -266,15 +285,17 @@ void JoinClansLayer::showOverviewList() {
   float buttonHeight = 50.0f;
   float topY = _contentArea->getContentSize().height - 30.0f;
   float buttonBottomY = topY - buttonHeight - 20.0f;  // 按钮下方留20像素间距
-  float scrollViewHeight = buttonBottomY - 20.0f;  // 从按钮下方到底部，底部留20像素间距
-  
+  float scrollViewHeight =
+      buttonBottomY - 20.0f;  // 从按钮下方到底部，底部留20像素间距
+
   _scrollView = ScrollView::create();
-  _scrollView->setContentSize(Size(_contentArea->getContentSize().width, scrollViewHeight));
+  _scrollView->setContentSize(
+      Size(_contentArea->getContentSize().width, scrollViewHeight));
   _scrollView->setPosition(Vec2(0.0f, 20.0f));  // 从底部开始，留20像素间距
   _scrollView->setDirection(ScrollView::Direction::VERTICAL);
   _scrollView->setBounceEnabled(true);
   _contentArea->addChild(_scrollView);
-  
+
   // 创建列表容器（不再使用，直接添加到 ScrollView）
   _listContainer = nullptr;
 
@@ -284,8 +305,8 @@ void JoinClansLayer::showOverviewList() {
       this->displayClansList(result.clans);
     } else {
       // 显示错误消息
-      auto errorLabel = createLabel("获取失败: " + result.message, 24,
-                                    Color4B::RED);
+      auto errorLabel =
+          createLabel("获取失败: " + result.message, 24, Color4B::RED);
       errorLabel->setPosition(
           Vec2(_contentArea->getContentSize().width / 2.0f,
                _contentArea->getContentSize().height / 2.0f));
@@ -355,15 +376,17 @@ void JoinClansLayer::onSearchConfirm() {
   float buttonHeight = 50.0f;
   float topY = _contentArea->getContentSize().height - 30.0f;
   float buttonBottomY = topY - buttonHeight - 20.0f;  // 按钮下方留20像素间距
-  float scrollViewHeight = buttonBottomY - 20.0f;  // 从按钮下方到底部，底部留20像素间距
-  
+  float scrollViewHeight =
+      buttonBottomY - 20.0f;  // 从按钮下方到底部，底部留20像素间距
+
   _scrollView = ScrollView::create();
-  _scrollView->setContentSize(Size(_contentArea->getContentSize().width, scrollViewHeight));
+  _scrollView->setContentSize(
+      Size(_contentArea->getContentSize().width, scrollViewHeight));
   _scrollView->setPosition(Vec2(0.0f, 20.0f));  // 从底部开始，留20像素间距
   _scrollView->setDirection(ScrollView::Direction::VERTICAL);
   _scrollView->setBounceEnabled(true);
   _contentArea->addChild(_scrollView);
-  
+
   // 创建列表容器（不再使用，直接添加到 ScrollView）
   _listContainer = nullptr;
 
@@ -373,8 +396,8 @@ void JoinClansLayer::onSearchConfirm() {
       this->displayClansList(result.clans);
     } else {
       // 显示错误消息
-      auto errorLabel = createLabel("搜索失败: " + result.message, 24,
-                                    Color4B::RED);
+      auto errorLabel =
+          createLabel("搜索失败: " + result.message, 24, Color4B::RED);
       errorLabel->setPosition(
           Vec2(_contentArea->getContentSize().width / 2.0f,
                _contentArea->getContentSize().height / 2.0f));
@@ -393,9 +416,8 @@ void JoinClansLayer::displayClansList(const std::vector<ClanInfo>& clans) {
 
   if (clans.empty()) {
     auto emptyLabel = createLabel("没有找到部落", 24, Color4B::WHITE);
-    emptyLabel->setPosition(
-        Vec2(_scrollView->getContentSize().width / 2.0f,
-             _scrollView->getContentSize().height / 2.0f));
+    emptyLabel->setPosition(Vec2(_scrollView->getContentSize().width / 2.0f,
+                                 _scrollView->getContentSize().height / 2.0f));
     _scrollView->addChild(emptyLabel);
     _scrollView->setInnerContainerSize(_scrollView->getContentSize());
     return;
@@ -417,7 +439,7 @@ void JoinClansLayer::displayClansList(const std::vector<ClanInfo>& clans) {
   for (size_t i = 0; i < clans.size(); i++) {
     auto item = createClanItem(clans[i]);
     item->setPosition(Vec2(_scrollView->getContentSize().width / 2.0f,
-                          innerHeight - (i + 0.5f) * (itemHeight + spacing)));
+                           innerHeight - (i + 0.5f) * (itemHeight + spacing)));
     _scrollView->addChild(item);
   }
 }
@@ -426,7 +448,7 @@ cocos2d::ui::Widget* JoinClansLayer::createClanItem(const ClanInfo& clan) {
   // 参考 AttackLayer 的 createLevelItem 方式
   float width = 700.0f;
   float height = 60.0f;
-  
+
   auto container = Layout::create();
   container->setContentSize(Size(width, height));
   container->setAnchorPoint(Vec2::ANCHOR_MIDDLE);
@@ -443,24 +465,25 @@ cocos2d::ui::Widget* JoinClansLayer::createClanItem(const ClanInfo& clan) {
   std::string memberText = "成员: " + std::to_string(clan.member_count);
   auto memberLabel = createLabel(memberText, 20, Color4B(200, 200, 200, 255));
   memberLabel->setAnchorPoint(Vec2::ANCHOR_MIDDLE_RIGHT);
-  
+
   // 创建"加入"按钮
   auto joinButton = Button::create();
   joinButton->setTitleText("加入");
   joinButton->setTitleFontSize(20);
   joinButton->setContentSize(Size(80.0f, 40.0f));
   joinButton->setPosition(Vec2(width - 60.0f, height / 2.0f));
-  
+
   // 调整成员数量标签位置，为按钮留出空间
   memberLabel->setPosition(Vec2(width - 160.0f, height / 2.0f));
   container->addChild(memberLabel);
-  
+
   // 为"加入"按钮添加点击事件
-  joinButton->addTouchEventListener([this, clan](Ref* sender, Widget::TouchEventType type) {
-    if (type == Widget::TouchEventType::ENDED) {
-      this->onJoinClanClick(clan);
-    }
-  });
+  joinButton->addTouchEventListener(
+      [this, clan](Ref* sender, Widget::TouchEventType type) {
+        if (type == Widget::TouchEventType::ENDED) {
+          this->onJoinClanClick(clan);
+        }
+      });
   container->addChild(joinButton);
 
   return container;
@@ -470,7 +493,7 @@ void JoinClansLayer::updateTabSelection(bool isOverview) {
   float buttonWidth = 140.0f;  // 与 buildUI 中的 buttonWidth 保持一致
   float buttonHeight = 50.0f;
   float radius = 8.0f;
-  
+
   if (isOverview) {
     // "概览" 选中，"搜索" 未选中
     // 移除旧的背景并创建新的
@@ -478,17 +501,19 @@ void JoinClansLayer::updateTabSelection(bool isOverview) {
       Vec2 oldPos = _overviewBg->getPosition();
       int oldZOrder = _overviewBg->getLocalZOrder();
       _overviewBg->removeFromParent();
-      _overviewBg = createRoundedBackground(Size(buttonWidth, buttonHeight), radius, true);
+      _overviewBg = createRoundedBackground(Size(buttonWidth, buttonHeight),
+                                            radius, true);
       _overviewBg->setAnchorPoint(Vec2::ANCHOR_MIDDLE);
       _overviewBg->setPosition(oldPos);
       _contentArea->addChild(_overviewBg, oldZOrder);  // 使用原来的 z-order
     }
-    
+
     if (_searchBg) {
       Vec2 oldPos = _searchBg->getPosition();
       int oldZOrder = _searchBg->getLocalZOrder();
       _searchBg->removeFromParent();
-      _searchBg = createRoundedBackground(Size(buttonWidth, buttonHeight), radius, false);
+      _searchBg = createRoundedBackground(Size(buttonWidth, buttonHeight),
+                                          radius, false);
       _searchBg->setAnchorPoint(Vec2::ANCHOR_MIDDLE);
       _searchBg->setPosition(oldPos);
       _contentArea->addChild(_searchBg, oldZOrder);  // 使用原来的 z-order
@@ -500,23 +525,25 @@ void JoinClansLayer::updateTabSelection(bool isOverview) {
       Vec2 oldPos = _overviewBg->getPosition();
       int oldZOrder = _overviewBg->getLocalZOrder();
       _overviewBg->removeFromParent();
-      _overviewBg = createRoundedBackground(Size(buttonWidth, buttonHeight), radius, false);
+      _overviewBg = createRoundedBackground(Size(buttonWidth, buttonHeight),
+                                            radius, false);
       _overviewBg->setAnchorPoint(Vec2::ANCHOR_MIDDLE);
       _overviewBg->setPosition(oldPos);
       _contentArea->addChild(_overviewBg, oldZOrder);  // 使用原来的 z-order
     }
-    
+
     if (_searchBg) {
       Vec2 oldPos = _searchBg->getPosition();
       int oldZOrder = _searchBg->getLocalZOrder();
       _searchBg->removeFromParent();
-      _searchBg = createRoundedBackground(Size(buttonWidth, buttonHeight), radius, true);
+      _searchBg = createRoundedBackground(Size(buttonWidth, buttonHeight),
+                                          radius, true);
       _searchBg->setAnchorPoint(Vec2::ANCHOR_MIDDLE);
       _searchBg->setPosition(oldPos);
       _contentArea->addChild(_searchBg, oldZOrder);  // 使用原来的 z-order
     }
   }
-  
+
   // 确保 Label 在背景之上（提高 z-order）
   if (_overviewLabel) {
     _overviewLabel->setLocalZOrder(10);
@@ -535,95 +562,97 @@ void JoinClansLayer::onJoinClanClick(const ClanInfo& clan) {
   }
 
   // 检查是否已经加入部落
-  if (profile->getClansId() != -1) {
-    CCLOG("JoinClansLayer: Had joined a clan, need to leave current clan first");
+  if (profile->getClansId() != 0) {
+    CCLOG(
+        "JoinClansLayer: Had joined a clan, need to leave current clan first");
     // 显示错误消息
-    auto errorLabel = createLabel("已经加入部落，需要先退出当前部落", 24, Color4B::RED);
-    errorLabel->setPosition(
-        Vec2(_contentArea->getContentSize().width / 2.0f,
-             _contentArea->getContentSize().height / 2.0f));
+    auto errorLabel =
+        createLabel("已经加入部落，需要先退出当前部落", 24, Color4B::RED);
+    errorLabel->setPosition(Vec2(_contentArea->getContentSize().width / 2.0f,
+                                 _contentArea->getContentSize().height / 2.0f));
     _contentArea->addChild(errorLabel, 1000);
     // 3秒后移除提示
     auto delay = DelayTime::create(3.0f);
-    auto remove = CallFunc::create([errorLabel]() {
-      errorLabel->removeFromParent();
-    });
+    auto remove =
+        CallFunc::create([errorLabel]() { errorLabel->removeFromParent(); });
     errorLabel->runAction(Sequence::create(delay, remove, nullptr));
     return;
   }
-  
+
   int userId = profile->getId();
   if (userId <= 0) {
     CCLOG("JoinClansLayer: Invalid user ID");
     return;
   }
-  
+
   // 检查部落ID是否有效
   if (clan.id.empty()) {
     CCLOG("JoinClansLayer: Clan ID is empty");
     return;
   }
-  
+
   // 调用API加入部落
-  Clans::joinClan(clan.id, userId, [this, clan](bool success, const std::string& message) {
-    if (success) {
-      CCLOG("JoinClansLayer: Successfully joined clan %s", clan.name.c_str());
-      // 更新Profile中的部落信息
-      auto profile = Profile::getInstance();
-      if (profile) {
-        // 假设clan.id是字符串，需要转换为int（如果服务器返回的是数字字符串）
-        try {
-          int clanId = std::stoi(clan.id);
-          profile->setClansId(clanId);
-        } catch (...) {
-          // 如果转换失败，使用默认值或跳过
-          CCLOG("JoinClansLayer: Failed to convert clan ID to int: %s", clan.id.c_str());
+  Clans::joinClan(
+      clan.id, userId, [this, clan](bool success, const std::string& message) {
+        if (success) {
+          CCLOG("JoinClansLayer: Successfully joined clan %s",
+                clan.name.c_str());
+          // 更新Profile中的部落信息
+          auto profile = Profile::getInstance();
+          if (profile) {
+            // 假设clan.id是字符串，需要转换为int（如果服务器返回的是数字字符串）
+            try {
+              int clanId = std::stoi(clan.id);
+              profile->setClansId(clanId);
+            } catch (...) {
+              // 如果转换失败，使用默认值或跳过
+              CCLOG("JoinClansLayer: Failed to convert clan ID to int: %s",
+                    clan.id.c_str());
+            }
+            profile->setClansName(clan.name);
+          }
+
+          // 显示成功消息（可以添加一个提示标签）
+          auto successLabel =
+              createLabel("加入成功: " + clan.name, 24, Color4B::GREEN);
+          successLabel->setPosition(
+              Vec2(_contentArea->getContentSize().width / 2.0f,
+                   _contentArea->getContentSize().height / 2.0f));
+          _contentArea->addChild(successLabel, 1000);
+
+          // 3秒后移除提示
+          auto delay = DelayTime::create(3.0f);
+          auto remove = CallFunc::create(
+              [successLabel]() { successLabel->removeFromParent(); });
+          successLabel->runAction(Sequence::create(delay, remove, nullptr));
+        } else {
+          CCLOG("JoinClansLayer: Failed to join clan: %s", message.c_str());
+          // 显示错误消息
+          auto errorLabel =
+              createLabel("加入失败: " + message, 24, Color4B::RED);
+          errorLabel->setPosition(
+              Vec2(_contentArea->getContentSize().width / 2.0f,
+                   _contentArea->getContentSize().height / 2.0f));
+          _contentArea->addChild(errorLabel, 1000);
+
+          // 3秒后移除提示
+          auto delay = DelayTime::create(3.0f);
+          auto remove = CallFunc::create(
+              [errorLabel]() { errorLabel->removeFromParent(); });
+          errorLabel->runAction(Sequence::create(delay, remove, nullptr));
         }
-        profile->setClansName(clan.name);
-      }
-      
-      // 显示成功消息（可以添加一个提示标签）
-      auto successLabel = createLabel("加入成功: " + clan.name, 24, Color4B::GREEN);
-      successLabel->setPosition(
-          Vec2(_contentArea->getContentSize().width / 2.0f,
-               _contentArea->getContentSize().height / 2.0f));
-      _contentArea->addChild(successLabel, 1000);
-      
-      // 3秒后移除提示
-      auto delay = DelayTime::create(3.0f);
-      auto remove = CallFunc::create([successLabel]() {
-        successLabel->removeFromParent();
       });
-      successLabel->runAction(Sequence::create(delay, remove, nullptr));
-    } else {
-      CCLOG("JoinClansLayer: Failed to join clan: %s", message.c_str());
-      // 显示错误消息
-      auto errorLabel = createLabel("加入失败: " + message, 24, Color4B::RED);
-      errorLabel->setPosition(
-          Vec2(_contentArea->getContentSize().width / 2.0f,
-               _contentArea->getContentSize().height / 2.0f));
-      _contentArea->addChild(errorLabel, 1000);
-      
-      // 3秒后移除提示
-      auto delay = DelayTime::create(3.0f);
-      auto remove = CallFunc::create([errorLabel]() {
-        errorLabel->removeFromParent();
-      });
-      errorLabel->runAction(Sequence::create(delay, remove, nullptr));
-    }
-  });
 }
 
-void JoinClansLayer::onCreateClanClick() {
-  showCreateClanDialog();
-}
+void JoinClansLayer::onCreateClanClick() { showCreateClanDialog(); }
 
 void JoinClansLayer::showCreateClanDialog() {
   auto visibleSize = Director::getInstance()->getVisibleSize();
   Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
   // 创建半透明背景层
-  auto bgLayer = LayerColor::create(Color4B(0, 0, 0, 0), visibleSize.width, visibleSize.height);
+  auto bgLayer = LayerColor::create(Color4B(0, 0, 0, 0), visibleSize.width,
+                                    visibleSize.height);
   bgLayer->setPosition(origin);
   bgLayer->setName("CreateClanDialogBackground");
   this->addChild(bgLayer, 1000);
@@ -631,9 +660,11 @@ void JoinClansLayer::showCreateClanDialog() {
   // 创建对话框背景
   float dialogWidth = 400.0f;
   float dialogHeight = 250.0f;
-  auto dialogBg = LayerColor::create(Color4B(50, 50, 50, 255), dialogWidth, dialogHeight);
+  auto dialogBg =
+      LayerColor::create(Color4B(50, 50, 50, 255), dialogWidth, dialogHeight);
   dialogBg->setAnchorPoint(Vec2::ANCHOR_MIDDLE);  // 设置锚点为中心
-  dialogBg->setPosition(Vec2(origin.x + dialogWidth / 2, origin.y + 50));  // 屏幕中心
+  dialogBg->setPosition(
+      Vec2(origin.x + dialogWidth / 2, origin.y + 50));  // 屏幕中心
   dialogBg->setName("CreateClanDialog");
   this->addChild(dialogBg, 1001);
 
@@ -665,7 +696,8 @@ void JoinClansLayer::showCreateClanDialog() {
   float btnHeight = 35.0f;
   float confirmBtnX = dialogWidth / 2.0f - btnWidth - 10.0f;
   float confirmBtnY = 30.0f;
-  auto confirmBtnBg = LayerColor::create(Color4B(100, 150, 100, 255), btnWidth, btnHeight);
+  auto confirmBtnBg =
+      LayerColor::create(Color4B(100, 150, 100, 255), btnWidth, btnHeight);
   confirmBtnBg->setAnchorPoint(Vec2::ANCHOR_BOTTOM_LEFT);
   confirmBtnBg->setPosition(Vec2(confirmBtnX, confirmBtnY));
   auto confirmLabel = createLabel("确定", 18);
@@ -676,7 +708,8 @@ void JoinClansLayer::showCreateClanDialog() {
   // 创建取消按钮
   float cancelBtnX = dialogWidth / 2.0f + 10.0f;
   float cancelBtnY = 30.0f;
-  auto cancelBtnBg = LayerColor::create(Color4B(150, 100, 100, 255), btnWidth, btnHeight);
+  auto cancelBtnBg =
+      LayerColor::create(Color4B(150, 100, 100, 255), btnWidth, btnHeight);
   cancelBtnBg->setAnchorPoint(Vec2::ANCHOR_BOTTOM_LEFT);
   cancelBtnBg->setPosition(Vec2(cancelBtnX, cancelBtnY));
   auto cancelLabel = createLabel("取消", 18);
@@ -687,9 +720,10 @@ void JoinClansLayer::showCreateClanDialog() {
   // 添加按钮点击事件
   auto listener = EventListenerTouchOneByOne::create();
   listener->setSwallowTouches(true);
-  listener->onTouchBegan = [this, bgLayer, dialogBg, textField, confirmBtnBg, cancelBtnBg,
-                             confirmBtnX, confirmBtnY, cancelBtnX, cancelBtnY,
-                             btnWidth, btnHeight](Touch* touch, Event* event) -> bool {
+  listener->onTouchBegan = [this, bgLayer, dialogBg, textField, confirmBtnBg,
+                            cancelBtnBg, confirmBtnX, confirmBtnY, cancelBtnX,
+                            cancelBtnY, btnWidth,
+                            btnHeight](Touch* touch, Event* event) -> bool {
     Vec2 location = touch->getLocation();
     // 将触摸位置转换为相对于 dialogBg 的坐标
     Vec2 dialogLocalPos = dialogBg->convertToNodeSpace(location);
@@ -699,15 +733,16 @@ void JoinClansLayer::showCreateClanDialog() {
     if (confirmRect.containsPoint(dialogLocalPos)) {
       // 获取输入的部落名称
       std::string clanName = textField->getString();
-      if (clanName.empty() || clanName.find_first_not_of(' ') == std::string::npos) {
+      if (clanName.empty() ||
+          clanName.find_first_not_of(' ') == std::string::npos) {
         // 部落名称为空或只有空格，显示错误提示
         auto errorLabel = createLabel("部落名称不能为空", 18, Color4B::RED);
-        errorLabel->setPosition(Vec2(dialogBg->getContentSize().width / 2.0f, 80.0f));
+        errorLabel->setPosition(
+            Vec2(dialogBg->getContentSize().width / 2.0f, 80.0f));
         dialogBg->addChild(errorLabel, 100);
         auto delay = DelayTime::create(2.0f);
-        auto remove = CallFunc::create([errorLabel]() {
-          errorLabel->removeFromParent();
-        });
+        auto remove = CallFunc::create(
+            [errorLabel]() { errorLabel->removeFromParent(); });
         errorLabel->runAction(Sequence::create(delay, remove, nullptr));
         return true;
       }
@@ -724,54 +759,61 @@ void JoinClansLayer::showCreateClanDialog() {
       }
 
       int userId = profile->getId();
-      Clans::createClan(clanName, userId, [this, clanName](bool success, const std::string& message, const std::string& clan_id) {
-        if (success) {
-          CCLOG("JoinClansLayer: Successfully created clan %s (ID: %s)", clanName.c_str(), clan_id.c_str());
-          
-          // 更新Profile中的部落信息
-          auto profile = Profile::getInstance();
-          if (profile) {
-            try {
-              int clanId = std::stoi(clan_id);
-              profile->setClansId(clanId);
-            } catch (...) {
-              CCLOG("JoinClansLayer: Failed to convert clan ID to int: %s", clan_id.c_str());
+      Clans::createClan(
+          clanName, userId,
+          [this, clanName](bool success, const std::string& message,
+                           const std::string& clan_id) {
+            if (success) {
+              CCLOG("JoinClansLayer: Successfully created clan %s (ID: %s)",
+                    clanName.c_str(), clan_id.c_str());
+
+              // 更新Profile中的部落信息
+              auto profile = Profile::getInstance();
+              if (profile) {
+                try {
+                  int clanId = std::stoi(clan_id);
+                  profile->setClansId(clanId);
+                } catch (...) {
+                  CCLOG("JoinClansLayer: Failed to convert clan ID to int: %s",
+                        clan_id.c_str());
+                }
+                profile->setClansName(clanName);
+                profile->save();
+              }
+
+              // 显示成功消息
+              auto successLabel =
+                  createLabel("创建成功: " + clanName, 24, Color4B::GREEN);
+              successLabel->setPosition(
+                  Vec2(_contentArea->getContentSize().width / 2.0f,
+                       _contentArea->getContentSize().height / 2.0f));
+              _contentArea->addChild(successLabel, 1000);
+
+              // 3秒后关闭当前层
+              auto delay = DelayTime::create(3.0f);
+              auto remove = CallFunc::create([this, successLabel]() {
+                successLabel->removeFromParent();
+                // this->removeFromParent();
+              });
+              successLabel->runAction(Sequence::create(delay, remove, nullptr));
+            } else {
+              CCLOG("JoinClansLayer: Failed to create clan: %s",
+                    message.c_str());
+              // 显示错误消息
+              auto errorLabel =
+                  createLabel("创建失败: " + message, 24, Color4B::RED);
+              errorLabel->setPosition(
+                  Vec2(_contentArea->getContentSize().width / 2.0f,
+                       _contentArea->getContentSize().height / 2.0f));
+              _contentArea->addChild(errorLabel, 1000);
+
+              // 3秒后移除提示
+              auto delay = DelayTime::create(3.0f);
+              auto remove = CallFunc::create(
+                  [errorLabel]() { errorLabel->removeFromParent(); });
+              errorLabel->runAction(Sequence::create(delay, remove, nullptr));
             }
-            profile->setClansName(clanName);
-            profile->save();
-          }
-          
-          // 显示成功消息
-          auto successLabel = createLabel("创建成功: " + clanName, 24, Color4B::GREEN);
-          successLabel->setPosition(
-              Vec2(_contentArea->getContentSize().width / 2.0f,
-                   _contentArea->getContentSize().height / 2.0f));
-          _contentArea->addChild(successLabel, 1000);
-          
-          // 3秒后关闭当前层
-          auto delay = DelayTime::create(3.0f);
-          auto remove = CallFunc::create([this, successLabel]() {
-            successLabel->removeFromParent();
-            // this->removeFromParent();
           });
-          successLabel->runAction(Sequence::create(delay, remove, nullptr));
-        } else {
-          CCLOG("JoinClansLayer: Failed to create clan: %s", message.c_str());
-          // 显示错误消息
-          auto errorLabel = createLabel("创建失败: " + message, 24, Color4B::RED);
-          errorLabel->setPosition(
-              Vec2(_contentArea->getContentSize().width / 2.0f,
-                   _contentArea->getContentSize().height / 2.0f));
-          _contentArea->addChild(errorLabel, 1000);
-          
-          // 3秒后移除提示
-          auto delay = DelayTime::create(3.0f);
-          auto remove = CallFunc::create([errorLabel]() {
-            errorLabel->removeFromParent();
-          });
-          errorLabel->runAction(Sequence::create(delay, remove, nullptr));
-        }
-      });
 
       return true;
     }

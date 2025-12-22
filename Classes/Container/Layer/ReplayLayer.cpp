@@ -119,7 +119,8 @@ void ReplayLayer::buildUI() {
   float itemHeight = 100.0f;
   float spacing = 10.0f;
   FileUtils* fileUtils = FileUtils::getInstance();
-  std::vector<std::tuple<std::string, std::string, std::string, std::string>>
+  std::vector<
+      std::tuple<std::string, std::string, std::string, std::string, bool>>
       records;  // <name, mapPath, recordPath, time>
 
   rapidjson::Document doc;
@@ -153,10 +154,12 @@ void ReplayLayer::buildUI() {
             std::string time = recordObj["time"].IsString()
                                    ? recordObj["time"].GetString()
                                    : "";
+            bool win =
+                recordObj["win"].IsBool() ? recordObj["win"].GetBool() : true;
             if (!name.empty() && !mapPath.empty() && !recordPath.empty() &&
                 !time.empty()) {
               records.push_back(
-                  std::make_tuple(name, mapPath, recordPath, time));
+                  std::make_tuple(name, mapPath, recordPath, time, win));
             }
           }
         }
@@ -186,7 +189,7 @@ void ReplayLayer::buildUI() {
     std::string mapPath = std::get<1>(record);
     std::string recordPath = std::get<2>(record);
     std::string timeStr = std::get<3>(record);
-
+    bool win = std::get<4>(record);
     // 格式化时间显示（从 YYYYMMDD_HHMMSS 转换为 YYYY-MM-DD HH:MM:SS）
     std::string formattedTime = timeStr;
     if (timeStr.length() == 15) {  // YYYYMMDD_HHMMSS
@@ -196,8 +199,7 @@ void ReplayLayer::buildUI() {
     }
 
     // 传递 mapPath 和 recordPath（使用 recordPath 作为主要标识）
-    auto item =
-        createReplayItem(recordPath, mapPath, name, true, formattedTime);
+    auto item = createReplayItem(recordPath, mapPath, name, win, formattedTime);
     item->setPosition(Vec2(_scrollView->getContentSize().width / 2.0f,
                            innerHeight - (i + 0.5f) * (itemHeight + spacing)));
     _scrollView->addChild(item);

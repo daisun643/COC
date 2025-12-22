@@ -4,6 +4,7 @@
 #include <sstream>
 
 #include "Utils/Profile/Profile.h"
+#include "Utils/API/User/User.h"
 
 USING_NS_CC;
 using namespace cocos2d::ui;
@@ -163,6 +164,23 @@ void LoginLayer::onLoginButtonClicked(Ref* sender) {
 
       if (_onLoginSuccess) {
         _onLoginSuccess();
+        // 调用 Classes\Utils\API\User\User.cpp 中的 getClanId 并设置 profile->setClansId
+        auto profile = Profile::getInstance();
+        if (profile) {
+          UserAPI::getClanId(std::to_string(id), [profile](bool success, const std::string& message, const std::string& clan_id) {
+            if (success && !clan_id.empty()) {
+              try {
+                int cid = std::stoi(clan_id);
+                profile->setClansId(cid);
+                CCLOG("LoginLayer: updated profile clansId=%d", cid);
+              } catch (const std::exception& e) {
+                CCLOG("LoginLayer: failed to parse clan_id: %s", e.what());
+              }
+            } else {
+              CCLOG("LoginLayer: getClanId failed: %s", message.c_str());
+            }
+          });
+        }
       }
     } else {
       CCLOG("LoginLayer: 登录失败: %s", result.message.c_str());

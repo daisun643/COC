@@ -17,6 +17,7 @@ class MainUILayer : public cocos2d::Layer {
   void setOnReplayClickCallback(std::function<void()> callback);
   void setOnMapEditClickCallback(std::function<void()> callback);
   void setOnClansClickCallback(std::function<void()> callback);
+  void setOnExitClickCallback(std::function<void()> callback);
 
  private:
   ResourceWidget* _goldWidget;
@@ -27,12 +28,14 @@ class MainUILayer : public cocos2d::Layer {
   cocos2d::ui::Button* _replayButton;
   cocos2d::ui::Button* _mapEditButton;
   cocos2d::ui::Button* _clansButton;
-
+  cocos2d::ui::Button* _exitButton;
+  // 我想设置一个退出的button
   std::function<void()> _onShopClick;
   std::function<void()> _onAttackClick;
   std::function<void()> _onReplayClick;
   std::function<void()> _onMapEditClick;
   std::function<void()> _onClansClick;
+  std::function<void()> _onExitClick;
 };
 
 #endif  // __MAIN_UI_LAYER_H__
