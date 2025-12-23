@@ -3,7 +3,9 @@
 #include <float.h>
 
 #include "Container/Layer/AttackLayer.h"
+#include "Container/Layer/Clans/ClansLayer.h"
 #include "Container/Layer/ReplayLayer.h"
+#include "Container/Scene/Authentication/AuthScene.h"
 #include "Container/Scene/SenceHelper.h"
 #include "Game/Building/AllBuildings.h"
 #include "Game/Building/BarracksBuilding.h"
@@ -15,6 +17,7 @@
 #include "Game/Building/TownHall.h"
 #include "Game/Building/Wall.h"
 #include "Manager/Config/ConfigManager.h"
+#include "Utils/Profile/Profile.h"
 
 Scene* GameScene::createScene(const std::string& jsonFilePath) {
   GameScene* scene = new (std::nothrow) GameScene();
@@ -60,6 +63,17 @@ bool GameScene::init(const std::string& jsonFilePath) {
   // 设置 UI 按钮回调
   _uiLayer->setOnShopClickCallback([this]() { this->openShop(); });
 
+  _uiLayer->setOnClansClickCallback([this]() {
+    if (this->getChildByName("ClansLayerUI")) {
+      return;
+    }
+    auto clansLayer = ClansLayer::create();
+    if (clansLayer) {
+      clansLayer->setName("ClansLayerUI");
+      this->addChild(clansLayer, 200);
+    }
+  });
+
   _uiLayer->setOnAttackClickCallback([this]() {
     if (this->getChildByName("AttackLayerUI")) {
       return;
@@ -67,14 +81,6 @@ bool GameScene::init(const std::string& jsonFilePath) {
     auto attackLayer = AttackLayer::create();
     if (attackLayer) {
       attackLayer->setName("AttackLayerUI");
-      attackLayer->setOnSearchOpponentCallback([]() {
-        CCLOG("Search Opponent Clicked!");
-        // TODO: Implement search logic
-      });
-      attackLayer->setOnLevelSelectedCallback([](int levelId) {
-        CCLOG("Level %d Selected!", levelId);
-        // TODO: Implement level loading
-      });
       this->addChild(attackLayer, 200);
     }
   });
@@ -95,6 +101,15 @@ bool GameScene::init(const std::string& jsonFilePath) {
     }
   });
 
+  _uiLayer->setOnExitClickCallback([]() {
+    Profile* profile = Profile::getInstance();
+    profile->setIsLogin(false);
+    profile->setClansId(-1);
+    auto director = Director::getInstance();
+    auto startScene = AuthScene::createScene();
+    director->replaceScene(startScene);
+  });
+
   _uiLayer->setOnMapEditClickCallback([this]() { this->enterMapEditMode(); });
 
   // 初始化 GameScene 特有的放置模式相关变量
@@ -104,6 +119,7 @@ bool GameScene::init(const std::string& jsonFilePath) {
   _isPlacingBuilding = false;
   _placementBuilding = nullptr;
   _placementHintLabel = nullptr;
+  _userInfoLabel = nullptr;
   _isPlacementMouseDown = false;
   _placementDraggingMap = false;
   _placementMouseDownPos = Vec2::ZERO;
@@ -125,6 +141,22 @@ bool GameScene::init(const std::string& jsonFilePath) {
     _placementHintLabel->setPosition(
         Vec2(origin.x + visibleSize.width / 2.0f, origin.y + 250.0f));
     this->addChild(_placementHintLabel, 150);
+  }
+
+  // 创建用户信息标签（左上角显示id和用户名）
+  auto profile = Profile::getInstance();
+  if (profile) {
+    std::string userInfo =
+        "ID: " + std::to_string(profile->getId()) + "  " + profile->getName();
+    _userInfoLabel = Label::createWithSystemFont(userInfo, "Arial", 18);
+    if (_userInfoLabel) {
+      _userInfoLabel->setColor(Color3B::WHITE);
+      // 设置在左上角，留出一些边距
+      _userInfoLabel->setAnchorPoint(Vec2(0, 1));  // 左上角对齐
+      _userInfoLabel->setPosition(
+          Vec2(origin.x + 20, origin.y + visibleSize.height - 20));
+      this->addChild(_userInfoLabel, 150);
+    }
   }
 
   // 创建建筑菜单层 (ZOrder 150, above map but below popups)
@@ -437,7 +469,8 @@ void GameScene::openShop() {
 bool GameScene::isPopupOpen() const {
   return this->getChildByName("ShopLayerUI") != nullptr ||
          this->getChildByName("AttackLayerUI") != nullptr ||
-         this->getChildByName("ReplayLayerUI") != nullptr;
+         this->getChildByName("ReplayLayerUI") != nullptr ||
+         this->getChildByName("ClansLayerUI") != nullptr;
 }
 
 std::vector<ShopItem> GameScene::buildShopCatalog() const {

@@ -79,6 +79,7 @@ bool AttackScene::init(const std::string& jsonFilePath) {
   _troopIconBgs.clear();
   _spellIconBgs.clear();
   _isAttackStarted = false;
+  _isEnd = false;
   _countdownSeconds = ATTACK_DURATION;
   _startAttackButton = nullptr;
   _endAttackButton = nullptr;
@@ -239,6 +240,7 @@ void AttackScene::createTroopIcons() {
     touchListener->setSwallowTouches(true);
     touchListener->onTouchBegan = [this, item, iconBg](Touch* touch,
                                                        Event* event) {
+      if (this->_isEnd) return false;
       Vec2 touchPos = touch->getLocation();
       // 使用getBoundingBox()直接检查（世界坐标）
       Rect rect = iconBg->getBoundingBox();
@@ -359,6 +361,7 @@ void AttackScene::createSpellIcons() {
     touchListener->setSwallowTouches(true);
     touchListener->onTouchBegan = [this, item, iconBg](Touch* touch,
                                                        Event* event) {
+      if (this->_isEnd) return false;
       Vec2 touchPos = touch->getLocation();
       // 使用getBoundingBox()直接检查（世界坐标）
       Rect rect = iconBg->getBoundingBox();
@@ -403,6 +406,7 @@ void AttackScene::createSpellIcons() {
 }
 
 void AttackScene::enterTroopPlacementMode(const TroopItem& item) {
+  if (_isEnd) return;
   _isPlacingTroop = true;
   _currentTroopItem = item;
 
@@ -428,6 +432,7 @@ void AttackScene::enterTroopPlacementMode(const TroopItem& item) {
 }
 
 void AttackScene::enterSpellPlacementMode(const SpellItem& item) {
+  if (_isEnd) return;
   _isPlacingSpell = true;
   _currentSpellItem = item;
 
@@ -476,6 +481,7 @@ void AttackScene::cancelPlacementMode() {
 }
 
 void AttackScene::placeSoldier(const Vec2& worldPos, const TroopItem& item) {
+  if (_isEnd) return;
   // 转换士兵类型字符串为枚举
   SoldierType soldierType = SoldierType::BARBARIAN;
   if (item.soldierType == "barbarian") {
@@ -554,6 +560,7 @@ void AttackScene::placeSoldier(const Vec2& worldPos, const TroopItem& item) {
 }
 
 void AttackScene::castSpell(const Vec2& worldPos, const SpellItem& item) {
+  if (_isEnd) return;
   // 转换法术类型字符串为枚举
   SpellType spellType = SpellType::HEAL;
   if (item.spellType == "Heal") {
@@ -926,8 +933,10 @@ void AttackScene::createAttackButtons() {
     _startAttackButton->setTitleColor(Color3B::WHITE);
     _startAttackButton->setContentSize(Size(buttonWidth, buttonHeight));
     _startAttackButton->setPosition(buttonPos);
-    _startAttackButton->addClickEventListener(
-        [this](Ref* sender) { this->startAttack(); });
+    _startAttackButton->addClickEventListener([this](Ref* sender) {
+      if (_isEnd) return;
+      this->startAttack();
+    });
     this->addChild(_startAttackButton, 200);
   }
 
@@ -1034,7 +1043,10 @@ void AttackScene::endAttack() {
   if (!_isAttackStarted) {
     return;
   }
-
+  if (_isClansWar) {
+    _buildingManager->updateClansWar(_clans_id, _map_id);
+  }
+  _isEnd = true;
   // 停止倒计时
   this->unschedule("updateCountdown");
 
@@ -1113,7 +1125,7 @@ void AttackScene::endAttack() {
   if (_countdownLabel) {
     _countdownLabel->setString(formatTime(ATTACK_DURATION));
   }
-
+  showResult();
   CCLOG("Attack ended, records saved");
 }
 
@@ -1316,6 +1328,15 @@ void AttackScene::updateRecordSummary(const std::string& recordName,
   timeValue.SetString(timeStr.c_str(), allocator);
   recordObj.AddMember("time", timeValue, allocator);
 
+  // win(bool): 是否获胜
+  recordObj.AddMember("win", _buildingManager->getWin(), allocator);
+
+  // stars(int): 取得星星数
+  recordObj.AddMember("stars", _buildingManager->getStars(), allocator);
+
+  // ratio(float): 摧毁比例
+  recordObj.AddMember("ratio", _buildingManager->getRatio(), allocator);
+
   // 将新记录添加到数组中
   recordsArray->PushBack(recordObj, allocator);
 
@@ -1366,4 +1387,34 @@ void AttackScene::exitScene() {
   // 如果获取失败，则直接退出
   auto director = Director::getInstance();
   director->end();
+}
+
+void AttackScene::showResult() {
+  int stars = 0;
+  float ratio = 0.0f;
+  bool win = false;
+  if (!_buildingManager->getBuildingResult(stars, ratio, win)) {
+    return;
+  }
+
+  std::string text =
+      "Attack Result:" + (win ? std::string("Victory!") : std::string("Lose")) +
+      "\n"
+      "Stars: " +
+      std::to_string(stars) +
+      "\n"
+      "Destroy: " +
+      std::to_string((int)(ratio * 100)) + "%";
+
+  auto label = Label::createWithSystemFont(text, "Arial", 28);
+
+  label->setPosition(Director::getInstance()->getVisibleSize() / 2);
+  this->addChild(label, 100);
+}
+
+void AttackScene::setClansWarInfo(const std::string& clans_id,
+                                  const std::string& map_id) {
+  _clans_id = clans_id;
+  _map_id = map_id;
+  _isClansWar = true;
 }

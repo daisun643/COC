@@ -20,6 +20,7 @@
 #include "Game/Building/TrapBuilding.h"
 #include "Manager/Config/ConfigManager.h"
 #include "Manager/PlayerManager.h"
+#include "Utils/API/Clans/ClansWar.h"
 #include "Utils/PathUtils.h"
 #include "json/document.h"
 #include "json/stringbuffer.h"
@@ -545,4 +546,117 @@ void BuildingManager::removeBuilding(Building* building) {
     updatePlayerResourcesStats();
     saveBuildingMap();
   }
+}
+
+bool BuildingManager::getBuildingResult(int& stars, float& ratio, bool& win) {
+  stars = 0;
+  ratio = 0.0f;
+  win = false;
+
+  int totalCount = 0;
+  int destroyedCount = 0;
+  bool townHallDestroyed = false;
+
+  for (auto building : _buildings) {
+    if (!building) continue;
+    if (dynamic_cast<Wall*>(building)) continue;
+
+    totalCount++;
+
+    if (building->getCurrentHP() <= 0) {
+      destroyedCount++;
+
+      if (dynamic_cast<TownHall*>(building)) {
+        townHallDestroyed = true;
+      }
+    }
+  }
+
+  if (totalCount == 0) {
+    return false;
+  }
+
+  ratio = static_cast<float>(destroyedCount) / totalCount;
+
+  // 星级判定
+  if (ratio >= 1.0f) {
+    stars = 3;
+  } else if (ratio >= 0.5f) {
+    stars = townHallDestroyed ? 2 : 1;
+  } else {
+    stars = townHallDestroyed ? 1 : 0;
+  }
+
+  win = (stars >= 1);
+
+  // 同步成员变量
+  _ratio = ratio;
+  _stars = stars;
+  _win = win;
+
+  return true;
+}
+
+void BuildingManager::updateClansWar(const std::string& clans_id,
+                                     const std::string& map_id) {
+  // 构造当前地图的 JSON 字符串（与 saveBuildingMap 类似，但不写入文件）
+  rapidjson::Document doc;
+  doc.SetObject();
+  rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+
+  // 将建筑按名称分组
+  std::map<std::string, rapidjson::Value> buildingMap;
+
+  for (auto building : _buildings) {
+    if (!building || building->getCurrentHP() < 0.1f) continue;
+
+    std::string name = building->getBuildingName();
+    if (buildingMap.find(name) == buildingMap.end()) {
+      rapidjson::Value arr(rapidjson::kArrayType);
+      buildingMap[name] = arr;
+    }
+
+    rapidjson::Value obj(rapidjson::kObjectType);
+    obj.AddMember("row", building->getRow(), allocator);
+    obj.AddMember("col", building->getCol(), allocator);
+    obj.AddMember("level", building->getLevel(), allocator);
+    obj.AddMember("HP", building->getCurrentHP(), allocator);
+
+    // 保存资源建筑的状态
+    auto resBuilding = dynamic_cast<ResourceBuilding*>(building);
+    if (resBuilding) {
+      obj.AddMember("storedResource", resBuilding->getStoredResource(),
+                    allocator);
+      obj.AddMember("lastTimestamp", ResourceBuilding::getCurrentTimestamp(),
+                    allocator);
+    }
+
+    buildingMap[name].PushBack(obj, allocator);
+  }
+
+  for (auto& pair : buildingMap) {
+    rapidjson::Value k(pair.first.c_str(), allocator);
+    doc.AddMember(k, pair.second, allocator);
+  }
+  int stars;
+  float ratio;
+  bool win;
+  getBuildingResult(stars, ratio, win);
+  doc.AddMember("stars", stars, allocator);
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  doc.Accept(writer);
+  std::string jsonString = buffer.GetString();
+
+  // 使用 ClansWar API 上传/保存地图数据
+  ClansWar::saveWarMap(
+      clans_id, map_id, jsonString,
+      [clans_id, map_id](bool success, const std::string& message) {
+        if (success) {
+          CCLOG("ClansWar: saveWarMap succeeded for %s %s", clans_id.c_str(),
+                map_id.c_str());
+        } else {
+          CCLOG("ClansWar: saveWarMap failed: %s", message.c_str());
+        }
+      });
 }

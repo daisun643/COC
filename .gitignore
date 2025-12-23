@@ -43,3 +43,10 @@ cocos2d/
 
 .vscode/settings.json
 # Resources/record/
+
+# Python 缓存文件
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python

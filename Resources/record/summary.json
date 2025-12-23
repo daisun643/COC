@@ -1,1 +1,16 @@
-{"records":[{"name":"Level-1","mapPath":"level/1.json","recordPath":"record/Level-1_20251220_211013.json","time":"20251220_211013"},{"name":"Level-1","mapPath":"level/1.json","recordPath":"record/Level-1_20251220_211051.json","time":"20251220_211051"}]}
+{
+    "records": [
+        {
+            "name": "Level-1",
+            "mapPath": "level/1.json",
+            "recordPath": "record/Level-1_20251220_211013.json",
+            "time": "20251220_211013"
+        },
+        {
+            "name": "Level-1",
+            "mapPath": "level/1.json",
+            "recordPath": "record/Level-1_20251220_211051.json",
+            "time": "20251220_211051"
+        }
+    ]
+}

@@ -1,6 +1,7 @@
 #ifndef __ATTACK_LAYER_H__
 #define __ATTACK_LAYER_H__
 
+#include <chrono>
 #include <functional>
 
 #include "cocos2d.h"
@@ -11,9 +12,6 @@ class AttackLayer : public cocos2d::LayerColor {
   static AttackLayer* create();
   virtual bool init();
 
-  // 设置回调
-  void setOnSearchOpponentCallback(std::function<void()> callback);
-  void setOnLevelSelectedCallback(std::function<void(int levelId)> callback);
 
  private:
   void buildUI();
@@ -29,9 +27,14 @@ class AttackLayer : public cocos2d::LayerColor {
   cocos2d::ui::Layout* _contentArea;
   cocos2d::ui::ScrollView* _scrollView;
 
-  // Callbacks
-  std::function<void()> _onSearchOpponent;
-  std::function<void(int)> _onLevelSelected;
+  bool searchOpponent();
+  void updateSearchStatus(float dt);  // 更新搜索状态显示
+
+  // 搜索相关 UI
+  cocos2d::Label* _searchStatusLabel;  // 搜索状态标签
+  cocos2d::Label* _searchTimeLabel;    // 搜索时间标签
+  bool _isSearching;                   // 是否正在搜索
+  std::chrono::steady_clock::time_point _searchStartTime;  // 搜索开始时间
 
   // Helper to create a level item
   cocos2d::ui::Widget* createLevelItem(int levelId, const std::string& name,

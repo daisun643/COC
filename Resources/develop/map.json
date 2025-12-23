@@ -1,1 +1,54 @@
-{"Bomb":[{"row":29.0,"col":25.0,"level":1,"HP":1000.0}],"ElixirBottle":[{"row":26.0,"col":22.0,"level":1,"HP":800.0}],"ElixirPump":[{"row":22.0,"col":26.0,"level":1,"HP":300.0,"storedResource":12.361968994140625,"lastTimestamp":1766236295}],"GoldMine":[{"row":22.0,"col":18.0,"level":1,"HP":300.0,"storedResource":12.361968994140625,"lastTimestamp":1766236295}],"GoldStorage":[{"row":18.0,"col":22.0,"level":1,"HP":800.0}],"TownHall":[{"row":22.0,"col":22.0,"level":1,"HP":1500.0}]}
+{
+    "Bomb": [
+        {
+            "row": 29.0,
+            "col": 25.0,
+            "level": 1,
+            "HP": 1000.0
+        }
+    ],
+    "ElixirBottle": [
+        {
+            "row": 26.0,
+            "col": 22.0,
+            "level": 1,
+            "HP": 800.0
+        }
+    ],
+    "ElixirPump": [
+        {
+            "row": 22.0,
+            "col": 26.0,
+            "level": 1,
+            "HP": 300.0,
+            "storedResource": 12.361968994140625,
+            "lastTimestamp": 1766236295
+        }
+    ],
+    "GoldMine": [
+        {
+            "row": 22.0,
+            "col": 18.0,
+            "level": 1,
+            "HP": 300.0,
+            "storedResource": 12.361968994140625,
+            "lastTimestamp": 1766236295
+        }
+    ],
+    "GoldStorage": [
+        {
+            "row": 18.0,
+            "col": 22.0,
+            "level": 1,
+            "HP": 800.0
+        }
+    ],
+    "TownHall": [
+        {
+            "row": 22.0,
+            "col": 22.0,
+            "level": 1,
+            "HP": 1500.0
+        }
+    ]
+}
