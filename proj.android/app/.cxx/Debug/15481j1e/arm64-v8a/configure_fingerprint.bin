@@ -1,120 +1,0 @@
-C/C++ Structured Log
-
-D:\COC\CMakeLists.txtC
-A
-?com.android.build.gradle.internal.cxx.io.EncodedFileFingerPrint	¦Â»Û´3½[ ù©ôÙ´3V
-T
-RD:\COC\proj.android\app\.cxx\Debug\15481j1e\arm64-v8a\additional_project_files.txt	¦Â»Û´3û¥ ×¥¹Û´3S
-Q
-OD:\COC\proj.android\app\.cxx\Debug\15481j1e\arm64-v8a\android_gradle_build.json	¦Â»Û´3ð< Ù¥¹Û´3X
-V
-TD:\COC\proj.android\app\.cxx\Debug\15481j1e\arm64-v8a\android_gradle_build_mini.json	¦Â»Û´3±8 ´¦¹Û´3E
-C
-AD:\COC\proj.android\app\.cxx\Debug\15481j1e\arm64-v8a\build.ninja	¦Â»Û´3ÿf “¤¹Û´3I
-G
-ED:\COC\proj.android\app\.cxx\Debug\15481j1e\arm64-v8a\build.ninja.txt	¦Â»Û´3N
-L
-JD:\COC\proj.android\app\.cxx\Debug\15481j1e\arm64-v8a\build_file_index.txt	¦Â»Û´3‘ ¸¦¹Û´3O
-M
-KD:\COC\proj.android\app\.cxx\Debug\15481j1e\arm64-v8a\compile_commands.json	¦Â»Û´3	“œZ ‘¤¹Û´3S
-Q
-OD:\COC\proj.android\app\.cxx\Debug\15481j1e\arm64-v8a\compile_commands.json.bin	¦Â»Û´3
-òª ‘¤¹Û´3Y
-W
-UD:\COC\proj.android\app\.cxx\Debug\15481j1e\arm64-v8a\metadata_generation_command.txt	¦Â»Û´3Ý ¶¦¹Û´3L
-J
-HD:\COC\proj.android\app\.cxx\Debug\15481j1e\arm64-v8a\prefab_config.json	¦Â»Û´3( ¶¦¹Û´3Q
-O
-MD:\COC\proj.android\app\.cxx\Debug\15481j1e\arm64-v8a\symbol_folder_index.txt	¦Â»Û´3L ¶¦¹Û´3:
-8
-6D:\cocos2d-x-4.0\cmake\Modules\CocosBuildHelpers.cmake	¦Â»Û´3²s  ­ï¬ê-6
-4
-2D:\cocos2d-x-4.0\cmake\Modules\CocosBuildSet.cmake	¦Â»Û´3µ  ­ï¬ê-:
-8
-6D:\cocos2d-x-4.0\cmake\Modules\CocosConfigDefine.cmake	¦Â»Û´3­  Œ¸ïæ-:
-8
-6D:\cocos2d-x-4.0\cmake\Modules\CocosConfigDepend.cmake	¦Â»Û´3ï  Œ¸ïæ-,
-*
-(D:\cocos2d-x-4.0\cocos\2d\CMakeLists.txt	¦Â»Û´3ê à›¸ïæ-,
-*
-(D:\cocos2d-x-4.0\cocos\3d\CMakeLists.txt	¦Â»Û´3“	 à›¸ïæ-)
-'
-%D:\cocos2d-x-4.0\cocos\CMakeLists.txt	¦Â»Û´3‡- à›¸ïæ-/
--
-+D:\cocos2d-x-4.0\cocos\audio\CMakeLists.txt	¦Â»Û´3´# à›¸ïæ-.
-,
-*D:\cocos2d-x-4.0\cocos\base\CMakeLists.txt	¦Â»Û´3Ì à›¸ïæ-C
-A
-?D:\cocos2d-x-4.0\cocos\editor-support\cocostudio\CMakeLists.txt	¦Â»Û´3£T à›¸ïæ-.
-,
-*D:\cocos2d-x-4.0\cocos\math\CMakeLists.txt	¦Â»Û´3ˆ àœý¿À-1
-/
--D:\cocos2d-x-4.0\cocos\navmesh\CMakeLists.txt	¦Â»Û´3ì àœý¿À-1
-/
--D:\cocos2d-x-4.0\cocos\network\CMakeLists.txt	¦Â»Û´3õ	 àœý¿À-3
-1
-/D:\cocos2d-x-4.0\cocos\physics3d\CMakeLists.txt	¦Â»Û´3ø àœý¿À-1
-/
--D:\cocos2d-x-4.0\cocos\physics\CMakeLists.txt	¦Â»Û´3¡ àœý¿À-2
-0
-.D:\cocos2d-x-4.0\cocos\platform\CMakeLists.txt	¦Â»Û´3î, à›¸ïæ-2
-0
-.D:\cocos2d-x-4.0\cocos\renderer\CMakeLists.txt	¦Â»Û´3É! à›¸ïæ-,
-*
-(D:\cocos2d-x-4.0\cocos\ui\CMakeLists.txt	¦Â»Û´3’! à›¸ïæ-.
-,
-*D:\cocos2d-x-4.0\extensions\CMakeLists.txt	¦Â»Û´3 ñ  à›¸ïæ-2
-0
-.D:\cocos2d-x-4.0\external\Box2D\CMakeLists.txt	¦Â»Û´3!Þ à¾Ï«3,
-*
-(D:\cocos2d-x-4.0\external\CMakeLists.txt	¦Â»Û´3" . à¾Ï«37
-5
-3D:\cocos2d-x-4.0\external\ConvertUTF\CMakeLists.txt	¦Â»Û´3#² à¾Ï«3I
-G
-ED:\cocos2d-x-4.0\external\android-specific\cpufeatures\CMakeLists.txt	¦Â»Û´3$… à¾Ï«3F
-D
-BD:\cocos2d-x-4.0\external\android-specific\pvmp3dec\CMakeLists.txt	¦Â»Û´3%¼ à¾Ï«3E
-C
-AD:\cocos2d-x-4.0\external\android-specific\tremolo\CMakeLists.txt	¦Â»Û´3&Â à¾Ï«33
-1
-/D:\cocos2d-x-4.0\external\bullet\CMakeLists.txt	¦Â»Û´3'° à¾Ï«35
-3
-1D:\cocos2d-x-4.0\external\chipmunk\CMakeLists.txt	¦Â»Û´3(É È¥¾Ï«34
-2
-0D:\cocos2d-x-4.0\external\clipper\CMakeLists.txt	¦Â»Û´3)– È¥¾Ï«3=
-;
-9D:\cocos2d-x-4.0\external\cmake\CocosExternalConfig.cmake	¦Â»Û´3*¼	 È¥¾Ï«31
-/
--D:\cocos2d-x-4.0\external\curl\CMakeLists.txt	¦Â»Û´3+ó È¥¾Ï«37
-5
-3D:\cocos2d-x-4.0\external\edtaa3func\CMakeLists.txt	¦Â»Û´3,œ È¥¾Ï«36
-4
-2D:\cocos2d-x-4.0\external\freetype2\CMakeLists.txt	¦Â»Û´3-ì °­¾Ï«31
-/
--D:\cocos2d-x-4.0\external\jpeg\CMakeLists.txt	¦Â»Û´3.á °­¾Ï«30
-.
-,D:\cocos2d-x-4.0\external\md5\CMakeLists.txt	¦Â»Û´3/¿ ˜µ¾Ï«34
-2
-0D:\cocos2d-x-4.0\external\openssl\CMakeLists.txt	¦Â»Û´30ç ˜µ¾Ï«30
-.
-,D:\cocos2d-x-4.0\external\png\CMakeLists.txt	¦Â»Û´31à €½¾Ï«35
-3
-1D:\cocos2d-x-4.0\external\poly2tri\CMakeLists.txt	¦Â»Û´32£ €½¾Ï«33
-1
-/D:\cocos2d-x-4.0\external\recast\CMakeLists.txt	¦Â»Û´33Ý €½¾Ï«35
-3
-1D:\cocos2d-x-4.0\external\tinyxml2\CMakeLists.txt	¦Â»Û´34µ €½¾Ï«32
-0
-.D:\cocos2d-x-4.0\external\unzip\CMakeLists.txt	¦Â»Û´35™ €½¾Ï«3/
--
-+D:\cocos2d-x-4.0\external\uv\CMakeLists.txt	¦Â»Û´36Ý €½¾Ï«31
-/
--D:\cocos2d-x-4.0\external\webp\CMakeLists.txt	¦Â»Û´37á €½¾Ï«37
-5
-3D:\cocos2d-x-4.0\external\websockets\CMakeLists.txt	¦Â»Û´38Þ €½¾Ï«33
-1
-/D:\cocos2d-x-4.0\external\xxhash\CMakeLists.txt	¦Â»Û´39’ €½¾Ï«32
-0
-.D:\cocos2d-x-4.0\external\xxtea\CMakeLists.txt	¦Â»Û´3:’ €½¾Ï«31
-/
--D:\cocos2d-x-4.0\external\zlib\CMakeLists.txt	¦Â»Û´3;Â èÄ¾Ï«3
