@@ -16,12 +16,14 @@
 #include "Game/Building/ResourceBuilding.h"
 #include "Game/Building/StorageBuilding.h"
 #include "Game/Building/TownHall.h"
-#include "Game/Building/Wall.h"
 #include "Game/Building/TrapBuilding.h"
+#include "Game/Building/Wall.h"
 #include "Manager/Config/ConfigManager.h"
 #include "Manager/PlayerManager.h"
 #include "Utils/API/Clans/ClansWar.h"
+#include "Utils/API/User/User.h"
 #include "Utils/PathUtils.h"
+#include "Utils/Profile/Profile.h"
 #include "json/document.h"
 #include "json/stringbuffer.h"
 #include "json/writer.h"
@@ -273,6 +275,24 @@ void BuildingManager::saveBuildingMap() {
   rapidjson::StringBuffer buffer;
   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
   doc.Accept(writer);
+  std::string jsonString = buffer.GetString();
+  Profile* profile = Profile::getInstance();
+  int id = -1;
+  if (profile) {
+    id = profile->getId();
+  }
+  // 如果有合法用户 id，则调用 UserAPI::saveMap 上传地图到服务器
+  if (id != -1) {
+    UserAPI::saveMap(std::to_string(id), jsonString,
+                     [id](bool success, const std::string& message) {
+                       if (success) {
+                         CCLOG("UserAPI: saveMap succeeded for user %d", id);
+                       } else {
+                         CCLOG("UserAPI: saveMap failed for user %d: %s", id,
+                               message.c_str());
+                       }
+                     });
+  }
 
   // 使用 PathUtils 获取真实写入路径
   std::string path = PathUtils::getRealFilePath(_jsonFilePath, true);
@@ -335,9 +355,9 @@ Building* BuildingManager::createBuilding(const std::string& buildingName,
     building = BarracksBuilding::create(level, buildingName);
   } else if (type == "WALL") {
     building = Wall::create(level, buildingName);
-  } else if (type == "TRAP") { 
+  } else if (type == "TRAP") {
     building = TrapBuilding::create(level, buildingName);
-  }else {
+  } else {
     CCLOG("Unknown building type '%s' for building '%s'", type.c_str(),
           buildingName.c_str());
     return nullptr;
