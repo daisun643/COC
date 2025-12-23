@@ -26,4 +26,4 @@ def hello():
 
 if __name__ == '__main__':
     # 绑定到所有网络接口，确保可以通过局域网 IP 访问
-    app.run(host='127.0.0.1', port=5000)
+    app.run(host='0.0.0.0', port=5000)
