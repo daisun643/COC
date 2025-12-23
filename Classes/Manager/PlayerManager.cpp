@@ -1,15 +1,16 @@
 #include "PlayerManager.h"
 
-#include <direct.h>  // for _getcwd
-
-#include "Utils/PathUtils.h"
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
+#include <direct.h>  // for _getcwd
 #include <io.h>
 #include <windows.h>
+#else
+#include <unistd.h>
 #endif
 
 #include <fstream>  // Added for std::ofstream
 
+#include "Utils/PathUtils.h"
 #include "cocos2d.h"
 #include "json/document.h"
 #include "json/stringbuffer.h"
@@ -102,16 +103,16 @@ void PlayerManager::setAutoSaveCallback(const std::function<void()>& callback) {
 }
 
 void PlayerManager::addGems(int amount) {
-    _gems += amount;
-    // saveUserData(); // 建议保存
+  _gems += amount;
+  // saveUserData(); // 建议保存
 }
 bool PlayerManager::consumeGems(int amount) {
-    if (_gems >= amount) {
-        _gems -= amount;
-        // saveUserData(); // 建议保存
-        return true;
-    }
-    return false;
+  if (_gems >= amount) {
+    _gems -= amount;
+    // saveUserData(); // 建议保存
+    return true;
+  }
+  return false;
 }
 
 void PlayerManager::setGold(int amount) {

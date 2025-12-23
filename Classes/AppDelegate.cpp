@@ -41,14 +41,21 @@ bool AppDelegate::applicationDidFinishLaunching() {
   auto director = Director::getInstance();
   auto glview = director->getOpenGLView();
   if (!glview) {
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) || \
-    (CC_TARGET_PLATFORM == CC_PLATFORM_MAC) ||   \
-    (CC_TARGET_PLATFORM == CC_PLATFORM_LINUX)
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
     glview = GLViewImpl::createWithRect(
         "COC", cocos2d::Rect(0, 0, designResolutionSize.width,
                              designResolutionSize.height));
     if (!glview) {
       MessageBoxA(nullptr, "Failed to create OpenGL view!", "Error", MB_OK);
+      return false;
+    }
+#elif (CC_TARGET_PLATFORM == CC_PLATFORM_MAC) || \
+    (CC_TARGET_PLATFORM == CC_PLATFORM_LINUX)
+    glview = GLViewImpl::createWithRect(
+        "COC", cocos2d::Rect(0, 0, designResolutionSize.width,
+                             designResolutionSize.height));
+    if (!glview) {
+      CCLOG("Failed to create OpenGL view!");
       return false;
     }
 #else

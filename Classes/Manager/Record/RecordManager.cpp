@@ -7,7 +7,9 @@
 #include "Utils/PathUtils.h"
 
 #ifdef _WIN32
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
 #include <direct.h>
+#endif
 #include <io.h>
 #else
 #include <sys/stat.h>

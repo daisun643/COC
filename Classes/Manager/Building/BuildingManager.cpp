@@ -1,7 +1,7 @@
 #include "BuildingManager.h"
 
-#include <io.h>  // for _access
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
+#include <io.h>  // for _access
 #include <windows.h>
 #endif
 
@@ -16,8 +16,8 @@
 #include "Game/Building/ResourceBuilding.h"
 #include "Game/Building/StorageBuilding.h"
 #include "Game/Building/TownHall.h"
-#include "Game/Building/Wall.h"
 #include "Game/Building/TrapBuilding.h"
+#include "Game/Building/Wall.h"
 #include "Manager/Config/ConfigManager.h"
 #include "Manager/PlayerManager.h"
 #include "Utils/API/Clans/ClansWar.h"
@@ -258,7 +258,8 @@ void BuildingManager::saveBuildingMap() {
       obj.AddMember("storedResource", resBuilding->getStoredResource(),
                     allocator);
       // 保存当前时间戳
-      obj.AddMember("lastTimestamp", ResourceBuilding::getCurrentTimestamp(),
+      obj.AddMember("lastTimestamp",
+                    (int64_t)ResourceBuilding::getCurrentTimestamp(),
                     allocator);
     }
 
@@ -335,9 +336,9 @@ Building* BuildingManager::createBuilding(const std::string& buildingName,
     building = BarracksBuilding::create(level, buildingName);
   } else if (type == "WALL") {
     building = Wall::create(level, buildingName);
-  } else if (type == "TRAP") { 
+  } else if (type == "TRAP") {
     building = TrapBuilding::create(level, buildingName);
-  }else {
+  } else {
     CCLOG("Unknown building type '%s' for building '%s'", type.c_str(),
           buildingName.c_str());
     return nullptr;
@@ -627,7 +628,8 @@ void BuildingManager::updateClansWar(const std::string& clans_id,
     if (resBuilding) {
       obj.AddMember("storedResource", resBuilding->getStoredResource(),
                     allocator);
-      obj.AddMember("lastTimestamp", ResourceBuilding::getCurrentTimestamp(),
+      obj.AddMember("lastTimestamp",
+                    (int64_t)ResourceBuilding::getCurrentTimestamp(),
                     allocator);
     }
 

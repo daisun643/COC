@@ -10,8 +10,10 @@
 #include "Utils/PathUtils.h"
 
 #ifdef _WIN32
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
 #include <direct.h>
 #include <io.h>
+#endif
 #else
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -89,16 +91,16 @@ bool AttackScene::init(const std::string& jsonFilePath) {
 
   // 初始化时将所有陷阱设为不可见（隐形）
   if (_buildingManager) {
-      const auto& allBuildings = _buildingManager->getAllBuildings();
-      for (Building* building : allBuildings) {
-          if (building && building->getBuildingType() == BuildingType::TRAP) {
-              TrapBuilding* trap = dynamic_cast<TrapBuilding*>(building);
-              if (trap) {
-                  trap->hide(); // 隐藏陷阱
-                  CCLOG("Trap hidden at init: %s", trap->getBuildingName().c_str());
-              }
-          }
+    const auto& allBuildings = _buildingManager->getAllBuildings();
+    for (Building* building : allBuildings) {
+      if (building && building->getBuildingType() == BuildingType::TRAP) {
+        TrapBuilding* trap = dynamic_cast<TrapBuilding*>(building);
+        if (trap) {
+          trap->hide();  // 隐藏陷阱
+          CCLOG("Trap hidden at init: %s", trap->getBuildingName().c_str());
+        }
       }
+    }
   }
 
   // 创建并初始化 TroopManager
@@ -492,7 +494,7 @@ void AttackScene::placeSoldier(const Vec2& worldPos, const TroopItem& item) {
     soldierType = SoldierType::GIANT;
   } else if (item.soldierType == "bomber") {
     soldierType = SoldierType::BOMBER;
-  } else if (item.soldierType == "dragon") { 
+  } else if (item.soldierType == "dragon") {
     soldierType = SoldierType::DRAGON;
   }
 
@@ -1034,7 +1036,8 @@ void AttackScene::startAttack() {
                  "updateDefenseBuildings");
 
   // 启动陷阱检测更新 (每 0.1 秒检查一次)
-  this->schedule([this](float dt) { this->updateTraps(dt); }, 0.1f, "updateTraps");
+  this->schedule([this](float dt) { this->updateTraps(dt); }, 0.1f,
+                 "updateTraps");
 
   CCLOG("Attack started, countdown: %d seconds", _countdownSeconds);
 }
@@ -1211,24 +1214,25 @@ void AttackScene::updateDefenseBuildings(float delta) {
 
 // 陷阱检测更新函数
 void AttackScene::updateTraps(float delta) {
-    if (!_isAttackStarted || !_buildingManager || _placedSoldiers.empty()) {
-        return;
-    }
+  if (!_isAttackStarted || !_buildingManager || _placedSoldiers.empty()) {
+    return;
+  }
 
-    const auto& allBuildings = _buildingManager->getAllBuildings();
-    
-    // 遍历所有建筑
-    for (Building* building : allBuildings) {
-        // 筛选出存活的陷阱建筑
-        if (building && building->getBuildingType() == BuildingType::TRAP && building->isAlive()) {
-            TrapBuilding* trap = dynamic_cast<TrapBuilding*>(building);
-            // 只有处于布防状态（未爆炸）的陷阱才需要检查
-            if (trap && trap->getIsArmed()) {
-                // 如果检测到触发，trap 内部会处理伤害、显形和特效
-                trap->checkTrigger(_placedSoldiers);
-            }
-        }
+  const auto& allBuildings = _buildingManager->getAllBuildings();
+
+  // 遍历所有建筑
+  for (Building* building : allBuildings) {
+    // 筛选出存活的陷阱建筑
+    if (building && building->getBuildingType() == BuildingType::TRAP &&
+        building->isAlive()) {
+      TrapBuilding* trap = dynamic_cast<TrapBuilding*>(building);
+      // 只有处于布防状态（未爆炸）的陷阱才需要检查
+      if (trap && trap->getIsArmed()) {
+        // 如果检测到触发，trap 内部会处理伤害、显形和特效
+        trap->checkTrigger(_placedSoldiers);
+      }
     }
+  }
 }
 
 AttackScene::~AttackScene() {

@@ -245,14 +245,12 @@ void AttackLayer::showMultiplayerTab() {
   _contentArea->addChild(label);
 
   auto searchBtn =
-      Button::create("images/ui/Attack.png");  // Reuse Attack icon or Bar
+      Button::create("images/ui/attack.png");  // Reuse Attack icon or Bar
   searchBtn->setScale(0.8f);
   searchBtn->setPosition(
       Vec2(_contentArea->getContentSize().width / 2.0f,
            _contentArea->getContentSize().height / 2.0f - 50.0f));
-  searchBtn->addClickEventListener([this](Ref*) {
-    this->searchOpponent();
-  });
+  searchBtn->addClickEventListener([this](Ref*) { this->searchOpponent(); });
   _contentArea->addChild(searchBtn);
 
   auto btnLabel = createLabel("搜索对手", 24);
@@ -320,62 +318,62 @@ bool AttackLayer::searchOpponent() {
                  "updateSearchStatus");
 
   // 调用 API 搜索对手
-  Battle::searchOpponent(
-      userId,
-      [this](bool success, const std::string& message, int opponentId,
-             const std::string& opponentName, const std::string& mapJsonData) {
-        // 停止搜索状态更新
-        this->unschedule("updateSearchStatus");
-        _isSearching = false;
+  Battle::searchOpponent(userId, [this](bool success,
+                                        const std::string& message,
+                                        int opponentId,
+                                        const std::string& opponentName,
+                                        const std::string& mapJsonData) {
+    // 停止搜索状态更新
+    this->unschedule("updateSearchStatus");
+    _isSearching = false;
 
-        // 隐藏搜索状态标签
-        if (_searchStatusLabel) {
-          _searchStatusLabel->setVisible(false);
-        }
-        if (_searchTimeLabel) {
-          _searchTimeLabel->setVisible(false);
-        }
+    // 隐藏搜索状态标签
+    if (_searchStatusLabel) {
+      _searchStatusLabel->setVisible(false);
+    }
+    if (_searchTimeLabel) {
+      _searchTimeLabel->setVisible(false);
+    }
 
-        if (success) {
-          CCLOG("Found opponent: %s (ID: %d)", opponentName.c_str(),
-                opponentId);
+    if (success) {
+      CCLOG("Found opponent: %s (ID: %d)", opponentName.c_str(), opponentId);
 
-          // 使用 mapJsonData 创建 AttackScene
-          std::string tmpPath = "level/_tmp.json";
-          // 使用 PathUtils 获取真实路径（forWrite=true 表示用于写入）
-          std::string fullPath = PathUtils::getRealFilePath(tmpPath, false);
-        
-          // 确保目录存在
-          if (!PathUtils::ensureDirectoryExists(fullPath)) {
-            CCLOG("Failed to create directory for temp map file: %s",
-                  fullPath.c_str());
-            return;
-          }
+      // 使用 mapJsonData 创建 AttackScene
+      std::string tmpPath = "level/_tmp.json";
+      // 使用 PathUtils 获取真实路径（forWrite=true 表示用于写入）
+      std::string fullPath = PathUtils::getRealFilePath(tmpPath, false);
 
-          // 将 mapJsonData 写入到 fullPath 文件
-          auto fileUtils = FileUtils::getInstance();
-          if (!fileUtils->writeStringToFile(mapJsonData, fullPath)) {
-            CCLOG("Failed to write map data to file: %s", fullPath.c_str());
-            return;
-          }
+      // 确保目录存在
+      if (!PathUtils::ensureDirectoryExists(fullPath)) {
+        CCLOG("Failed to create directory for temp map file: %s",
+              fullPath.c_str());
+        return;
+      }
 
-          CCLOG("Map data written to: %s", fullPath.c_str());
+      // 将 mapJsonData 写入到 fullPath 文件
+      auto fileUtils = FileUtils::getInstance();
+      if (!fileUtils->writeStringToFile(mapJsonData, fullPath)) {
+        CCLOG("Failed to write map data to file: %s", fullPath.c_str());
+        return;
+      }
 
-          // 使用文件路径创建 AttackScene（使用 opponentName 作为 levelName）
-          auto attackScene = AttackScene::createScene(tmpPath, opponentName);
-          if (attackScene) {
-            auto director = Director::getInstance();
-            director->replaceScene(attackScene);
-          } else {
-            CCLOG("Failed to create AttackScene from file: %s", fullPath.c_str());
-          }
-          // 删除临时文件
-          // fileUtils->removeFile(fullPath);
-        } else {
-          CCLOG("Search opponent failed: %s", message.c_str());
-          // 可以在这里显示错误提示
-        }
-      });
+      CCLOG("Map data written to: %s", fullPath.c_str());
+
+      // 使用文件路径创建 AttackScene（使用 opponentName 作为 levelName）
+      auto attackScene = AttackScene::createScene(tmpPath, opponentName);
+      if (attackScene) {
+        auto director = Director::getInstance();
+        director->replaceScene(attackScene);
+      } else {
+        CCLOG("Failed to create AttackScene from file: %s", fullPath.c_str());
+      }
+      // 删除临时文件
+      // fileUtils->removeFile(fullPath);
+    } else {
+      CCLOG("Search opponent failed: %s", message.c_str());
+      // 可以在这里显示错误提示
+    }
+  });
 
   return true;
 }

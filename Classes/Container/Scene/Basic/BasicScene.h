@@ -30,6 +30,13 @@ class BasicScene : public Scene {
   Building* _draggingBuilding;  // 正在拖动的建筑
   Vec2 _buildingStartPos;       // 建筑开始拖动时的位置
 
+  // 触摸事件相关变量
+  bool _isTouchDragging;        // 是否正在触摸拖动地图
+  Vec2 _lastTouchPos;           // 上次触摸位置
+  float _initialPinchDistance;  // 双指缩放初始距离
+  float _pinchStartScale;       // 双指缩放开始时的缩放比例
+  bool _isPinching;             // 是否正在双指缩放
+
   // 地图参数（从initGrassBackground中提取）
   Vec2 _p00;      // 地图原点p[0][0]
   float _deltaX;  // X方向间距
@@ -51,6 +58,11 @@ class BasicScene : public Scene {
    * 初始化鼠标事件监听器（滚轮缩放和拖拽移动）
    */
   void initMouseEventListeners();
+
+  /**
+   * 初始化触摸事件监听器（移动设备支持）
+   */
+  void initTouchEventListeners();
 
   /**
    * 处理鼠标滚轮事件

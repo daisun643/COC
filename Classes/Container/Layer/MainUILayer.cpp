@@ -65,14 +65,14 @@ bool MainUILayer::init() {
 
   // 商店按钮 (右下角)
   _shopButton = createButton(
-      "images/ui/Shop.png", 0.3f,
+      "images/ui/shop.png", 0.3f,
       Vec2(origin.x + visibleSize.width - 80, origin.y + 80), "商店",
       Vec2(origin.x + visibleSize.width - 80, origin.y + 30), [this]() {
         if (_onShopClick) _onShopClick();
       });
 
   // 进攻按钮 (左下角)
-  _attackButton = createButton("images/ui/Attack.png", 0.8f,
+  _attackButton = createButton("images/ui/attack.png", 0.8f,
                                Vec2(origin.x + 80, origin.y + 80), "进攻",
                                Vec2(origin.x + 80, origin.y + 30), [this]() {
                                  if (_onAttackClick) _onAttackClick();

@@ -1,10 +1,16 @@
 #include "Container/Scene/Authentication/AuthScene.h"
 
+#include <string>
+
 #include "Container/Layer/Authentication/LoginLayer.h"
 #include "Container/Layer/Authentication/RegisterLayer.h"
 #include "Container/Scene/GameScene.h"
+#include "cocos2d.h"
+
+// Windows.h 只在 Windows 平台使用
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
 #include <Windows.h>
-#include <string>
+#endif
 
 USING_NS_CC;
 
@@ -56,10 +62,13 @@ void AuthScene::showRegisterLayer() {
     CCLOG("AuthScene: 注册成功，用户ID=%d，返回登录", user_id);
     auto msg = StringUtils::format("注册成功，用户ID=%d，返回登录", user_id);
 
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
     auto utf8ToWstring = [](const std::string& s) -> std::wstring {
       if (s.empty()) return std::wstring();
-      int size = ::MultiByteToWideChar(CP_UTF8, 0, s.c_str(), (int)s.size(), NULL, 0);
-      std::wstring w; w.resize(size);
+      int size =
+          ::MultiByteToWideChar(CP_UTF8, 0, s.c_str(), (int)s.size(), NULL, 0);
+      std::wstring w;
+      w.resize(size);
       ::MultiByteToWideChar(CP_UTF8, 0, s.c_str(), (int)s.size(), &w[0], size);
       return w;
     };
@@ -67,6 +76,10 @@ void AuthScene::showRegisterLayer() {
     std::wstring wmsg = utf8ToWstring(msg);
     std::wstring wcap = utf8ToWstring("注册成功");
     MessageBoxW(NULL, wmsg.c_str(), wcap.c_str(), MB_OK);
+#else
+    // 在非 Windows 平台使用 Cocos2d-x 的 MessageBox（接受 UTF-8）
+    ccMessageBox(msg.c_str(), "注册成功");
+#endif
 
     this->showLoginLayer();
   });

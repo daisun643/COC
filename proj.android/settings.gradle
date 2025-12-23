@@ -1,0 +1,8 @@
+include ':libcocos2dx'
+def cocosRoot = System.getenv("COCOS2DX_ROOT")
+if (cocosRoot == null || cocosRoot.isEmpty()) {
+    throw new GradleException("环境变量 COCOS2DX_ROOT 未设置！请设置 Cocos2d-x 引擎路径。")
+}
+project(':libcocos2dx').projectDir = new File(cocosRoot, 'cocos/platform/android/libcocos2dx')
+include ':COC'
+project(':COC').projectDir = new File(settingsDir, 'app')

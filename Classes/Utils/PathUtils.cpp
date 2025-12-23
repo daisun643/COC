@@ -6,6 +6,9 @@
 #include <direct.h>
 #include <io.h>
 #include <windows.h>
+#else
+#include <sys/stat.h>
+#include <unistd.h>
 #endif
 
 USING_NS_CC;
@@ -97,9 +100,15 @@ bool PathUtils::ensureDirectoryExists(const std::string& filePath) {
   std::string dir = path.substr(0, lastSlash);
   if (dir.empty()) return true;
 
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
   if (_access(dir.c_str(), 0) == 0) {
     return true;
   }
+#else
+  if (access(dir.c_str(), F_OK) == 0) {
+    return true;
+  }
+#endif
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
   return (_mkdir(dir.c_str()) == 0);

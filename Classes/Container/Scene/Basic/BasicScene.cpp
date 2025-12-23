@@ -69,8 +69,12 @@ bool BasicScene::init(const std::string& jsonFilePath) {
   titleLabel->setColor(Color3B::WHITE);
   this->addChild(titleLabel, 1);
 
-  // 初始化鼠标事件监听器
+  // 初始化鼠标事件监听器（桌面端）
   initMouseEventListeners();
+
+  // 初始化触摸事件监听器（移动端）
+  initTouchEventListeners();
+
   return true;
 }
 
@@ -196,6 +200,193 @@ void BasicScene::initMouseEventListeners() {
   mouseListener->onMouseUp = [this](Event* event) { this->onMouseUp(event); };
 
   _eventDispatcher->addEventListenerWithSceneGraphPriority(mouseListener, this);
+}
+
+void BasicScene::initTouchEventListeners() {
+  // 初始化触摸相关变量
+  _isTouchDragging = false;
+  _isPinching = false;
+  _initialPinchDistance = 0.0f;
+  _pinchStartScale = 1.0f;
+
+  // 创建多点触摸事件监听器（用于双指缩放和单指拖动）
+  auto touchListener = EventListenerTouchAllAtOnce::create();
+
+  // 触摸开始
+  touchListener->onTouchesBegan = [this](const std::vector<Touch*>& touches,
+                                         Event* event) {
+    if (touches.size() == 1) {
+      // 单指触摸：准备拖动地图或选择建筑
+      Touch* touch = touches[0];
+      Vec2 touchPos = touch->getLocation();
+      _lastTouchPos = touchPos;
+
+      // 转换为地图层坐标系，检查是否点击了建筑
+      Vec2 mapPos = _mapLayer->convertToNodeSpace(touchPos);
+      Building* clickedBuilding = nullptr;
+
+      if (_buildingManager) {
+        clickedBuilding = _buildingManager->getBuildingAtPosition(mapPos);
+      }
+
+      if (clickedBuilding) {
+        // 点击了建筑
+        if (_selectedBuilding && _selectedBuilding != clickedBuilding) {
+          _selectedBuilding->hideGlow();
+        }
+        _selectedBuilding = clickedBuilding;
+        _selectedBuilding->showGlow();
+        _selectedBuilding->_isDragging = false;
+        _buildingStartPos = _selectedBuilding->getPosition();
+        _draggingBuilding = nullptr;
+      } else {
+        // 没有点击建筑，准备拖动地图
+        if (_selectedBuilding) {
+          _selectedBuilding->hideGlow();
+          _selectedBuilding = nullptr;
+        }
+        _isTouchDragging = true;
+      }
+    } else if (touches.size() >= 2) {
+      // 双指触摸：开始缩放
+      _isTouchDragging = false;  // 停止单指拖动
+      _isPinching = true;
+
+      Vec2 pos1 = touches[0]->getLocation();
+      Vec2 pos2 = touches[1]->getLocation();
+      _initialPinchDistance = pos1.distance(pos2);
+      _pinchStartScale = _currentScale;
+    }
+  };
+
+  // 触摸移动
+  touchListener->onTouchesMoved = [this](const std::vector<Touch*>& touches,
+                                         Event* event) {
+    if (_isPinching && touches.size() >= 2) {
+      // 双指缩放
+      Vec2 pos1 = touches[0]->getLocation();
+      Vec2 pos2 = touches[1]->getLocation();
+      float currentDistance = pos1.distance(pos2);
+
+      if (_initialPinchDistance > 0) {
+        float scale =
+            _pinchStartScale * (currentDistance / _initialPinchDistance);
+
+        // 限制缩放范围
+        const float MIN_SCALE = 0.5f;
+        const float MAX_SCALE = 2.0f;
+        scale = std::max(MIN_SCALE, std::min(MAX_SCALE, scale));
+
+        if (scale != _currentScale) {
+          // 计算双指中心点
+          Vec2 pinchCenter = (pos1 + pos2) / 2.0f;
+          Vec2 mapLayerPos = _mapLayer->getPosition();
+          float oldScale = _currentScale;
+
+          // 计算中心点在地图层本地坐标系中的位置（缩放前）
+          Vec2 centerInMapBefore = (pinchCenter - mapLayerPos) / oldScale;
+
+          // 应用新缩放
+          _currentScale = scale;
+          _mapLayer->setScale(_currentScale);
+
+          // 计算缩放后，中心点应该在地图层中的位置
+          Vec2 centerInMapAfter = centerInMapBefore * _currentScale;
+
+          // 调整地图层位置，使双指中心点保持不动
+          Vec2 newMapLayerPos = pinchCenter - centerInMapAfter;
+          _mapLayer->setPosition(newMapLayerPos);
+        }
+      }
+    } else if (touches.size() == 1) {
+      Touch* touch = touches[0];
+      Vec2 currentPos = touch->getLocation();
+
+      // 检查是否在拖动建筑
+      if (_selectedBuilding && !_draggingBuilding) {
+        float dragThreshold = 10.0f;  // 触摸的拖动阈值稍大
+        float moveDistance = _lastTouchPos.distance(currentPos);
+
+        if (moveDistance > dragThreshold) {
+          _draggingBuilding = _selectedBuilding;
+          _draggingBuilding->_isDragging = true;
+          Vec2 mapPos = _mapLayer->convertToNodeSpace(currentPos);
+          _draggingBuilding->_dragOffset = mapPos - _buildingStartPos;
+        }
+      }
+
+      if (_draggingBuilding) {
+        // 拖动建筑
+        Vec2 mapPos = _mapLayer->convertToNodeSpace(currentPos);
+        Vec2 targetAnchorPos = mapPos - _draggingBuilding->_dragOffset;
+
+        float row, col;
+        Vec2 nearestPos;
+        if (GridUtils::findNearestGrassVertex(targetAnchorPos, _p00, row, col,
+                                              nearestPos)) {
+          if (_draggingBuilding->getGridCount() % 2 != 0) {
+            nearestPos.x += _deltaX;
+          }
+          _draggingBuilding->setPosition(nearestPos);
+          _draggingBuilding->setCenterX(nearestPos.x);
+          _draggingBuilding->setCenterY(nearestPos.y);
+          _draggingBuilding->setRow(row);
+          _draggingBuilding->setCol(col);
+        } else {
+          _draggingBuilding->setPosition(targetAnchorPos);
+          _draggingBuilding->setCenterX(targetAnchorPos.x);
+          _draggingBuilding->setCenterY(targetAnchorPos.y);
+        }
+      } else if (_isTouchDragging) {
+        // 单指拖动地图
+        Vec2 delta = currentPos - _lastTouchPos;
+        Vec2 newPos = _mapLayer->getPosition() + delta;
+        _mapLayer->setPosition(newPos);
+        _lastTouchPos = currentPos;
+      }
+    }
+  };
+
+  // 触摸结束
+  touchListener->onTouchesEnded = [this](const std::vector<Touch*>& touches,
+                                         Event* event) {
+    if (_isPinching) {
+      _isPinching = false;
+      _initialPinchDistance = 0.0f;
+    }
+
+    if (_draggingBuilding) {
+      // 结束拖动建筑
+      if (isPlacementValid(_draggingBuilding)) {
+        _draggingBuilding->_isDragging = false;
+      } else {
+        // 放置无效，返回原位置
+        _draggingBuilding->setPosition(_buildingStartPos);
+        _draggingBuilding->setCenterX(_buildingStartPos.x);
+        _draggingBuilding->setCenterY(_buildingStartPos.y);
+        _draggingBuilding->_isDragging = false;
+      }
+      _draggingBuilding = nullptr;
+    }
+
+    _isTouchDragging = false;
+  };
+
+  // 触摸取消
+  touchListener->onTouchesCancelled = [this](const std::vector<Touch*>& touches,
+                                             Event* event) {
+    _isPinching = false;
+    _isTouchDragging = false;
+    _initialPinchDistance = 0.0f;
+
+    if (_draggingBuilding) {
+      _draggingBuilding->setPosition(_buildingStartPos);
+      _draggingBuilding->_isDragging = false;
+      _draggingBuilding = nullptr;
+    }
+  };
+
+  _eventDispatcher->addEventListenerWithSceneGraphPriority(touchListener, this);
 }
 
 void BasicScene::onMouseScroll(Event* event) {
