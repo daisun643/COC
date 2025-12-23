@@ -72,38 +72,16 @@ build.bat
 
 ### 前置要求
 
-1. **Android SDK** - 建议使用 Android Studio 安装
-2. **Android NDK** - 推荐 r21 或更高版本
-3. **设置环境变量**：
-   - `COCOS2DX_ROOT` - 指向 Cocos2d-x 4.0 引擎目录
-   - `ANDROID_HOME` 或 `ANDROID_SDK_ROOT` - 指向 Android SDK 目录
-   - `ANDROID_NDK_HOME` - 指向 Android NDK 目录
-
-### 配置 local.properties
-
-在 `proj.android` 目录下创建 `local.properties` 文件：
-
-```properties
-sdk.dir=C:\\Users\\YourName\\AppData\\Local\\Android\\Sdk
-```
+1. 安装 Android Studio 。
+2. 找到你的 SDK 路径： 通常在 `C:\Users\你的用户名\AppData\Local\Android\Sdk`。
+3. 配置 `proj.android\local.properties` 文件。
 
 ### 构建 APK
 
-```bash
-cd proj.android
-
-# Debug 版本
-gradlew assembleDebug
-
-# Release 版本
-gradlew assembleRelease
-```
-
-### 安装到设备
-
-```bash
-gradlew installDebug
-```
+1. 删除 `proj.android\app\.cxx` 和 `proj.android\app\build` 。
+2. Android Studio -> 构建 -> Clean Project 。
+3. Android Studio -> 文件 -> Sync Project with Gradle Files 。 
+4. Android Studio -> 构建 -> Generate APP Bundles or APKs -> Generate APKs
 
 生成的 APK 位于：`proj.android/app/build/outputs/apk/`
 

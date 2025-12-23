@@ -50,3 +50,21 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
+
+# ---------------- Android / proj.android ----------------
+# Ignore Android Studio / Gradle build and local property files for proj.android
+proj.android/.gradle/
+proj.android/.idea/
+proj.android/*.iml
+proj.android/captures/
+proj.android/.externalNativeBuild/
+proj.android/app/.cxx/
+proj.android/app/build/
+
+# Ignore generated apk files
+*.apk
+
+# NDK intermediate files
+**/obj/
+**/libs/
+# end proj.android
