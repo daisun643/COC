@@ -17,21 +17,6 @@
             "name": "user3",
             "password": "password",
             "clan_id": "1"
-        },
-        {
-            "id": 4,
-            "name": "wowoo",
-            "password": "1"
-        },
-        {
-            "id": 5,
-            "name": "2222",
-            "password": "3123"
-        },
-        {
-            "id": 6,
-            "name": "qwe",
-            "password": "qweqwe"
         }
     ]
 }
