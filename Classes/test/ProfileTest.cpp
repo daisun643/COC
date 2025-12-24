@@ -1,15 +1,16 @@
-#include "gtest/gtest.h"
+#include <gtest.h>
+
 #include "Utils/Profile/Profile.h"
 
 TEST(ProfileTest, LoadProfile) {
-    Profile profile;
-    bool loaded = profile.load("me.json");
-    EXPECT_TRUE(loaded);
+  Profile profile;
+  bool loaded = profile.load("me.json");
+  EXPECT_TRUE(loaded);
 }
 
 TEST(ProfileTest, SaveProfile) {
-    Profile profile;
-    profile.load("me.json");
-    bool saved = profile.save();
-    EXPECT_TRUE(saved);
+  Profile profile;
+  profile.load("me.json");
+  bool saved = profile.save();
+  EXPECT_TRUE(saved);
 }

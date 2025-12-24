@@ -16,7 +16,7 @@ enum class BuildingType {
   RESOURCE,   // 资源建筑
   STORAGE,    // 储存建筑
   BARRACKS,   // 兵营
-  WALL,        // 城墙
+  WALL,       // 城墙
   TRAP        // 陷阱
 };
 
@@ -117,11 +117,11 @@ class Building : public Sprite {
    * @return 是否存活
    */
   bool isAlive() const;
+  Building& operator-=(float damage);
 
  protected:
   Building();
   virtual ~Building();
-
   Label* _infoLabel;
   DrawNode* _glowNode;
   DrawNode* _anchorNode;

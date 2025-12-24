@@ -2,7 +2,7 @@
 
 ## 1. 项目概述
 
-本项目为一款仿《部落冲突》的策略类游戏原型，客户端采用$C++$和$cocos2d$引擎，后端采用$flask$框架，进行开发，实现主村庄建设与进攻战斗两大核心玩法。玩家通过建设与升级建筑、训练兵种，在不同地图中发起进攻，由 AI 自动完成战斗过程，并根据战果获得资源与评价。
+本项目为一款仿《部落冲突》的策略类游戏原型，客户端采用`C++`和`cocos2d`引擎，后端采用`flask`框架，进行开发，实现主村庄建设与进攻战斗两大核心玩法。玩家通过建设与升级建筑、训练兵种，在不同地图中发起进攻，由 AI 自动完成战斗过程，并根据战果获得资源与评价。
 
 ---
 
@@ -27,38 +27,48 @@
 * [X]  战斗回放：回放进攻过程
 * [X]  建筑升级加速：加速建筑的升级过程
 ### 2.3 自行扩展
-* [X] 后端云服务：$flask$框架，服务联机需求
+* [X] 后端云服务：`flask`框架，服务联机需求
 ### 2.4 加分项
 #### 2.4.1 版本控制与协作
 * [X] GitHub 使用规范
-- 多$branch$同步推进解耦需求
-- $master$采用$squash\space merge$，确保$commit$记录清晰
-- 使用$code\space diff$进行$code\space review$
-- 使用$issues$汇总开发时遇到的$Bug$并解决
-- $gitignore$避免上传$build$中间文件
-- $GitHub$ [仓库](https://github.com/daisun643/COC)
+- 多`branch`同步推进解耦需求
+- `master`采用`squash\space merge`，确保`commit`记录清晰
+- 使用`code\space diff`进行`code\space review`
+- 使用`issues`汇总开发时遇到的`Bug`并解决
+- `gitignore`避免上传`build`中间文件
+- `GitHub` [仓库](https://github.com/daisun643/COC)
 * [X] 合理分工
 - 需求逻辑解耦
 - 共同开发项目基座 
 - 根据兴趣特长分配需求
 - 一次分配一周工作量，一周一迭代
 * [X] Commit 记录清晰
-- $message$记录$commit$中功能添加、$Bug$修复等等
+- `message`记录`commit`中功能添加、`Bug`修复等等
 #### 2.4.2 代码质量
 * [X] 单元测试
 - 工具函数
-  使用$Google\space Test$框架为工具函数编写单元测试，参见`Classes\test`。
+  使用`Google\space Test`框架为工具函数编写单元测试，参见`Classes\test`。
 - 图形界面
   编译后手动点击测试
 * [X] 合理异常处理
-  TODO
+  当事件与预期不符合，通过`CCLOG`写入输出，再通过`VS`查看输出锁定异常。
+```cpp
+try {
+  outFile << buffer.GetString();
+  outFile.close();
+  CCLOG("BuildingManager: Map saved to %s", path.c_str());
+} catch (const std::exception& e) {
+  CCLOG("BuildingManager: Error saving map to %s: %s", path.c_str(),
+        e.what());
+}
+```
 * [X] 无内存泄漏
-- 单实例模式，避免反复$new$和$delete$
+- 单实例模式，避免反复`new`和`delete`
     ```cpp
     Profile* profile =  Profile::getInstance();
     ```
 - 析构安全
-    $BasicSence$作为$Scene$的基类，其维护不少配置类，为了防止子类错误析构，进而导致重复析构，类似下面在基类中采用$if$判断避免重复析构。
+    `BasicSence`作为`Scene`的基类，其维护不少配置类，为了防止子类错误析构，进而导致重复析构，类似下面在基类中采用`if`判断避免重复析构。
     ```cpp
     BasicSence::~BasicSence(){
       ...
@@ -75,9 +85,9 @@
 - 类的继承和多态运用
   参见 3.1
 - 资源管理逻辑解耦
-  $Classes/Manager$处理资源加载更新保存逻辑，与$Classes/Game$下游戏逻辑解耦。
+  `Classes/Manager`处理资源加载更新保存逻辑，与`Classes/Game`下游戏逻辑解耦。
 - 规避配置硬编码
-  配置$Resource$下$json$文件，通过$Classes/Manager$下$Manager$加载更新保存参数配置。
+  配置`Resource`下`json`文件，通过`Classes/Manager`下`Manager`加载更新保存参数配置。
 * [X] 目录结构清晰
   ```
   COC/
@@ -117,63 +127,60 @@
   ```
 #### 2.4.4 界面与体验
 * [X] 界面精美
-* [X] 游戏不卡顿不崩溃
-* [X] 流畅动画
+  使用网络素材包美化界面。
+  ![](./pic/p1.png)
 ### 2.5 超级加分项
 * [X] 成功运行于`Andriod`
-  通过`Andriod Studio`进行代码和资源的打包。
+  通过`Andriod Studio`进行代码和资源的打包，apk位于`release`中。
+  ![运行示例](./pic/p2.jpg)
 ---
 ##  3.项目要求覆盖说明
 ### 3.1 必须符合的要求(C++ 特性使用)
-* [X] STL 容器:$vector、map 、set、pair、pair$
+* [X] STL 容器:`vector、map 、set、pair、pair`
 * [X] 迭代器
-  TODO
-这里不知道有没有
+  这里采用逆向迭代器，遍历建筑。
+```cpp
+for (auto it = _buildings.rbegin(); it != _buildings.rend(); ++it) {
+  ...
+}
+```
 * [X] 类与多态
 ```mermaid
 classDiagram
     class Building {
-        +upgrade()
-        +completeUpgrade()
-        +updateHPBar()
+        int _level
+        float _maxHP
+        float _currentHP
+        upgrade()
+        completeUpgrade()
+        updateHPBar()
     }
     class Wall {
-        +int _defense
+        int _defense
     }
     class StorageBuilding {
-        +int _capacity
-        +string _resourceType
-    }
-    class TownHall {
-        +int _capacity
+        int _capacity
+        string _resourceType
     }
     class TrapBuilding {
-        +float _triggerRange
-        +int _damage
-        +bool _isArmed
-        +checkTrigger()
+        float _triggerRange
+        int _damage
+        bool _isArmed
+        checkTrigger()
     }
     class ResourceBuilding {
-        +int _productionRate
-        +float _storedResource
-        +collect()
-        +update()
-    }
-
-    class BasicSpell {
-        <<abstract>>
-        +applyEffect()
-        +createVisualEffect()
-        +updateEffect()
-    }
-    class HealSpell {
-        +float _healPerSecond
+        int _productionRate
+        float _storedResource
+        collect()
+        update()
     }
 
     class BasicSoldier {
-        +isAlive()
-        +getCurrentHP()
-        +setMaxHP()
+        float _attackRange
+        AttackType _attackType
+        isAlive()
+        getCurrentHP()
+        setMaxHP()
     }
     class Dragon {
     }
@@ -187,15 +194,34 @@ classDiagram
     Building <|-- ResourceBuilding
     Building <|-- PlaceholderBuilding
 
-    BasicSpell <|-- HealSpell
-
     BasicSoldier <|-- Dragon
     BasicSoldier <|-- Barbarian
 ```
 * [X] 异常处理
-  TODO
+  当事件与预期不符合，通过`CCLOG`写入输出，再通过`VS`查看输出锁定异常。
+```cpp
+try {
+  outFile << buffer.GetString();
+  outFile.close();
+  CCLOG("BuildingManager: Map saved to %s", path.c_str());
+} catch (const std::exception& e) {
+  CCLOG("BuildingManager: Error saving map to %s: %s", path.c_str(),
+        e.what());
+}
+```
 * [X] 函数重载&操作符重载
-  TODO
+  重载`-=`运算符，实现对建筑生命值的减少。
+```cpp
+Building& Building::operator-=(float damage) {
+  ...
+  _currentHP -= damage;
+  if (_currentHP < 0) {
+    _currentHP = 0;
+  }
+  ...
+  return *this;
+}
+```
 * [X] C++11 或以上功能
 - lambda&auto
 ```cpp
@@ -232,11 +258,11 @@ static std::vector<Vec2> findPath(
 ```
 ### 3.2 项目必达标准
 * [X] 代码格式统一
-- $Google formater$统一代码风格
+- `Google formater`统一代码风格
 * [X] Google C++ Style
-- 类名采用$PascalCase$命名法
-- 成员变量采用下划线+$camelCase$命名法
-- 函数名采用$camelCase$命名法
+- 类名采用`PascalCase`命名法
+- 成员变量采用下划线+`camelCase`命名法
+- 函数名采用`camelCase`命名法
 * [X] C++ 风格类型转换
 - static_cast
 ```cpp

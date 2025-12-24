@@ -311,17 +311,13 @@ void BuildingManager::saveBuildingMap() {
   // 因为 FileUtils::writeStringToFile 可能会强制加上 WritablePath 前缀
 
   std::ofstream outFile(path.c_str());
-  if (outFile.is_open()) {
+  try {
     outFile << buffer.GetString();
     outFile.close();
     CCLOG("BuildingManager: Map saved to %s", path.c_str());
-  } else {
-    CCLOG("BuildingManager: Failed to save map to %s", path.c_str());
-    // 尝试使用 MessageBox 提示错误 (仅限 Windows)
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
-    std::string msg = "Failed to save map to: " + path;
-    MessageBoxA(NULL, msg.c_str(), "Save Error", MB_OK | MB_ICONERROR);
-#endif
+  } catch (const std::exception& e) {
+    CCLOG("BuildingManager: Error saving map to %s: %s", path.c_str(),
+          e.what());
   }
 }
 

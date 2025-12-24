@@ -158,7 +158,7 @@ void Building::createDefaultAppearance() {
       color = Color4B(128, 128, 128, 255);  // 灰色
       break;
     case BuildingType::TRAP:
-      color = Color4B(60, 60, 60, 200);     // 深灰半透明
+      color = Color4B(60, 60, 60, 200);  // 深灰半透明
       break;
   }
 
@@ -341,9 +341,9 @@ void Building::upgrade() {
     CCLOG("Building %s reached max level %d", _buildingName.c_str(), _maxLevel);
     return;
   }
-  
+
   if (_state == State::UPGRADING) {
-      return; 
+    return;
   }
 
   // 1. 获取下一等级的配置，查看消耗
@@ -422,25 +422,25 @@ void Building::upgrade() {
 
 // 升级完成逻辑（倒计时结束时调用）
 void Building::completeUpgrade() {
-    _state = State::NORMAL;
-    removeUpgradeUI();
+  _state = State::NORMAL;
+  removeUpgradeUI();
 
-    _level++;
+  _level++;
 
-    // 使用 ConfigManager 获取新等级的配置（主要为了更新贴图）
-    auto config =
-        ConfigManager::getInstance()->getBuildingConfig(_buildingName, _level);
+  // 使用 ConfigManager 获取新等级的配置（主要为了更新贴图）
+  auto config =
+      ConfigManager::getInstance()->getBuildingConfig(_buildingName, _level);
 
-    if (!config.image.empty()) {
-        auto texture =
-            Director::getInstance()->getTextureCache()->addImage(config.image);
-        if (texture) {
-            this->setTexture(texture);
-            this->setTextureRect(Rect(0, 0, texture->getContentSize().width,
-                texture->getContentSize().height));
-            this->setContentSize(texture->getContentSize());
-        }
+  if (!config.image.empty()) {
+    auto texture =
+        Director::getInstance()->getTextureCache()->addImage(config.image);
+    if (texture) {
+      this->setTexture(texture);
+      this->setTextureRect(Rect(0, 0, texture->getContentSize().width,
+                                texture->getContentSize().height));
+      this->setContentSize(texture->getContentSize());
     }
+  }
 
   if (_infoLabel) {
     _infoLabel->setPosition(Vec2(this->getContentSize().width / 2,
@@ -471,10 +471,10 @@ void Building::cancelUpgrade() {
     _upgradeTimer = 0.0f;
     removeUpgradeUI();
     CCLOG("Upgrade cancelled for %s", _buildingName.c_str());
-    // 注意：这里未实现退款逻辑，如需退款可在 PlayerManager 添加 addGold/addElixir
+    // 注意：这里未实现退款逻辑，如需退款可在 PlayerManager 添加
+    // addGold/addElixir
   }
 }
-
 
 // 立即完成（使用宝石）
 void Building::finishUpgradeImmediately() {
@@ -639,9 +639,11 @@ void Building::setHealthBarVisible(bool visible) {
   }
 }
 
-void Building::takeDamage(float damage) {
+void Building::takeDamage(float damage) { *this -= damage; }
+
+Building& Building::operator-=(float damage) {
   if (!isAlive()) {
-    return;
+    return *this;
   }
 
   _currentHP -= damage;
@@ -658,6 +660,8 @@ void Building::takeDamage(float damage) {
     this->setVisible(false);
     this->removeFromParent();
   }
+
+  return *this;
 }
 
 bool Building::isAlive() const { return _currentHP > 0; }

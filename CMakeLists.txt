@@ -104,6 +104,9 @@ endif()
 # ================= 4. 项目文件配置 =================
 file(GLOB_RECURSE GAME_SOURCES CONFIGURE_DEPENDS "Classes/*.cpp" "Classes/*.h")
 
+# 排除 class/test 目录下的文件
+list(FILTER GAME_SOURCES EXCLUDE REGEX "Classes/test/.*")
+
 # Android 平台需要添加 jni 入口文件
 if(ANDROID)
     list(APPEND GAME_SOURCES
