@@ -94,7 +94,6 @@ bool GameScene::init(const std::string& jsonFilePath) {
       replayLayer->setName("ReplayLayerUI");
       replayLayer->setOnReplaySelectedCallback(
           [](const std::string& recordPath) {
-            CCLOG("Replay selected: %s", recordPath.c_str());
             // TODO: Implement replay playback
           });
       this->addChild(replayLayer, 200);
@@ -131,6 +130,7 @@ bool GameScene::init(const std::string& jsonFilePath) {
   _currentMousePos = Vec2::ZERO;
   _ignoreNextMouseUp = false;
   _autoSaveOnExit = true;
+  _placementTouchListener = nullptr;
 
   // 创建放置提示标签
   _placementHintLabel = Label::createWithSystemFont("", "Arial", 20);
@@ -165,14 +165,10 @@ bool GameScene::init(const std::string& jsonFilePath) {
 
   // 设置回调
   _buildingMenuLayer->setOnInfoCallback([](Building* b) {
-    CCLOG("Info clicked for building type: %d", (int)b->getBuildingType());
     // TODO: Show info dialog
   });
   _buildingMenuLayer->setOnUpgradeCallback([this](Building* b) {
     if (!b) return;
-
-    CCLOG("Upgrade clicked for building: %s, level: %d",
-          b->getBuildingName().c_str(), b->getLevel());
 
     // 调用建筑的升级方法，这将触发 Building::upgrade()
     // 从而加载新配置并切换图片
@@ -182,26 +178,25 @@ bool GameScene::init(const std::string& jsonFilePath) {
     // 如果 upgrade() 因为资源不足或满级而提前返回，状态将保持 NORMAL
     // 只有状态变为 UPGRADING，才视为升级操作成功
     if (b->isUpgrading()) {
-        if (_buildingManager) {
-          _buildingManager->saveBuildingMap();
-        }
+      if (_buildingManager) {
+        _buildingManager->saveBuildingMap();
+      }
 
-        // 升级成功后，隐藏操作菜单
-        _buildingMenuLayer->hideOptions();
+      // 升级成功后，隐藏操作菜单
+      _buildingMenuLayer->hideOptions();
 
-        // 显示提示信息 (现在只有真正成功时才会显示)
-        showPlacementHint("升级成功！");
-        if (_placementHintLabel) {
-          _placementHintLabel->stopAllActions();
-          _placementHintLabel->setVisible(true);
-          auto delay = DelayTime::create(1.5f);
-          auto clear = CallFunc::create([this]() { showPlacementHint(""); });
-          _placementHintLabel->runAction(Sequence::create(delay, clear, nullptr));
-        }
+      // 显示提示信息 (现在只有真正成功时才会显示)
+      showPlacementHint("升级成功！");
+      if (_placementHintLabel) {
+        _placementHintLabel->stopAllActions();
+        _placementHintLabel->setVisible(true);
+        auto delay = DelayTime::create(1.5f);
+        auto clear = CallFunc::create([this]() { showPlacementHint(""); });
+        _placementHintLabel->runAction(Sequence::create(delay, clear, nullptr));
+      }
     }
   });
   _buildingMenuLayer->setOnCollectCallback([this](Building* b) {
-    CCLOG("Collect clicked");
     auto resourceBuilding = dynamic_cast<ResourceBuilding*>(b);
     if (resourceBuilding) {
       auto playerManager = PlayerManager::getInstance();
@@ -279,6 +274,13 @@ void GameScene::onMouseDown(Event* event) {
       cancelPlacementMode(true);
       return;
     }
+    // 左键按下时进入放置按下状态，允许按住拖动地图
+    if (mouseEvent->getMouseButton() == EventMouse::MouseButton::BUTTON_LEFT) {
+      _isPlacementMouseDown = true;
+      _placementMouseDownPos = mouseEvent->getLocationInView();
+      _placementLastMousePos = _placementMouseDownPos;
+      _placementDraggingMap = false;
+    }
     return;
   }
 
@@ -296,7 +298,25 @@ void GameScene::onMouseMove(Event* event) {
   }
 
   if (_isPlacingBuilding) {
-    // 放置模式下禁用地图拖动，仅更新建筑预览位置
+    // 放置模式下：支持按住拖动地图，也支持移动时更新建筑预览
+    // 如果用户在放置模式按下了左键并移动，则视为拖动地图
+    if (_isPlacementMouseDown) {
+      float dragThreshold = 5.0f;
+      if (!_placementDraggingMap) {
+        if (_placementMouseDownPos.distance(currentPos) > dragThreshold) {
+          _placementDraggingMap = true;
+        }
+      }
+
+      if (_placementDraggingMap) {
+        Vec2 delta = currentPos - _placementLastMousePos;
+        _mapLayer->setPosition(_mapLayer->getPosition() + delta);
+        _placementLastMousePos = currentPos;
+        return;
+      }
+    }
+
+    // 非按住拖动时，更新预览位置
     if (_placementBuilding) {
       updatePlacementPreview(currentPos);
     }
@@ -330,6 +350,11 @@ void GameScene::onMouseUp(Event* event) {
 
   if (_ignoreNextMouseUp) {
     _ignoreNextMouseUp = false;
+    // 清理放置模式的按下状态，避免因为购买点击导致卡住
+    _isPlacementMouseDown = false;
+    _placementDraggingMap = false;
+    _placementMouseDownPos = Vec2::ZERO;
+    _placementLastMousePos = Vec2::ZERO;
     return;
   }
 
@@ -514,7 +539,9 @@ std::vector<ShopItem> GameScene::buildShopCatalog() const {
        {"圣水瓶", "储存大量圣水", 500, 0, Color4B(186, 85, 211, 255)}},
       {"Barracks", {"兵营", "训练军队的地方", 200, 0, Color4B(139, 0, 0, 255)}},
       {"Wall", {"城墙", "阻挡敌人进攻", 50, 0, Color4B(200, 200, 200, 255)}},
-      {"Bomb", {"隐形炸弹", "给粗心的敌人一个惊喜！", 200, 0, Color4B(50, 50, 50, 255)}}};
+      {"Bomb",
+       {"隐形炸弹", "给粗心的敌人一个惊喜！", 200, 0,
+        Color4B(50, 50, 50, 255)}}};
 
   for (const auto& name : buildingNames) {
     // 跳过没有元数据的建筑（或者使用默认值）
@@ -546,7 +573,7 @@ std::vector<ShopItem> GameScene::buildShopCatalog() const {
       item.category = BuildingType::BARRACKS;
     else if (config.type == "WALL")
       item.category = BuildingType::WALL;
-    else if (config.type == "TRAP") 
+    else if (config.type == "TRAP")
       item.category = BuildingType::TRAP;
     else
       continue;  // 未知类型跳过
@@ -597,8 +624,121 @@ bool GameScene::handleShopPurchase(const ShopItem& item) {
     return false;
   }
 
-  enterPlacementMode(item);
+  // 优先尝试自动放置；若找不到合适位置，则进入手动放置模式
+  if (!autoPlaceBuilding(item)) {
+    enterPlacementMode(item);
+  }
   return true;
+}
+
+bool GameScene::autoPlaceBuilding(const ShopItem& item) {
+  // 创建建筑实例用于检测
+  Building* building = createBuildingForItem(item);
+  if (!building) return false;
+
+  // 清理可能残留的鼠标/触摸拖动状态，避免自动放置后立即触发拖动
+  _isDragging = false;
+  _isMouseDown = false;
+  _isTouchDragging = false;
+  _draggingBuilding = nullptr;
+  _lastMousePos = Vec2::ZERO;
+  _isPlacementMouseDown = false;
+  _placementDraggingMap = false;
+  _placementMouseDownPos = Vec2::ZERO;
+  _placementLastMousePos = Vec2::ZERO;
+  // 忽略接下来一次鼠标/触摸结束事件，防止残留事件影响
+  _ignoreNextMouseUp = true;
+
+  // 获取网格大小和中心点
+  auto configManager = ConfigManager::getInstance();
+  if (!configManager) {
+    // 回收临时建筑
+    building->removeFromParent();
+    return false;
+  }
+  int gridSize = configManager->getConstantConfig().gridSize;
+
+  int centerRow = gridSize / 2;
+  int centerCol = gridSize / 2;
+
+  // 螺旋搜索，从中心向外
+  for (int radius = 0; radius <= gridSize; ++radius) {
+    for (int dx = -radius; dx <= radius; ++dx) {
+      for (int dy = -radius; dy <= radius; ++dy) {
+        // 只在边界上遍历（形成环）以实现螺旋
+        if (std::max(std::abs(dx), std::abs(dy)) != radius) continue;
+
+        int r = centerRow + dx;
+        int c = centerCol + dy;
+        if (r < 0 || r >= gridSize || c < 0 || c >= gridSize) continue;
+
+        Vec2 pos = GridUtils::gridToScene(static_cast<float>(r),
+                                          static_cast<float>(c), _p00);
+
+        // 对奇数格宽的建筑进行偏移调整
+        if (building->getGridCount() % 2 != 0) {
+          float deltaX = configManager->getConstantConfig().deltaX;
+          pos.x += deltaX;
+        }
+
+        building->setPosition(pos);
+        building->setCenterX(pos.x);
+        building->setCenterY(pos.y);
+        building->setRow(static_cast<float>(r));
+        building->setCol(static_cast<float>(c));
+
+        // 边界检查和重叠检查
+        if (building->isOutOfBounds(_gridSize)) continue;
+        if (checkBuildingOverlap(building)) continue;
+
+        // 找到可放置位置，注册并高亮选中
+        _mapLayer->addChild(building, 2);
+        building->setOpacity(255);
+        building->hideGlow();
+        building->setPlacementValid(true);
+        building->showGlow();
+
+        if (_buildingManager) {
+          _buildingManager->registerBuilding(building);
+          _buildingManager->saveBuildingMap();
+        }
+
+        // 自动将新建筑居中到屏幕中心（考虑 map 层缩放）
+        auto director = Director::getInstance();
+        auto visibleSize = director->getVisibleSize();
+        Vec2 origin = director->getVisibleOrigin();
+        Vec2 screenCenter = Vec2(origin.x + visibleSize.width / 2.0f,
+                                 origin.y + visibleSize.height / 2.0f);
+
+        Vec2 localPos = building->getPosition();
+        float scale = _currentScale;
+        Vec2 newMapPos =
+            screenCenter - Vec2(localPos.x * scale, localPos.y * scale);
+        _mapLayer->setPosition(newMapPos);
+
+        // 更新输入状态，防止自动移动后出现残留拖动
+        _lastMousePos = screenCenter;
+        _placementLastMousePos = screenCenter;
+
+        _selectedBuilding = building;
+        // 显示放置提示并在短暂时间后清除
+        showPlacementHint("建筑已自动放置（黄色高亮）");
+        if (_placementHintLabel) {
+          _placementHintLabel->stopAllActions();
+          auto delay = DelayTime::create(1.5f);
+          auto clear = CallFunc::create([this]() { showPlacementHint(""); });
+          _placementHintLabel->runAction(
+              Sequence::create(delay, clear, nullptr));
+        }
+
+        return true;
+      }
+    }
+  }
+
+  // 未找到位置，销毁临时建筑并返回 false
+  building->removeFromParent();
+  return false;
 }
 
 void GameScene::enterPlacementMode(const ShopItem& item) {
@@ -632,6 +772,125 @@ void GameScene::enterPlacementMode(const ShopItem& item) {
   _mapLayer->addChild(building, 2);
   building->setOpacity(180);
   building->showGlow();
+
+  // 在移动设备上，为放置模式添加专用触摸监听器（吞掉触摸事件，优先处理放置逻辑）
+  if (_placementTouchListener) {
+    _eventDispatcher->removeEventListener(_placementTouchListener);
+    _placementTouchListener = nullptr;
+  }
+
+  auto placementListener = EventListenerTouchOneByOne::create();
+  placementListener->setSwallowTouches(true);
+  placementListener->onTouchBegan = [this](Touch* touch, Event* event) -> bool {
+    _isPlacementMouseDown = true;
+    _placementMouseDownPos = touch->getLocation();
+    _placementLastMousePos = _placementMouseDownPos;
+    _placementDraggingMap = false;
+    return true;
+  };
+
+  placementListener->onTouchMoved = [this](Touch* touch, Event* event) {
+    Vec2 currentPos = touch->getLocation();
+
+    if (_isPlacementMouseDown) {
+      float dragThreshold = 10.0f;
+      if (!_placementDraggingMap) {
+        if (_placementMouseDownPos.distance(currentPos) > dragThreshold) {
+          _placementDraggingMap = true;
+        }
+      }
+
+      if (_placementDraggingMap) {
+        Vec2 delta = currentPos - _placementLastMousePos;
+        _mapLayer->setPosition(_mapLayer->getPosition() + delta);
+        _placementLastMousePos = currentPos;
+        return;
+      }
+    }
+
+    if (_placementBuilding) {
+      updatePlacementPreview(currentPos);
+    }
+  };
+
+  placementListener->onTouchEnded = [this, placementListener](Touch* touch,
+                                                              Event* event) {
+    Vec2 currentPos = touch->getLocation();
+
+    // 如果是在拖动地图，则只结束拖动
+    if (_placementDraggingMap) {
+      _isPlacementMouseDown = false;
+      _placementDraggingMap = false;
+      return;
+    }
+
+    // 更新预览并尝试放置
+    updatePlacementPreview(currentPos);
+    if (!_placementBuilding) return;
+    if (!_placementPreviewValid) return;
+
+    _placementBuilding->setPosition(_placementPreviewAnchor);
+    auto configManager = ConfigManager::getInstance();
+    if (configManager) {
+      auto constantConfig = configManager->getConstantConfig();
+      float deltaX = constantConfig.deltaX;
+      _placementBuilding->setCenterX(_placementPreviewAnchor.x);
+    } else {
+      _placementBuilding->setCenterX(_placementPreviewAnchor.x);
+    }
+    _placementBuilding->setCenterY(_placementPreviewAnchor.y);
+    _placementBuilding->setRow(_placementPreviewRow);
+    _placementBuilding->setCol(_placementPreviewCol);
+
+    if (_placementBuilding->isOutOfBounds(_gridSize)) {
+      _isPlacementMouseDown = false;
+      return;
+    }
+
+    if (checkBuildingOverlap(_placementBuilding)) {
+      _isPlacementMouseDown = false;
+      return;
+    }
+
+    _placementBuilding->setOpacity(255);
+    _placementBuilding->hideGlow();
+    _placementBuilding->setPlacementValid(true);
+
+    if (_buildingManager) {
+      _buildingManager->registerBuilding(_placementBuilding);
+      _placementBuilding->setHealthBarVisible(false);
+      _buildingManager->saveBuildingMap();
+      CCLOG("GameScene: Building placed and saved (touch).");
+    }
+
+    _selectedBuilding = _placementBuilding;
+    _placementBuilding = nullptr;
+    _isPlacingBuilding = false;
+    _placementPreviewValid = false;
+    _isPlacementMouseDown = false;
+
+    showPlacementHint("建筑已放置");
+
+    // 放置后不立即选中
+    _selectedBuilding = nullptr;
+
+    // 移除触摸监听器
+    if (_placementTouchListener) {
+      _eventDispatcher->removeEventListener(_placementTouchListener);
+      _placementTouchListener = nullptr;
+    }
+
+    if (_placementHintLabel) {
+      _placementHintLabel->stopAllActions();
+      auto delay = DelayTime::create(1.5f);
+      auto clear = CallFunc::create([this]() { showPlacementHint(""); });
+      _placementHintLabel->runAction(Sequence::create(delay, clear, nullptr));
+    }
+  };
+
+  _placementTouchListener = placementListener;
+  _eventDispatcher->addEventListenerWithSceneGraphPriority(placementListener,
+                                                           this);
 
   // 使用当前鼠标位置作为初始位置
   Vec2 initialPos;
@@ -675,6 +934,12 @@ void GameScene::cancelPlacementMode(bool refundResources) {
   if (_placementBuilding) {
     _placementBuilding->removeFromParent();
     _placementBuilding = nullptr;
+  }
+
+  // 移除可能存在的放置触摸监听器（移动端）
+  if (_placementTouchListener) {
+    _eventDispatcher->removeEventListener(_placementTouchListener);
+    _placementTouchListener = nullptr;
   }
 
   _isPlacingBuilding = false;

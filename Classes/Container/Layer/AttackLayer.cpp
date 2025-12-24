@@ -181,7 +181,7 @@ void AttackLayer::showSinglePlayerTab() {
   rapidjson::Document doc;
   std::string summaryPath = "level/summary.json";
   // 使用 PathUtils 获取真实路径
-  std::string fullPath = PathUtils::getRealFilePath(summaryPath, true);
+  std::string fullPath = PathUtils::getRealFilePath(summaryPath, false);
   CCLOG("fullPath: %s", fullPath.c_str());
   if (!fullPath.empty() && fileUtils->isFileExist(fullPath)) {
     std::string content = fileUtils->getStringFromFile(fullPath);

@@ -37,7 +37,6 @@
 Scene* AttackScene::createScene(const std::string& levelFilePath,
                                 const std::string& levelName) {
   if (levelFilePath.empty()) {
-    CCLOG("AttackScene: levelFilePath is empty");
   }
   AttackScene* scene = new (std::nothrow) AttackScene();
   if (scene) {
@@ -65,6 +64,9 @@ bool AttackScene::init(const std::string& jsonFilePath) {
     return false;
   }
 
+  // 攻击场景不允许选中或拖动建筑（移动端触摸会走父类的触摸处理）
+  this->_allowBuildingDrag = false;
+
   auto visibleSize = Director::getInstance()->getVisibleSize();
   Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
@@ -76,6 +78,8 @@ bool AttackScene::init(const std::string& jsonFilePath) {
   _placementPreview = nullptr;
   _selectedTroopIconBg = nullptr;
   _selectedSpellIconBg = nullptr;
+  _selectedTroopIndex = -1;
+  _selectedSpellIndex = -1;
   _statusBarLayer = nullptr;
   _troopManager = nullptr;
   _troopIconBgs.clear();
@@ -97,7 +101,6 @@ bool AttackScene::init(const std::string& jsonFilePath) {
         TrapBuilding* trap = dynamic_cast<TrapBuilding*>(building);
         if (trap) {
           trap->hide();  // 隐藏陷阱
-          CCLOG("Trap hidden at init: %s", trap->getBuildingName().c_str());
         }
       }
     }
@@ -106,7 +109,6 @@ bool AttackScene::init(const std::string& jsonFilePath) {
   // 创建并初始化 TroopManager
   _troopManager = new (std::nothrow) TroopManager();
   if (!_troopManager || !_troopManager->init()) {
-    CCLOG("Failed to create TroopManager");
     CC_SAFE_DELETE(_troopManager);
     return false;
   }
@@ -114,10 +116,22 @@ bool AttackScene::init(const std::string& jsonFilePath) {
   _troopItems = _troopManager->getTroopItems();
   _spellItems = _troopManager->getSpellItems();
 
+  // 预加载图标纹理，避免在选择或重建状态栏时出现卡顿
+  auto texCache = Director::getInstance()->getTextureCache();
+  for (const auto& t : _troopItems) {
+    if (!t.panelImage.empty()) {
+      texCache->addImage(t.panelImage);
+    }
+  }
+  for (const auto& s : _spellItems) {
+    if (!s.panelImage.empty()) {
+      texCache->addImage(s.panelImage);
+    }
+  }
+
   // 创建并初始化 RecordManager
   _recordManager = new (std::nothrow) RecordManager();
   if (!_recordManager || !_recordManager->init()) {
-    CCLOG("Failed to create RecordManager");
     CC_SAFE_DELETE(_recordManager);
     return false;
   }
@@ -132,6 +146,87 @@ bool AttackScene::init(const std::string& jsonFilePath) {
   // 创建进攻控制按钮
   createAttackButtons();
 
+  // 在移动端添加地图触摸监听，桌面使用鼠标事件处理以避免重复放置
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID) || \
+    (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
+  auto mapTouchListener = EventListenerTouchOneByOne::create();
+  mapTouchListener->setSwallowTouches(false);  // 不吞噬，避免干扰父类触摸状态
+  mapTouchListener->onTouchBegan = [this](Touch* touch, Event* event) -> bool {
+    if (this->_isEnd) return false;
+    Vec2 touchPos = touch->getLocation();
+    // 忽略状态栏区域的触摸
+    if (touchPos.y < 80) return false;
+    // 点击兵种后，直接点击地图放置（不进入拖动预览模式）
+    if (this->_isTroopSelected || this->_isSpellSelected) {
+      return true;  // 我们会处理后续 onTouchEnded
+    }
+    return false;
+  };
+
+  mapTouchListener->onTouchMoved = [this](Touch* touch, Event* event) {
+    // 不做跟随预览，保持点击-放置模式的一致性
+  };
+
+  mapTouchListener->onTouchEnded = [this](Touch* touch, Event* event) {
+    if (this->_isTroopSelected) {
+      Vec2 mapPos = this->screenToMapPosition(touch->getLocation());
+      if (this->isValidPlacementPosition(mapPos)) {
+        this->placeSoldier(mapPos, this->_currentTroopItem);
+
+        // 更新数量标签并决定是否保持选中
+        if (_troopManager) {
+          _troopItems = _troopManager->getTroopItems();
+          for (size_t idx = 0;
+               idx < _troopCountLabels.size() && idx < _troopItems.size();
+               ++idx) {
+            if (_troopCountLabels[idx] && _troopCountLabels[idx]->getParent()) {
+              _troopCountLabels[idx]->setString(
+                  std::to_string(_troopItems[idx].count));
+            }
+          }
+          int foundIndex = -1;
+          for (size_t k = 0; k < _troopItems.size(); ++k) {
+            if (_troopItems[k].soldierType == _currentTroopItem.soldierType &&
+                _troopItems[k].level == _currentTroopItem.level) {
+              foundIndex = static_cast<int>(k);
+              break;
+            }
+          }
+          if (foundIndex >= 0 && _troopItems[foundIndex].count > 0) {
+            _selectedTroopIndex = foundIndex;
+            if (foundIndex < (int)_troopIconBgs.size()) {
+              LayerColor* bg = _troopIconBgs[foundIndex].first;
+              if (bg && bg->getParent()) {
+                bg->setColor(Color3B(255, 255, 0));
+                _selectedTroopIconBg = bg;
+              }
+            }
+            _isTroopSelected = true;
+          } else {
+            cancelPlacementMode();
+          }
+        } else {
+          cancelPlacementMode();
+        }
+      }
+    } else if (this->_isSpellSelected) {
+      Vec2 mapPos = this->screenToMapPosition(touch->getLocation());
+      if (this->isValidPlacementPosition(mapPos)) {
+        this->castSpell(mapPos, this->_currentSpellItem);
+        this->cancelPlacementMode();
+      }
+    }
+
+    // 重置触摸状态
+    this->_isTouchDragging = false;
+    this->_isMouseDown = false;
+    this->_isPinching = false;
+  };
+
+  _eventDispatcher->addEventListenerWithSceneGraphPriority(mapTouchListener,
+                                                           _mapLayer);
+#endif
+
   return true;
 }
 
@@ -142,6 +237,8 @@ void AttackScene::createStatusBar() {
   // 清空图标背景列表（重新创建时需要清空）
   _troopIconBgs.clear();
   _spellIconBgs.clear();
+  _troopCountLabels.clear();
+  _spellCountLabels.clear();
 
   // 创建状态栏层（固定在底部）
   if (!_statusBarLayer) {
@@ -196,14 +293,9 @@ void AttackScene::createTroopIcons() {
     if (!item.panelImage.empty()) {
       iconSprite = Sprite::create(item.panelImage);
       if (!iconSprite) {
-        CCLOG("Failed to load troop icon image: %s", item.panelImage.c_str());
       } else {
-        CCLOG("Successfully loaded troop icon image: %s",
-              item.panelImage.c_str());
       }
     } else {
-      CCLOG("Troop item image path is empty for soldierType: %s, level: %d",
-            item.soldierType.c_str(), item.level);
     }
 
     if (!iconSprite) {
@@ -229,33 +321,35 @@ void AttackScene::createTroopIcons() {
     }
     _statusBarLayer->addChild(iconSprite);
 
-    // 创建数量标签
+    // 创建数量标签，保存指针以便后续更新
     auto countLabel =
         Label::createWithSystemFont(std::to_string(item.count), "Arial", 16);
     countLabel->setPosition(
         Vec2(xPos + iconSize - 10, yPos + iconSize / 2 - 10));
-    // countLabel->setColor(Color3B::WHITE);
     _statusBarLayer->addChild(countLabel);
+    _troopCountLabels.push_back(countLabel);
 
     // 添加触摸事件（点击选中panel，等待在地图上点击布置）
     auto touchListener = EventListenerTouchOneByOne::create();
     touchListener->setSwallowTouches(true);
-    touchListener->onTouchBegan = [this, item, iconBg](Touch* touch,
-                                                       Event* event) {
+    // 捕获当前索引 i，避免闭包引用错误
+    touchListener->onTouchBegan = [this, item, iconSprite, iconBg, i](
+                                      Touch* touch, Event* event) {
       if (this->_isEnd) return false;
       Vec2 touchPos = touch->getLocation();
-      // 使用getBoundingBox()直接检查（世界坐标）
-      Rect rect = iconBg->getBoundingBox();
-      CCLOG("Troop touch: worldPos(%.1f, %.1f), rect(%.1f, %.1f, %.1f, %.1f)",
-            touchPos.x, touchPos.y, rect.origin.x, rect.origin.y,
-            rect.size.width, rect.size.height);
-      if (rect.containsPoint(touchPos)) {
+      // 把触摸点转换到 iconSprite 的本地坐标系，按 contentSize 和 anchorPoint
+      // 判定命中
+      Vec2 localPos = iconSprite->convertToNodeSpace(touchPos);
+      Size sz = iconSprite->getContentSize();
+      Vec2 anchor = iconSprite->getAnchorPoint();
+      Vec2 origin(-anchor.x * sz.width, -anchor.y * sz.height);
+      Rect localRect(origin.x, origin.y, sz.width, sz.height);
+
+      if (localRect.containsPoint(localPos)) {
         if (item.count > 0) {
-          CCLOG("Troop panel clicked: %s Level %d", item.soldierType.c_str(),
-                item.level);
           // 取消之前选中的士兵panel
           if (_selectedTroopIconBg && _selectedTroopIconBg != iconBg) {
-            // _selectedTroopIconBg->setColor(Color3B(100, 100, 100));
+            _selectedTroopIconBg->setColor(Color3B(100, 100, 100));
           }
           // 取消选中的法术panel
           if (_selectedSpellIconBg) {
@@ -266,8 +360,9 @@ void AttackScene::createTroopIcons() {
           }
 
           // 选中当前panel（高亮显示）
+          _selectedTroopIndex = static_cast<int>(i);
           _selectedTroopIconBg = iconBg;
-          // _selectedTroopIconBg->setColor(Color3B(255, 255, 0));  // 黄色高亮
+          _selectedTroopIconBg->setColor(Color3B(255, 255, 0));  // 黄色高亮
           _isTroopSelected = true;
           _currentTroopItem = item;
 
@@ -283,7 +378,15 @@ void AttackScene::createTroopIcons() {
       return false;
     };
     this->getEventDispatcher()->addEventListenerWithSceneGraphPriority(
-        touchListener, iconBg);
+        touchListener, iconSprite);
+
+    // 如果当前索引被标记为已选中，应用高亮（用于重建状态栏时保持选中）
+    if (_selectedTroopIndex == static_cast<int>(i)) {
+      iconBg->setColor(Color3B(255, 255, 0));
+      _selectedTroopIconBg = iconBg;
+      _isTroopSelected = true;
+      _currentTroopItem = item;
+    }
   }
 }
 
@@ -317,10 +420,7 @@ void AttackScene::createSpellIcons() {
     if (!item.panelImage.empty()) {
       iconSprite = Sprite::create(item.panelImage);
       if (!iconSprite) {
-        CCLOG("Failed to load spell icon image: %s", item.panelImage.c_str());
       } else {
-        CCLOG("Successfully loaded spell icon image: %s",
-              item.panelImage.c_str());
       }
     } else {
       CCLOG("Spell item panelImage path is empty for spellType: %s",
@@ -350,44 +450,47 @@ void AttackScene::createSpellIcons() {
     }
     _statusBarLayer->addChild(iconSprite);
     // TODO 标签不明显
-    // 创建数量标签
+    // 创建数量标签，保存指针以便后续更新
     auto countLabel =
         Label::createWithSystemFont(std::to_string(item.count), "Arial", 16);
     countLabel->setPosition(
         Vec2(xPos + iconSize - 10, yPos + iconSize / 2 - 10));
-    // countLabel->setColor(Color3B::WHITE);
     _statusBarLayer->addChild(countLabel);
+    _spellCountLabels.push_back(countLabel);
 
     // 添加触摸事件（点击选中panel，等待在地图上点击施法）
     auto touchListener = EventListenerTouchOneByOne::create();
     touchListener->setSwallowTouches(true);
-    touchListener->onTouchBegan = [this, item, iconBg](Touch* touch,
-                                                       Event* event) {
+    // 捕获索引 i，便于重建时恢复选中
+    touchListener->onTouchBegan = [this, item, iconSprite, iconBg, i](
+                                      Touch* touch, Event* event) {
       if (this->_isEnd) return false;
       Vec2 touchPos = touch->getLocation();
-      // 使用getBoundingBox()直接检查（世界坐标）
-      Rect rect = iconBg->getBoundingBox();
-      CCLOG("Spell touch: worldPos(%.1f, %.1f), rect(%.1f, %.1f, %.1f, %.1f)",
-            touchPos.x, touchPos.y, rect.origin.x, rect.origin.y,
-            rect.size.width, rect.size.height);
-      if (rect.containsPoint(touchPos)) {
+      // 把触摸点转换到 iconSprite 的本地坐标系，按 contentSize 和 anchorPoint
+      // 判定命中
+      Vec2 localPos = iconSprite->convertToNodeSpace(touchPos);
+      Size sz = iconSprite->getContentSize();
+      Vec2 anchor = iconSprite->getAnchorPoint();
+      Vec2 origin(-anchor.x * sz.width, -anchor.y * sz.height);
+      Rect localRect(origin.x, origin.y, sz.width, sz.height);
+
+      if (localRect.containsPoint(localPos)) {
         if (item.count > 0) {
-          CCLOG("Spell panel clicked: %s", item.spellType.c_str());
           // 取消之前选中的法术panel
           if (_selectedSpellIconBg && _selectedSpellIconBg != iconBg) {
-            // _selectedSpellIconBg->setColor(Color3B(100, 100, 100));
+            _selectedSpellIconBg->setColor(Color3B(100, 100, 100));
           }
           // 取消选中的士兵panel
           if (_selectedTroopIconBg) {
-            // _selectedTroopIconBg->setColor(Color3B(100, 100, 100));
             _selectedTroopIconBg = nullptr;
             _isTroopSelected = false;
             cancelPlacementMode();
           }
 
           // 选中当前panel（高亮显示）
+          _selectedSpellIndex = static_cast<int>(i);
           _selectedSpellIconBg = iconBg;
-          // _selectedSpellIconBg->setColor(Color3B(255, 255, 0));  // 黄色高亮
+          _selectedSpellIconBg->setColor(Color3B(255, 255, 0));  // 黄色高亮
           _isSpellSelected = true;
           _currentSpellItem = item;
 
@@ -403,7 +506,14 @@ void AttackScene::createSpellIcons() {
       return false;
     };
     this->getEventDispatcher()->addEventListenerWithSceneGraphPriority(
-        touchListener, iconBg);
+        touchListener, iconSprite);
+    // 重建时恢复选中样式
+    if (_selectedSpellIndex == static_cast<int>(i)) {
+      iconBg->setColor(Color3B(255, 255, 0));
+      _selectedSpellIconBg = iconBg;
+      _isSpellSelected = true;
+      _currentSpellItem = item;
+    }
   }
 }
 
@@ -428,9 +538,6 @@ void AttackScene::enterTroopPlacementMode(const TroopItem& item) {
 
   _placementPreview->setOpacity(180);
   _mapLayer->addChild(_placementPreview, 10);
-
-  CCLOG("Enter troop placement mode: %s Level %d", item.soldierType.c_str(),
-        item.level);
 }
 
 void AttackScene::enterSpellPlacementMode(const SpellItem& item) {
@@ -455,8 +562,6 @@ void AttackScene::enterSpellPlacementMode(const SpellItem& item) {
   _placementPreview->addChild(drawNode);
   _placementPreview->setOpacity(180);
   _mapLayer->addChild(_placementPreview, 10);
-
-  CCLOG("Enter spell placement mode: %s", item.spellType.c_str());
 }
 
 void AttackScene::cancelPlacementMode() {
@@ -470,16 +575,22 @@ void AttackScene::cancelPlacementMode() {
     _placementPreview = nullptr;
   }
 
-  // 取消panel高亮
-  // TODO : BUG in Access Violation
-  // if (_selectedTroopIconBg) {
-  //   _selectedTroopIconBg->setColor(Color3B(100, 100, 100));
-  //   _selectedTroopIconBg = nullptr;
-  // }
-  // if (_selectedSpellIconBg) {
-  //   _selectedSpellIconBg->setColor(Color3B(100, 100, 100));
-  //   _selectedSpellIconBg = nullptr;
-  // }
+  // 取消panel高亮（使用索引安全处理）
+  if (_selectedTroopIndex >= 0 &&
+      _selectedTroopIndex < (int)_troopIconBgs.size()) {
+    LayerColor* bg = _troopIconBgs[_selectedTroopIndex].first;
+    if (bg && bg->getParent()) bg->setColor(Color3B(100, 100, 100));
+  }
+  _selectedTroopIndex = -1;
+  _selectedTroopIconBg = nullptr;
+
+  if (_selectedSpellIndex >= 0 &&
+      _selectedSpellIndex < (int)_spellIconBgs.size()) {
+    LayerColor* bg = _spellIconBgs[_selectedSpellIndex].first;
+    if (bg && bg->getParent()) bg->setColor(Color3B(100, 100, 100));
+  }
+  _selectedSpellIndex = -1;
+  _selectedSpellIconBg = nullptr;
 }
 
 void AttackScene::placeSoldier(const Vec2& worldPos, const TroopItem& item) {
@@ -538,11 +649,14 @@ void AttackScene::placeSoldier(const Vec2& worldPos, const TroopItem& item) {
       // 更新本地列表
       _troopItems = _troopManager->getTroopItems();
 
-      // 更新状态栏（重新创建以更新数量）
-      if (_statusBarLayer) {
-        _statusBarLayer->removeAllChildren();
+      // 更新数量标签（避免重建整个状态栏，提高性能）
+      for (size_t idx = 0;
+           idx < _troopCountLabels.size() && idx < _troopItems.size(); ++idx) {
+        if (_troopCountLabels[idx] && _troopCountLabels[idx]->getParent()) {
+          _troopCountLabels[idx]->setString(
+              std::to_string(_troopItems[idx].count));
+        }
       }
-      createStatusBar();
     }
 
     // 如果进攻尚未开始，则自动开始
@@ -556,8 +670,6 @@ void AttackScene::placeSoldier(const Vec2& worldPos, const TroopItem& item) {
       _recordManager->recordTroopPlacement(item.soldierType, item.level,
                                            worldPos.x, worldPos.y, timestamp);
     }
-
-    CCLOG("Placed soldier at (%.1f, %.1f)", worldPos.x, worldPos.y);
   }
 }
 
@@ -631,11 +743,15 @@ void AttackScene::castSpell(const Vec2& worldPos, const SpellItem& item) {
         // 更新本地列表
         _spellItems = _troopManager->getSpellItems();
 
-        // 更新状态栏
-        if (_statusBarLayer) {
-          _statusBarLayer->removeAllChildren();
+        // 更新数量标签（避免重建整个状态栏）
+        for (size_t idx = 0;
+             idx < _spellCountLabels.size() && idx < _spellItems.size();
+             ++idx) {
+          if (_spellCountLabels[idx] && _spellCountLabels[idx]->getParent()) {
+            _spellCountLabels[idx]->setString(
+                std::to_string(_spellItems[idx].count));
+          }
         }
-        createStatusBar();
       }
 
       // 如果进攻尚未开始，则自动开始
@@ -650,7 +766,6 @@ void AttackScene::castSpell(const Vec2& worldPos, const SpellItem& item) {
                                              worldPos.y, timestamp);
       }
 
-      CCLOG("Cast spell at (%.1f, %.1f)", worldPos.x, worldPos.y);
     } else {
       CC_SAFE_DELETE(spell);
     }
@@ -687,11 +802,9 @@ void AttackScene::onMouseDown(Event* event) {
         Rect rect = iconBg->getBoundingBox();
         if (rect.containsPoint(mousePos)) {
           if (item.count > 0) {
-            CCLOG("Troop panel clicked (mouse): %s Level %d",
-                  item.soldierType.c_str(), item.level);
             // 取消之前选中的士兵panel
             if (_selectedTroopIconBg && _selectedTroopIconBg != iconBg) {
-              // _selectedTroopIconBg->setColor(Color3B(100, 100, 100));
+              _selectedTroopIconBg->setColor(Color3B(100, 100, 100));
             }
             // 取消选中的法术panel
             if (_selectedSpellIconBg) {
@@ -703,8 +816,7 @@ void AttackScene::onMouseDown(Event* event) {
 
             // 选中当前panel（高亮显示）
             _selectedTroopIconBg = iconBg;
-            // _selectedTroopIconBg->setColor(Color3B(255, 255, 0));  //
-            // 黄色高亮
+            _selectedTroopIconBg->setColor(Color3B(255, 255, 0));  // 黄色高亮
             _isTroopSelected = true;
             _currentTroopItem = item;
 
@@ -725,10 +837,9 @@ void AttackScene::onMouseDown(Event* event) {
         Rect rect = iconBg->getBoundingBox();
         if (rect.containsPoint(mousePos)) {
           if (item.count > 0) {
-            CCLOG("Spell panel clicked (mouse): %s", item.spellType.c_str());
             // 取消之前选中的法术panel
             if (_selectedSpellIconBg && _selectedSpellIconBg != iconBg) {
-              // _selectedSpellIconBg->setColor(Color3B(100, 100, 100));
+              _selectedSpellIconBg->setColor(Color3B(100, 100, 100));
             }
             // 取消选中的士兵panel
             if (_selectedTroopIconBg) {
@@ -740,8 +851,7 @@ void AttackScene::onMouseDown(Event* event) {
 
             // 选中当前panel（高亮显示）
             _selectedSpellIconBg = iconBg;
-            // _selectedSpellIconBg->setColor(Color3B(255, 255, 0));  //
-            // 黄色高亮
+            _selectedSpellIconBg->setColor(Color3B(255, 255, 0));  // 黄色高亮
             _isSpellSelected = true;
             _currentSpellItem = item;
 
@@ -784,19 +894,8 @@ void AttackScene::onMouseMove(Event* event) {
   EventMouse* mouseEvent = static_cast<EventMouse*>(event);
   Vec2 mousePos = mouseEvent->getLocationInView();
 
-  // 如果选中了士兵或法术，显示预览跟随鼠标
+  // 如果选中了士兵或法术，等待鼠标抬起以完成放置（不进入拖动预览）
   if (_isTroopSelected || _isSpellSelected) {
-    if (!_placementPreview) {
-      if (_isTroopSelected) {
-        enterTroopPlacementMode(_currentTroopItem);
-      } else if (_isSpellSelected) {
-        enterSpellPlacementMode(_currentSpellItem);
-      }
-    }
-    if (_placementPreview) {
-      Vec2 mapPos = screenToMapPosition(mousePos);
-      _placementPreview->setPosition(mapPos);
-    }
     return;
   }
 
@@ -838,11 +937,46 @@ void AttackScene::onMouseUp(Event* event) {
   if (_isTroopSelected) {
     Vec2 mapPos = screenToMapPosition(mousePos);
     if (isValidPlacementPosition(mapPos)) {
-      CCLOG("Placing soldier at map position: (%.1f, %.1f)", mapPos.x,
-            mapPos.y);
       placeSoldier(mapPos, _currentTroopItem);
-      // 放置后取消选中
-      cancelPlacementMode();
+
+      // 更新本地列表并刷新数量标签；保持选中以支持连续放置
+      if (_troopManager) {
+        _troopItems = _troopManager->getTroopItems();
+        for (size_t idx = 0;
+             idx < _troopCountLabels.size() && idx < _troopItems.size();
+             ++idx) {
+          if (_troopCountLabels[idx] && _troopCountLabels[idx]->getParent()) {
+            _troopCountLabels[idx]->setString(
+                std::to_string(_troopItems[idx].count));
+          }
+        }
+
+        // 查找当前选中兵种的新索引并决定是否保持选中
+        int foundIndex = -1;
+        for (size_t k = 0; k < _troopItems.size(); ++k) {
+          if (_troopItems[k].soldierType == _currentTroopItem.soldierType &&
+              _troopItems[k].level == _currentTroopItem.level) {
+            foundIndex = static_cast<int>(k);
+            break;
+          }
+        }
+        if (foundIndex >= 0 && _troopItems[foundIndex].count > 0) {
+          _selectedTroopIndex = foundIndex;
+          if (foundIndex < (int)_troopIconBgs.size()) {
+            LayerColor* bg = _troopIconBgs[foundIndex].first;
+            if (bg && bg->getParent()) {
+              bg->setColor(Color3B(255, 255, 0));
+              _selectedTroopIconBg = bg;
+            }
+          }
+          _isTroopSelected = true;
+        } else {
+          // 数量耗尽或不存在，取消选中
+          cancelPlacementMode();
+        }
+      } else {
+        cancelPlacementMode();
+      }
     }
     _isMouseDown = false;
     return;

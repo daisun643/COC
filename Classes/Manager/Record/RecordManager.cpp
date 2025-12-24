@@ -34,7 +34,6 @@ void RecordManager::startAttack() {
   clear();
   _attackStartTime = std::chrono::steady_clock::now();
   _isRecording = true;
-  CCLOG("RecordManager: Attack started, recording enabled");
 }
 
 void RecordManager::recordTroopPlacement(const std::string& category, int level,
@@ -52,9 +51,6 @@ void RecordManager::recordTroopPlacement(const std::string& category, int level,
   record.timestamp = timestamp;
 
   _records.push_back(record);
-  CCLOG(
-      "RecordManager: Recorded troop placement - %s Lv%d at (%.1f, %.1f) @ %ds",
-      category.c_str(), level, x, y, timestamp);
 }
 
 void RecordManager::recordSpellPlacement(const std::string& category, float x,
@@ -72,8 +68,6 @@ void RecordManager::recordSpellPlacement(const std::string& category, float x,
   record.timestamp = timestamp;
 
   _records.push_back(record);
-  CCLOG("RecordManager: Recorded spell placement - %s at (%.1f, %.1f) @ %ds",
-        category.c_str(), x, y, timestamp);
 }
 
 int RecordManager::getCurrentTimestamp() const {
@@ -89,7 +83,6 @@ int RecordManager::getCurrentTimestamp() const {
 
 bool RecordManager::endAttackAndSave(const std::string& filePath) {
   if (!_isRecording) {
-    CCLOG("RecordManager: Not recording, nothing to save");
     return false;
   }
 
@@ -176,18 +169,13 @@ bool RecordManager::endAttackAndSave(const std::string& filePath) {
   // 写入文件
   std::ofstream outFile(fullPath, std::ios::out | std::ios::trunc);
   if (!outFile.is_open()) {
-    CCLOG("RecordManager: Failed to open file for writing: %s",
-          fullPath.c_str());
     return false;
   }
 
   outFile << jsonString;
   outFile.close();
 
-  CCLOG("RecordManager: Saved %zu records to %s", _records.size(),
-        fullPath.c_str());
-
-  // 停止记录
+    // 停止记录
   _isRecording = false;
 
   return true;

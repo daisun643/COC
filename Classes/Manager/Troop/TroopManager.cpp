@@ -19,20 +19,17 @@ bool TroopManager::loadTroopConfig(const std::string& configPath) {
   std::string fullPath = fileUtils->fullPathForFilename(configPath);
 
   if (fullPath.empty()) {
-    CCLOG("Troop config file not found: %s", configPath.c_str());
     return false;
   }
 
   std::string content = fileUtils->getStringFromFile(fullPath);
   if (content.empty()) {
-    CCLOG("Troop config file is empty: %s", configPath.c_str());
     return false;
   }
 
   rapidjson::Document doc;
   doc.Parse(content.c_str());
   if (doc.HasParseError()) {
-    CCLOG("JSON parse error in troop config file");
     return false;
   }
 

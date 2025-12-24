@@ -1,3 +1,1 @@
-{
-    "records": []
-}
+{"records":[{"name":"Level-1","mapPath":"level/1.json","recordPath":"record/Level-1_20251224_130317.json","time":"20251224_130317","win":true,"stars":525976232,"ratio":4.347705243548755e-20},{"name":"Level-1","mapPath":"level/1.json","recordPath":"record/Level-1_20251224_130519.json","time":"20251224_130519","win":false,"stars":0,"ratio":0.0},{"name":"Level-1","mapPath":"level/1.json","recordPath":"record/Level-1_20251224_130532.json","time":"20251224_130532","win":false,"stars":0,"ratio":0.0},{"name":"Level-1","mapPath":"level/1.json","recordPath":"record/Level-1_20251224_134512.json","time":"20251224_134512","win":false,"stars":0,"ratio":0.0}]}

@@ -41,6 +41,7 @@ bool BasicScene::init(const std::string& jsonFilePath) {
   _isMouseDown = false;
   _selectedBuilding = nullptr;
   _draggingBuilding = nullptr;
+  _allowBuildingDrag = true;
   // TODO
   _gridSize = constantConfig.gridSize;
   _buildingManager = nullptr;
@@ -229,8 +230,8 @@ void BasicScene::initTouchEventListeners() {
         clickedBuilding = _buildingManager->getBuildingAtPosition(mapPos);
       }
 
-      if (clickedBuilding) {
-        // 点击了建筑
+      if (_allowBuildingDrag && clickedBuilding) {
+        // 点击了建筑（仅当允许建筑拖动时）
         if (_selectedBuilding && _selectedBuilding != clickedBuilding) {
           _selectedBuilding->hideGlow();
         }
@@ -240,7 +241,7 @@ void BasicScene::initTouchEventListeners() {
         _buildingStartPos = _selectedBuilding->getPosition();
         _draggingBuilding = nullptr;
       } else {
-        // 没有点击建筑，准备拖动地图
+        // 不允许选中建筑或没有点击建筑，准备拖动地图
         if (_selectedBuilding) {
           _selectedBuilding->hideGlow();
           _selectedBuilding = nullptr;
@@ -336,6 +337,12 @@ void BasicScene::initTouchEventListeners() {
           _draggingBuilding->setPosition(targetAnchorPos);
           _draggingBuilding->setCenterX(targetAnchorPos.x);
           _draggingBuilding->setCenterY(targetAnchorPos.y);
+        }
+        // 实时更新放置有效性（移动端即时显示红色/黄色提示）
+        if (isPlacementValid(_draggingBuilding)) {
+          _draggingBuilding->setPlacementValid(true);
+        } else {
+          _draggingBuilding->setPlacementValid(false);
         }
       } else if (_isTouchDragging) {
         // 单指拖动地图

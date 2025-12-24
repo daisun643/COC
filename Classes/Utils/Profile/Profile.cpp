@@ -56,7 +56,7 @@ bool Profile::init() {
         if (doc.HasMember("clans-name") && doc["clans-name"].IsString()) {
           _clansName = doc["clans-name"].GetString();
         }
-        CCLOG("Profile: Loaded from %s", path.c_str());
+
         return true;
       }
     }
@@ -78,7 +78,7 @@ bool Profile::init() {
   }
 
   // 如果都加载失败，使用默认值
-  CCLOG("Profile: No profile file found or load failed, using default values.");
+
   _isLogin = false;
   _id = 0;
   _name = "";
@@ -86,21 +86,18 @@ bool Profile::init() {
   _clansName = "";
   //   调用 Classes\Utils\API\User\User.cpp 中的 getClanId 设置 _clansId
   if (_id != 0 && _isLogin) {
-    UserAPI::getClanId(
-        std::to_string(_id), [this](bool success, const std::string& message,
-                                    const std::string& clan_id) {
-          if (success && !clan_id.empty()) {
-            try {
-              int id = std::stoi(clan_id);
-              this->setClansId(id);
-              CCLOG("Profile: set clansId from server: %d", id);
-            } catch (const std::exception& e) {
-              CCLOG("Profile: failed to parse clan_id: %s", e.what());
-            }
-          } else {
-            CCLOG("Profile: getClanId failed: %s", message.c_str());
-          }
-        });
+    UserAPI::getClanId(std::to_string(_id),
+                       [this](bool success, const std::string& message,
+                              const std::string& clan_id) {
+                         if (success && !clan_id.empty()) {
+                           try {
+                             int id = std::stoi(clan_id);
+                             this->setClansId(id);
+                           } catch (const std::exception& e) {
+                           }
+                         } else {
+                         }
+                       });
   }
   return true;
 }
@@ -166,12 +163,6 @@ bool Profile::save() {
 
   // 写入文件（writeStringToFile会自动创建必要的目录）
   bool result = FileUtils::getInstance()->writeStringToFile(jsonString, path);
-
-  if (result) {
-    CCLOG("Profile: Saved to %s", path.c_str());
-  } else {
-    CCLOG("Profile: Failed to save to %s", path.c_str());
-  }
 
   return result;
 }

@@ -73,6 +73,9 @@ class GameScene : public BasicScene {
    */
   Building* createBuildingForItem(const ShopItem& item);
 
+  // 尝试自动搜索一个可放置的位置并直接放置，返回是否成功
+  bool autoPlaceBuilding(const ShopItem& item);
+
   /**
    * 放置提示
    */
@@ -104,22 +107,24 @@ class GameScene : public BasicScene {
   // 析构函数（清理放置模式相关资源，BuildingManager由父类清理）
   virtual ~GameScene();
 
-  bool _isPlacingBuilding;                // 是否处于放置模式
-  Building* _placementBuilding;           // 正在放置的建筑
-  ShopItem _placementItem;                // 当前放置商品
-  cocos2d::Label* _placementHintLabel;    // 放置提示文本
-  cocos2d::Label* _userInfoLabel;         // 用户信息标签（左上角显示id和用户名）
-  bool _isPlacementMouseDown;             // 放置模式左键是否按下
-  bool _placementDraggingMap;             // 放置模式是否正在拖动地图
-  cocos2d::Vec2 _placementMouseDownPos;   // 放置模式按下位置
-  cocos2d::Vec2 _placementLastMousePos;   // 放置模式最后一次鼠标位置
-  bool _placementPreviewValid;            // 当前预览是否有效
-  float _placementPreviewRow;             // 预览所在行
-  float _placementPreviewCol;             // 预览所在列
+  bool _isPlacingBuilding;               // 是否处于放置模式
+  Building* _placementBuilding;          // 正在放置的建筑
+  ShopItem _placementItem;               // 当前放置商品
+  cocos2d::Label* _placementHintLabel;   // 放置提示文本
+  cocos2d::Label* _userInfoLabel;        // 用户信息标签（左上角显示id和用户名）
+  bool _isPlacementMouseDown;            // 放置模式左键是否按下
+  bool _placementDraggingMap;            // 放置模式是否正在拖动地图
+  cocos2d::Vec2 _placementMouseDownPos;  // 放置模式按下位置
+  cocos2d::Vec2 _placementLastMousePos;  // 放置模式最后一次鼠标位置
+  bool _placementPreviewValid;           // 当前预览是否有效
+  float _placementPreviewRow;            // 预览所在行
+  float _placementPreviewCol;            // 预览所在列
   cocos2d::Vec2 _placementPreviewAnchor;  // 预览锚点位置
   cocos2d::Vec2 _currentMousePos;         // 当前鼠标位置
   bool _ignoreNextMouseUp;                // 是否忽略下一次鼠标抬起事件
   bool _autoSaveOnExit;                   // 退出场景时是否自动保存
+  cocos2d::EventListenerTouchOneByOne*
+      _placementTouchListener;  // 放置模式触摸监听（移动端）
 };
 
 #endif  // __GAME_SCENE_H__

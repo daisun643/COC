@@ -58,17 +58,12 @@ bool PlayerManager::init() {
   bool loadSuccess = loadUserData();
   if (!loadSuccess) {
     _isNewGame = true;
-    CCLOG(
-        "PlayerManager: No save data found or load failed, using default "
-        "values.");
 
     // 初始资源设为0，等待BuildingManager计算上限后填满
     _gold = 0;
     _elixir = 0;
   } else {
     _isNewGame = false;
-    CCLOG("PlayerManager: Initialized with saved data - Gold: %d, Elixir: %d",
-          _gold, _elixir);
   }
 
   // [注意] _maxGold 和 _maxElixir 这里是初始值。
@@ -186,12 +181,9 @@ void PlayerManager::saveUserData() {
   if (outFile.is_open()) {
     outFile << buffer.GetString();
     outFile.close();
-    CCLOG("PlayerManager: User data saved to %s", path.c_str());
   } else {
-    CCLOG("PlayerManager: Failed to save user data to %s", path.c_str());
     // 尝试使用 FileUtils 作为备选 (主要针对非 Windows 平台)
     if (FileUtils::getInstance()->writeStringToFile(buffer.GetString(), path)) {
-      CCLOG("PlayerManager: User data saved via FileUtils to %s", path.c_str());
     }
   }
 }
@@ -200,8 +192,6 @@ void PlayerManager::saveUserData() {
 bool PlayerManager::loadUserData() {
   std::string relativePath = "develop/user_data.json";
   std::string path = PathUtils::getRealFilePath(relativePath, false);
-
-  CCLOG("PlayerManager: Loading data from %s", path.c_str());
 
   std::string content;
 
@@ -224,7 +214,6 @@ bool PlayerManager::loadUserData() {
   }
 
   if (content.empty()) {
-    CCLOG("PlayerManager: Failed to load file or file is empty.");
     return false;
   }
 
@@ -232,7 +221,6 @@ bool PlayerManager::loadUserData() {
   doc.Parse(content.c_str());
 
   if (doc.HasParseError()) {
-    CCLOG("PlayerManager: JSON parse error.");
     return false;
   }
 
@@ -243,7 +231,5 @@ bool PlayerManager::loadUserData() {
     _elixir = doc["elixir"].GetInt();
   }
 
-  CCLOG("PlayerManager: User data loaded successfully. Gold: %d, Elixir: %d",
-        _gold, _elixir);
   return true;
 }

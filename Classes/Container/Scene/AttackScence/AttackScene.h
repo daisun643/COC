@@ -6,12 +6,12 @@
 
 #include "Container/Scene/Basic/BasicScene.h"
 #include "Game/Building/DefenseBuilding.h"
+#include "Game/Building/TrapBuilding.h"
 #include "Game/Soldier/BasicSoldier.h"
 #include "Game/Spell/BasicSpell.h"
 #include "Manager/Record/RecordManager.h"
 #include "Manager/Troop/TroopManager.h"
 #include "ui/CocosGUI.h"
-#include "Game/Building/TrapBuilding.h"
 
 USING_NS_CC;
 
@@ -123,10 +123,10 @@ class AttackScene : public BasicScene {
   void updateDefenseBuildings(float delta);
 
   /**
-     * 更新陷阱检测（每帧调用）
-     * 检测是否有士兵触发陷阱
-     */
-    void updateTraps(float delta);
+   * 更新陷阱检测（每帧调用）
+   * 检测是否有士兵触发陷阱
+   */
+  void updateTraps(float delta);
 
   /**
    * 更新记录摘要文件 record/summary.json
@@ -152,10 +152,16 @@ class AttackScene : public BasicScene {
   Sprite* _placementPreview;         // 布置预览精灵
   LayerColor* _selectedTroopIconBg;  // 当前选中的士兵图标背景（用于高亮）
   LayerColor* _selectedSpellIconBg;  // 当前选中的法术图标背景（用于高亮）
+  int _selectedTroopIndex;           // 选中的士兵索引（避免指针在重建时悬空）
+  int _selectedSpellIndex;           // 选中的法术索引
   std::vector<std::pair<LayerColor*, TroopItem>>
       _troopIconBgs;  // 士兵图标背景列表（用于鼠标点击检测）
   std::vector<std::pair<LayerColor*, SpellItem>>
       _spellIconBgs;  // 法术图标背景列表（用于鼠标点击检测）
+  std::vector<Label*>
+      _troopCountLabels;  // 士兵数量标签（与 _troopIconBgs 对应）
+  std::vector<Label*>
+      _spellCountLabels;  // 法术数量标签（与 _spellIconBgs 对应）
   std::vector<BasicSoldier*> _placedSoldiers;  // 已布置的士兵列表
   std::vector<BasicSpell*> _activeSpells;      // 活跃的法术列表
 

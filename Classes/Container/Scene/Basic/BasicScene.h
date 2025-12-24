@@ -29,6 +29,7 @@ class BasicScene : public Scene {
   Building* _selectedBuilding;  // 当前选中的建筑（点击但未拖动）
   Building* _draggingBuilding;  // 正在拖动的建筑
   Vec2 _buildingStartPos;       // 建筑开始拖动时的位置
+  bool _allowBuildingDrag;      // 是否允许建筑被选中和拖动（子类可修改）
 
   // 触摸事件相关变量
   bool _isTouchDragging;        // 是否正在触摸拖动地图
