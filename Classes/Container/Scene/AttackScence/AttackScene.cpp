@@ -28,6 +28,7 @@
 #include "Game/Spell/RageSpell.h"
 #include "Manager/Record/RecordManager.h"
 #include "Manager/Troop/TroopManager.h"
+#include "Utils/AudioManager.h"
 #include "json/document.h"
 #include "json/stringbuffer.h"
 #include "json/writer.h"
@@ -1545,6 +1546,14 @@ void AttackScene::showResult() {
       std::to_string((int)(ratio * 100)) + "%";
 
   auto label = Label::createWithSystemFont(text, "Arial", 28);
+
+  // 播放结算相关音效：胜利播放联盟小节（或胜利音乐），获得星级播放经验音效
+  if (win) {
+    AudioManager::getInstance()->playEffect("ringtones/alliance_jingle_v2.mp3");
+  }
+  if (stars > 0) {
+    AudioManager::getInstance()->playEffect("ringtones/xp_gain_06.mp3");
+  }
 
   label->setPosition(Director::getInstance()->getVisibleSize() / 2);
   this->addChild(label, 100);

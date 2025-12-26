@@ -17,6 +17,7 @@
 #include "Game/Building/TownHall.h"
 #include "Game/Building/Wall.h"
 #include "Manager/Config/ConfigManager.h"
+#include "Utils/AudioManager.h"
 #include "Utils/Profile/Profile.h"
 
 Scene* GameScene::createScene(const std::string& jsonFilePath) {
@@ -208,9 +209,15 @@ bool GameScene::init(const std::string& jsonFilePath) {
           if (resourceBuilding->getResourceType() == "Gold") {
             playerManager->addGold(amount);
             showPlacementHint("收集了 " + std::to_string(amount) + " 金币");
+            // 播放金币收集音效
+            AudioManager::getInstance()->playEffect(
+                "ringtones/coins_collect_01.mp3");
           } else if (resourceBuilding->getResourceType() == "Elixir") {
             playerManager->addElixir(amount);
             showPlacementHint("收集了 " + std::to_string(amount) + " 圣水");
+            // 播放圣水收集音效
+            AudioManager::getInstance()->playEffect(
+                "ringtones/elixir_collect_02.mp3");
           }
         } else {
           showPlacementHint("没有资源可收集");

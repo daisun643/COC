@@ -255,5 +255,80 @@ if(WIN32)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${COCOS2DX_ROOT}/external/openssl/prebuilt/win32/libssl-1_1.dll $<TARGET_FILE_DIR:${PROJECT_NAME}>)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${COCOS2DX_ROOT}/external/openssl/prebuilt/win32/libcrypto-1_1.dll $<TARGET_FILE_DIR:${PROJECT_NAME}>)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/Resources $<TARGET_FILE_DIR:${PROJECT_NAME}>/Resources)
+    # 复制 MP3/OGG 解码器 DLL（按架构优先 x64，再 x86）
+    if(EXISTS "${COCOS2DX_ROOT}/external/win32-specific/MP3Decoder/prebuilt/libmpg123.dll")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${COCOS2DX_ROOT}/external/win32-specific/MP3Decoder/prebuilt/libmpg123.dll
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+    elseif(EXISTS "${COCOS2DX_ROOT}/external/win32-specific/MP3Decoder/prebuilt/x64/libmpg123.dll")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${COCOS2DX_ROOT}/external/win32-specific/MP3Decoder/prebuilt/x64/libmpg123.dll
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+    elseif(EXISTS "${COCOS2DX_ROOT}/external/win32-specific/MP3Decoder/prebuilt/win32/libmpg123.dll")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${COCOS2DX_ROOT}/external/win32-specific/MP3Decoder/prebuilt/win32/libmpg123.dll
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+    elseif(EXISTS "${COCOS2DX_ROOT}/external/win32-specific/MP3Decoder/prebuilt/x86/libmpg123.dll")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${COCOS2DX_ROOT}/external/win32-specific/MP3Decoder/prebuilt/x86/libmpg123.dll
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+    endif()
+
+    if(EXISTS "${COCOS2DX_ROOT}/external/win32-specific/OggDecoder/prebuilt/libvorbisfile.dll")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${COCOS2DX_ROOT}/external/win32-specific/OggDecoder/prebuilt/libvorbisfile.dll
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+    elseif(EXISTS "${COCOS2DX_ROOT}/external/win32-specific/OggDecoder/prebuilt/x64/libvorbisfile.dll")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${COCOS2DX_ROOT}/external/win32-specific/OggDecoder/prebuilt/x64/libvorbisfile.dll
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+    elseif(EXISTS "${COCOS2DX_ROOT}/external/win32-specific/OggDecoder/prebuilt/win32/libvorbisfile.dll")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${COCOS2DX_ROOT}/external/win32-specific/OggDecoder/prebuilt/win32/libvorbisfile.dll
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+    elseif(EXISTS "${COCOS2DX_ROOT}/external/win32-specific/OggDecoder/prebuilt/x86/libvorbisfile.dll")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${COCOS2DX_ROOT}/external/win32-specific/OggDecoder/prebuilt/x86/libvorbisfile.dll
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+    endif()
+
+    # 复制 libvorbis.dll（OGG 解码器）
+    if(EXISTS "${COCOS2DX_ROOT}/external/win32-specific/OggDecoder/prebuilt/libvorbis.dll")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${COCOS2DX_ROOT}/external/win32-specific/OggDecoder/prebuilt/libvorbis.dll
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+    elseif(EXISTS "${COCOS2DX_ROOT}/external/win32-specific/OggDecoder/prebuilt/x64/libvorbis.dll")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${COCOS2DX_ROOT}/external/win32-specific/OggDecoder/prebuilt/x64/libvorbis.dll
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+    elseif(EXISTS "${COCOS2DX_ROOT}/external/win32-specific/OggDecoder/prebuilt/win32/libvorbis.dll")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${COCOS2DX_ROOT}/external/win32-specific/OggDecoder/prebuilt/win32/libvorbis.dll
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+    elseif(EXISTS "${COCOS2DX_ROOT}/external/win32-specific/OggDecoder/prebuilt/x86/libvorbis.dll")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${COCOS2DX_ROOT}/external/win32-specific/OggDecoder/prebuilt/x86/libvorbis.dll
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+    endif()
+
+    # 复制 libogg.dll（OGG 容器库）
+    if(EXISTS "${COCOS2DX_ROOT}/external/win32-specific/OggDecoder/prebuilt/libogg.dll")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${COCOS2DX_ROOT}/external/win32-specific/OggDecoder/prebuilt/libogg.dll
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+    elseif(EXISTS "${COCOS2DX_ROOT}/external/win32-specific/OggDecoder/prebuilt/x64/libogg.dll")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${COCOS2DX_ROOT}/external/win32-specific/OggDecoder/prebuilt/x64/libogg.dll
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+    elseif(EXISTS "${COCOS2DX_ROOT}/external/win32-specific/OggDecoder/prebuilt/win32/libogg.dll")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${COCOS2DX_ROOT}/external/win32-specific/OggDecoder/prebuilt/win32/libogg.dll
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+    elseif(EXISTS "${COCOS2DX_ROOT}/external/win32-specific/OggDecoder/prebuilt/x86/libogg.dll")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${COCOS2DX_ROOT}/external/win32-specific/OggDecoder/prebuilt/x86/libogg.dll
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+    endif()
+
     set_target_properties(${PROJECT_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 endif()

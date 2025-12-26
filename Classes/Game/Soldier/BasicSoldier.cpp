@@ -10,6 +10,7 @@
 #include "Game/Soldier/Dragon.h"
 #include "Game/Soldier/Gaint.h"
 #include "Manager/Config/ConfigManager.h"
+#include "Utils/AudioManager.h"
 #include "Utils/GridUtils.h"
 #include "Utils/PathFinder.h"
 
@@ -215,6 +216,10 @@ bool BasicSoldier::init(SoldierType soldierType, int level) {
   // 启用更新
   this->scheduleUpdate();
 
+  // 放置时播放一次攻击音效（所有兵种）
+  AudioManager::getInstance()->playEffect(
+      "ringtones/barbarian_king_attack_01.mp3");
+
   return true;
 }
 
@@ -414,6 +419,7 @@ void BasicSoldier::attackTarget(float delta) {
     _target->takeDamage(_attackDamage);
     CCLOG("Soldier attacks building, damage: %.1f, building HP: %.1f/%.1f",
           _attackDamage, _target->getCurrentHP(), _target->getMaxHP());
+    // （放置时已播放一次攻击音效，运行中攻击不再重复播放以避免嘈杂）
   }
 
   // 重置攻击冷却
@@ -444,6 +450,8 @@ void BasicSoldier::die() {
   _target = nullptr;
 
   // 隐藏士兵（或者播放死亡动画）
+  // 播放死亡音效（所有兵种）
+  AudioManager::getInstance()->playEffect("ringtones/barbarian_death_02.mp3");
   this->setVisible(false);
 
   // 停止更新

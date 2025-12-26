@@ -5,6 +5,7 @@
 
 #include "Game/Building/Building.h"
 #include "Game/Soldier/BasicSoldier.h"
+#include "Utils/AudioManager.h"
 
 LightningSpell::LightningSpell() { _spellType = SpellType::LIGHTNING; }
 
@@ -40,6 +41,10 @@ void LightningSpell::applyEffect(const std::vector<BasicSoldier*>& soldiers,
           _amount, building->getCurrentHP(), building->getMaxHP());
     }
   }
+
+  // 播放闪电法术音效（一次）
+  AudioManager::getInstance()->playEffect(
+      "ringtones/bottle_break_04_lightning_01.mp3");
 }
 
 void LightningSpell::createVisualEffect() {

@@ -6,6 +6,7 @@
 #include "Container/Scene/Record/RecordScene.h"
 #include "Manager/Config/ConfigManager.h"
 #include "Manager/PlayerManager.h"
+#include "Utils/AudioManager.h"
 #include "Utils/Profile/Profile.h"
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
 #include <windows.h>
@@ -107,6 +108,16 @@ bool AppDelegate::applicationDidFinishLaunching() {
   } else {
     startScene = GameScene::createScene();
   }
+
+  // 预加载常用音效，减少首次播放延迟
+  AudioManager::getInstance()->preload("ringtones/coins_collect_01.mp3");
+  AudioManager::getInstance()->preload(
+      "ringtones/barbarian_king_attack_01.mp3");
+  AudioManager::getInstance()->preload("ringtones/barbarian_death_02.mp3");
+  AudioManager::getInstance()->preload(
+      "ringtones/loading_screen_jingle_original.mp3");
+
+  // 启动时不自动播放测试音效
 
   director->runWithScene(startScene);
   return true;
