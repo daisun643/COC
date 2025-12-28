@@ -123,7 +123,7 @@ try {
   │   └── record/           # 音频资源
   ├── test/                 # 单元测试
   └── server/               # 服务器逻辑
-
+  
   ```
 #### 2.4.4 界面与体验
 * [X] 界面精美
@@ -302,3 +302,98 @@ static void leaveClan(const std::string& clan_id, int user_id, JoinClanCallback 
     }
 """
 ```
+### 3.3 核心技术实现细节
+
+#### 3.3.1 面向对象设计范式的实践
+
+针对游戏中种类繁多的建筑与兵种，我们利用 C++ 的继承、多态与封装特性，构建了高内聚、低耦合的实体架构。
+
+1. 继承体系与抽象
+
+通过提取共性构建清晰的类层次，最大化代码复用。
+
+- **建筑抽象体系**：
+  - **基类封装**：`Building` 类作为所有建筑的根基，封装了核心属性（如 `_level` 等级、`_currentHP` 生命值、`_row/_col` 网格坐标）与通用行为接口（如 `takeDamage()` 受击、`isAlive()` 存活判定）。
+  - **派生类特化**：
+    - **`DefenseBuilding` (防御塔)**：继承自 `Building`，扩展了 **攻击行为**。新增 `_attackRange` (射程)、`_damage` (伤害) 属性，并实现了 `attackSoldiers()` 索敌逻辑。
+    - **`ResourceBuilding` (资源设施)**：继承自 `Building`，扩展了 **生产行为**。新增 `_productionRate` 属性与 `harvest()` 接口，利用 `update()` 钩子实现资源的定时产出。
+- 多态与运行时行为
+
+利用虚函数机制实现“同一接口，不同行为”，提升系统的可扩展性。
+
+- 差异化的升级逻辑：
+
+  基类定义了 virtual void upgrade()。
+
+  ```c++
+  void DefenseBuilding::upgrade() {
+    Building::upgrade(); // 复用基类逻辑（等级+1，纹理刷新）
+    // 扩展派生类特有逻辑：数据驱动更新攻击属性
+    auto config = ConfigManager::getInstance()->getBuildingConfig(_buildingName, _level);
+    this->_damage = config.damage;
+  }
+  ```
+
+  这种设计符合 **开闭原则 (OCP)**：若未来新增“陷阱”类建筑，只需继承基类并重写 `upgrade`，无需修改核心升级系统的代码。
+
+**3. 设计模式的应用**
+
+- 简单工厂模式：
+
+  为解耦对象创建与使用，兵种生成模块采用工厂方法。UI 层只传入 SoldierType 枚举，工厂负责返回对应派生类实例，符合 依赖倒置原则：
+
+  ```c++
+  BasicSoldier* BasicSoldier::create(SoldierType soldierType, int level) {
+    switch (soldierType) {
+      case SoldierType::BARBARIAN: return Barbarian::create(level);
+      case SoldierType::ARCHER:    return Archer::create(level);
+      // ... 新增兵种只需在此添加 case，无需修改外部调用逻辑
+    }
+    return nullptr;
+  }
+  ```
+
+- 单例模式：
+
+  对于全局唯一的配置管理器 ConfigManager 和音频管理器 AudioManager，我们实现了线程安全的单例模式。通过私有化构造函数并提供静态访问点 getInstance()，确保了全局资源的一致性访问，避免了重复加载配置文件的 IO 开销。
+
+- 有限状态机 (FSM)：
+
+  在 BasicSoldier 的 AI 设计中，我们使用状态模式管理兵种行为。定义 SoldierState 枚举 (IDLE, MOVING, ATTACKING, DEAD)，在 update() 中根据状态切换行为逻辑，保证了复杂战斗逻辑下的状态流转清晰可控。
+
+#### 3.3.2 智能算法与 AI 决策
+
+1. 高精度 A 寻路算法优化*
+
+为解决士兵寻路问题，PathFinder 类实现了一套优化的 A* 算法：
+
+- **子网格精度细分**：引入 `precision`（默认 4），将一个逻辑网格细分为 16 个 (4x4) 寻路子网格。计算时使用高精度坐标，输出路径时通过 `(curr->row + 0.5f) / precision` 将坐标修正到子网格中心，实现了平滑的移动轨迹。
+- **数据结构优化**：使用 `std::priority_queue` 管理开放列表，确保每次以 $O(1)$ 时间复杂度取出 F 值最小的节点。
+- **启发式函数优化**：使用曼哈顿距离 (`std::abs(dx) + std::abs(dy)`) 作为启发函数 $H$，在网格地图中相比欧几里得距离计算开销更低且更符合移动规则。
+- **策略模式应用**：`findPath` 接口接收 `std::function<bool(int,int)> isWalkable` 回调。普通兵种传入常规碰撞检测，而**炸弹人**传入特殊检测函数（将“墙体”视作可通行目标），从而复用了核心算法实现了完全不同的 AI 行为。
+- 多级 AI 索敌决策树
+
+为了还原真实的战斗策略，我们在 findTarget 中实现了一套三级优先级决策系统：
+
+1. **首选目标**：根据兵种特性（如巨人优先攻击防御塔）筛选特定类型建筑。
+2. **次选兜底：若首选目标不存在，自动降级搜索最近的任意非墙建筑。
+3. **破墙机制：当 A* 寻路返回空路径（被围墙完全阻挡）时，AI 智能识别并锁定最近的城墙作为临时攻击目标。
+
+#### 3.3.3 全异步网络通信与数据驱动架构
+
+1. 异步非阻塞通信
+
+为了避免网络交互阻塞主线程导致游戏卡顿，客户端采用了全异步设计：
+
+- **Lambda 与闭包**：使用 C++11 Lambda 表达式封装 `HttpRequest` 回调，通过值捕获 `[callback]` 传递上下文，避免了传统函数指针导致的上下文丢失问题。
+
+  ```c++
+  request->setResponseCallback([callback](HttpClient* client, HttpResponse* response) {
+    // 在回调中解析数据并通过 callback 回传，不阻塞主线程
+    if (callback) callback(success, message, ...);
+  });
+  ```
+
+- 数据驱动设计
+
+游戏的核心数值（如兵种血量、建筑造价）并未硬编码在 C++ 代码中，而是完全分离至 JSON 配置文件。ConfigManager 利用 rapidjson 在运行时加载 config/building.json 等文件。这种设计使得数值策划可以在不重新编译程序的情况下调整游戏平衡性，极大地提高了开发效率。同时，在解析时通过 IsObject、IsString 等严格类型检查，提高了面对异常网络数据时的健壮性。
