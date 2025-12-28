@@ -40,30 +40,20 @@ bool AppDelegate::applicationDidFinishLaunching() {
 
   // 初始化导演类
   auto director = Director::getInstance();
-  auto glview = director->getOpenGLView();
-  if (!glview) {
+  GLView* glview = nullptr;
+  try{
+    glview = director->getOpenGLView();
+  }
+  catch(...){
+    CCLOG("AppDelegate Failed to create OpenGL view!");
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
-    glview = GLViewImpl::createWithRect(
-        "COC", cocos2d::Rect(0, 0, designResolutionSize.width,
-                             designResolutionSize.height));
-    if (!glview) {
-      MessageBoxA(nullptr, "Failed to create OpenGL view!", "Error", MB_OK);
-      return false;
-    }
-#elif (CC_TARGET_PLATFORM == CC_PLATFORM_MAC) || \
-    (CC_TARGET_PLATFORM == CC_PLATFORM_LINUX)
-    glview = GLViewImpl::createWithRect(
-        "COC", cocos2d::Rect(0, 0, designResolutionSize.width,
-                             designResolutionSize.height));
-    if (!glview) {
-      CCLOG("Failed to create OpenGL view!");
-      return false;
-    }
+    // ...
+    MessageBoxA(nullptr, "AppDelegate Failed to create OpenGL view!", "Error", MB_OK);
+    return false;
+#elif (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
+    ccMessageBox("AppDelegate Failed to create OpenGL view!");
 #else
-    glview = GLViewImpl::create("COC");
-    if (!glview) {
-      return false;
-    }
+    CCLOG("AppDelegate Unkonw Plateform")
 #endif
     director->setOpenGLView(glview);
   }
