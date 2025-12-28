@@ -1,11 +1,11 @@
-# 部落攻防（Clash-like）项目设计与实现文档
+# 部落冲突（Clash of Clans）项目设计与实现文档
 
 ------
 
 ## 1. 项目简介
 
 - **课程项目**：程序设计范式 / Cocos2d-x 游戏开发期末项目 
-- **项目名称**：部落攻防（Clash-like）  
+- **项目名称**：部落冲突（Clash of Clans）  
 - **团队成员**：
   - 组长：但泰然
   - 成员：孙同德
@@ -498,26 +498,37 @@ static void leaveClan(const std::string& clan_id, int user_id, JoinClanCallback 
 ### 5.1 运行环境
 
 - **客户端**：Windows 10/11（Visual Studio + CMake），或 Android（Android Studio）  
-- **引擎**：Cocos2d-x 3.x
+- **引擎**：Cocos2d-x 4.0
 - **语言标准**：C++11 或以上  
 - **后端**：Python 3.8+ Flask  
 
 ### 5.2 客户端（Windows）快速启动
 
 1. 安装依赖  
-   - Visual Studio 2022  
-   - CMake（建议 3.2x+）  
-   - Git（可选）  
+  - Visual Studio 2022（含 "Desktop development with C++" 工作负载）  
+  - CMake（建议 >= 3.10）  
+  - Cocos2d-x 源码（设置 `COCOS2DX_ROOT` 环境变量或在 CMake 命令中传入）  
+  - Git（可选）  
 
 2. 编译  
-   - 双击运行 `build.bat`（如仓库提供）  
-   - 或手动：
-     - `mkdir build && cd build`
-     - `cmake ..`
-     - `cmake --build . --config Release`
+  - 使用仓库脚本（在仓库根目录运行）：
+
+```cmd
+build.bat
+```
+
+  - 脚本说明：默认使用生成器 `Visual Studio 17 2022` 且 `-A Win32`（32-bit）。如需构建 x64，请编辑 `build.bat` 中的 `-A` 参数或手动运行：
+
+```cmd
+mkdir build
+cd build
+cmake .. -G "Visual Studio 17 2022" -A x64 -DCOCOS2DX_ROOT="D:\path\to\cocos2d-x-4.0"
+cmake --build . --config Release --target COC
+```
 
 3. 运行  
-   - 在生成目录中找到可执行文件并运行（例如 `Release/COC.exe`）
+  - 常见可执行文件位置：`build/release/`（或 `build/debug/`），也可以打开 `build/COC.sln` 在 Visual Studio 中运行/调试。  
+  - 如果找不到可执行，请确认 CMake 配置成功并检查 `COCOS2DX_ROOT` 是否正确。
 
 ### 5.3 客户端（Android）快速启动
 
@@ -528,11 +539,24 @@ static void leaveClan(const std::string& clan_id, int user_id, JoinClanCallback 
 ### 5.4 服务器（Flask）快速启动
 
 1. 进入服务器目录：`cd server`  
-2. 安装依赖：`pip install -r requirements.txt`  
-3. 启动服务：`python app.py`（或 `flask run --host 0.0.0.0 --port 80`）  
+2. 建议创建虚拟环境并安装依赖：
+
+```cmd
+python -m venv venv
+venv\Scripts\activate
+pip install Flask
+```
+
+3. 启动服务：`python run.py`（仓库入口为 `server/run.py`），默认脚本在示例中绑定端口 `80`（通常需要管理员权限），开发时建议改为 `5000`：
+
+```cmd
+python run.py
+# 或 编辑 run.py 中的 app.run(..., port=5000) 后运行
+```
+
 4. 配置客户端连接（如需要）：  
-   - 服务器地址：`http://127.0.0.1:80`  
-   - 端口：80
+  - 本地测试：`http://127.0.0.1:5000`（或脚本中配置的端口）
+  - 部署时请使用生产级 WSGI 容器（gunicorn/uwsgi）并启用持久化存储（当前为文件存储 `server/static/user/users.json`，仅适用于测试）。
 
 ------
 
